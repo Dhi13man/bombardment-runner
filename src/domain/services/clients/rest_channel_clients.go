@@ -4,14 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"time"
 
-	"dhi13man.github.io/credit_card_bombardment/src/models/dto/requests"
+	models_dto_requests "dhi13man.github.io/credit_card_bombardment/src/models/dto/requests"
 	models_dto_responses "dhi13man.github.io/credit_card_bombardment/src/models/dto/responses"
 	models_enums "dhi13man.github.io/credit_card_bombardment/src/models/enums"
+	"go.uber.org/zap"
 )
 
 type RestChannelClient interface {
@@ -72,18 +72,17 @@ func (c *restChannelClient) Execute(
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {
-		log.Printf("Request failed: %s", err)
+		zap.L().Error("Request failed: %s", zap.Error(err))
 		return nil, err
 	}
 	defer response.Body.Close()
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		log.Printf("Response reading failed: %s", err)
+		zap.L().Error("Response reading failed: %s", zap.Error(err))
 		return nil, err
 	}
 
-	log.Printf("Response: %s", body)
 	restChannelResponse := models_dto_responses.NewRestChannelResponse(
 		response.StatusCode,
 		body,
@@ -98,7 +97,7 @@ func (*restChannelClient) generateHttpRequest(
 	// Marshal the payload.
 	payloadBytes, err := json.Marshal(restRequest.Body)
 	if err != nil {
-		log.Printf("Payload marshalling failed: %s", err)
+		zap.L().Error("Payload marshalling failed: %s", zap.Error(err))
 		return nil, err
 	}
 
@@ -110,7 +109,7 @@ func (*restChannelClient) generateHttpRequest(
 		bytes.NewBuffer(payloadBytes),
 	)
 	if err != nil {
-		log.Printf("Request creation failed: %s", err)
+		zap.L().Error("Request creation failed: %s", zap.Error(err))
 		return nil, err
 	}
 

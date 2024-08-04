@@ -10,7 +10,7 @@ import (
 )
 
 type RoundRobinLoadBalancer interface {
-	ClientLoadBalancer
+	BaseClientLoadBalancer
 }
 
 type roundRobinLoadBalancer struct {
