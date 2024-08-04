@@ -17,7 +17,7 @@ Bombardment is a lightweight automation tool intended to pick up data, transform
 - [x] Implement workgroup and worker pool
 - [x] Implement basic clients: REST
 - [x] Implement basic load balancing strategy: Round Robin
-- [ ] Implement batch processing
+- [x] Implement concurrent batch processing using channels
 - [ ] Implement basic data transformation rules: JSONata
 - [ ] Implement a state machine for Start, Pause, Resume, Stop
 - [ ] Implement advanced progress tracking

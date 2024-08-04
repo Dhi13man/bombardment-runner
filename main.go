@@ -6,11 +6,11 @@ import (
 
 	"dhi13man.github.io/credit_card_bombardment/src/domain/services/batching"
 	"dhi13man.github.io/credit_card_bombardment/src/domain/services/clients"
-	"dhi13man.github.io/credit_card_bombardment/src/domain/services/load_balancer"
+	"dhi13man.github.io/credit_card_bombardment/src/domain/services/load_balancing"
 	"dhi13man.github.io/credit_card_bombardment/src/domain/services/parsing"
-	models_dto "dhi13man.github.io/credit_card_bombardment/src/models/dto"
-	models_dto_requests "dhi13man.github.io/credit_card_bombardment/src/models/dto/requests"
-	models_dto_responses "dhi13man.github.io/credit_card_bombardment/src/models/dto/responses"
+	"dhi13man.github.io/credit_card_bombardment/src/models/dto"
+	"dhi13man.github.io/credit_card_bombardment/src/models/dto/requests"
+	"dhi13man.github.io/credit_card_bombardment/src/models/dto/responses"
 	"go.uber.org/zap"
 )
 
@@ -44,7 +44,7 @@ func main() {
 		5*time.Second,
 		5*time.Second,
 	)
-	var loadBalancer load_balancer.BaseClientLoadBalancer = load_balancer.NewRoundRobinLoadBalancer(
+	var loadBalancer load_balancing.BaseClientLoadBalancer = load_balancing.NewRoundRobinLoadBalancer(
 		restClient,
 		urls,
 	)
@@ -58,15 +58,13 @@ func main() {
 			return status
 		},
 	)
-	var csv_parser parsing.CsvParser[models_dto.InsightData] = parsing.NewCsvParser[models_dto.InsightData](
+	var csv_parser parsing.BaseFileParser[models_dto.InsightData] = parsing.NewCsvParser[models_dto.InsightData](
 		dataFilePath,
 	)
 	defer csv_parser.Close()
 
 	// Read CSV file and get headers and data channel
-	insight_channel, err := csv_parser.GetParsedCsvStream(
-		models_dto.FromCSVRecord,
-	)
+	insight_channel, err := csv_parser.GetParsedDataStream(models_dto.FromRawData)
 	if err != nil {
 		zap.S().Error("failed to read CSV file: %s", err)
 	}
@@ -84,7 +82,7 @@ func main() {
 
 func makeRequest(
 	data *models_dto.InsightData,
-	loadBalancer load_balancer.BaseClientLoadBalancer,
+	loadBalancer load_balancing.BaseClientLoadBalancer,
 ) (*int, error) {
 	restChannelRequest := models_dto_requests.NewRestChannelRequest(
 		"/insight/v1/event/ingest",

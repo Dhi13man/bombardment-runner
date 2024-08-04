@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-
-	"go.uber.org/zap"
 )
 
 type InsightData struct {
@@ -46,21 +44,14 @@ func (data *InsightData) ToPayload() Payload {
 	}
 }
 
-func FromCSVRecord(headers []string, record []string) InsightData {
-	// Get the indexes of the required fields
-	rowIDIndex := getCSVIndex(headers, "row_id")
-	userAccountIDIndex := getCSVIndex(headers, "user_account_id")
-	last4DigitsIndex := getCSVIndex(headers, "last_4_digits")
-	mobileNumberIndex := getCSVIndex(headers, "mobile_number")
-	billerNameIndex := getCSVIndex(headers, "biller_name")
-
+func FromRawData(rawData map[string]string) InsightData {
 	// Parse the fields
-	rowID, _ := strconv.Atoi(record[rowIDIndex])
-	userAccountID := record[userAccountIDIndex]
-	last4Digits := record[last4DigitsIndex]
-	mobileNumberFloat, _ := strconv.ParseFloat(record[mobileNumberIndex], 64)
+	rowID, _ := strconv.Atoi(rawData["row_id"])
+	userAccountID := rawData["user_account_id"]
+	last4Digits := rawData["last_4_digits"]
+	mobileNumberFloat, _ := strconv.ParseFloat(rawData["mobile_number"], 64)
 	mobileNumber := int(mobileNumberFloat)
-	billerName := record[billerNameIndex]
+	billerName := rawData["biller_name"]
 	return InsightData{
 		RowID:         rowID,
 		UserAccountID: userAccountID,
@@ -68,15 +59,4 @@ func FromCSVRecord(headers []string, record []string) InsightData {
 		Last4Digits:   last4Digits,
 		MobileNumber:  mobileNumber,
 	}
-}
-
-func getCSVIndex(headers []string, header string) int {
-	for i, h := range headers {
-		if h == header {
-			return i
-		}
-	}
-
-	zap.S().Fatalf("header %s not found in CSV", header)
-	return -1
 }
