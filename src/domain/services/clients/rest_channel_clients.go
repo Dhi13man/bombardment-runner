@@ -69,6 +69,7 @@ func (c *restChannelClient) Execute(
 	if err != nil {
 		return nil, err
 	}
+	zap.S().Info("Request created: %s", req)
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {

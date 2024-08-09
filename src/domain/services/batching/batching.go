@@ -6,7 +6,7 @@ import (
 
 type BatchProcessor[T any, R any] interface {
 	// Processes the batch of requests and returns the responses.
-	ProcessBatch(requests chan T) chan R
+	CreateProcessedBatchChannel(requests chan T) chan R
 }
 
 type batchProcessor[T any, R any] struct {
@@ -25,7 +25,7 @@ func NewBatchProcessor[T any, R any](
 	}
 }
 
-func (bp *batchProcessor[T, R]) ProcessBatch(requests chan T) chan R {
+func (bp *batchProcessor[T, R]) CreateProcessedBatchChannel(requests chan T) chan R {
 	// Create a channel to store the responses.
 	responseChannel := make(chan R)
 

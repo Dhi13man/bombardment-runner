@@ -8,15 +8,16 @@ import (
 	"dhi13man.github.io/credit_card_bombardment/src/domain/services/clients"
 	"dhi13man.github.io/credit_card_bombardment/src/domain/services/load_balancing"
 	"dhi13man.github.io/credit_card_bombardment/src/domain/services/parsing"
-	"dhi13man.github.io/credit_card_bombardment/src/models/dto"
-	"dhi13man.github.io/credit_card_bombardment/src/models/dto/requests"
-	"dhi13man.github.io/credit_card_bombardment/src/models/dto/responses"
+	"dhi13man.github.io/credit_card_bombardment/src/domain/services/transforming"
+	models_dto "dhi13man.github.io/credit_card_bombardment/src/models/dto"
+	models_dto_requests "dhi13man.github.io/credit_card_bombardment/src/models/dto/requests"
+	models_dto_responses "dhi13man.github.io/credit_card_bombardment/src/models/dto/responses"
 	"go.uber.org/zap"
 )
 
 const (
 	dataFilePath = "./private/gupi_sms_credit_card.csv"
-	batchSize    = 100
+	batchSize    = 1
 )
 
 var urls = []string{
@@ -48,10 +49,30 @@ func main() {
 		restClient,
 		urls,
 	)
-	var batchProcessor batching.BatchProcessor[models_dto.InsightData, *int] = batching.NewBatchProcessor(
+	var transformer transforming.BaseTransformer = transforming.NewJsonataTransformer(
+		`{
+		   "request_id": "bulk-create-" & $number(row_id),
+		   "event_ts": $millis(),
+		   "user_account_id": user_account_id,
+		   "template_id": "4066f10464763823cc3e70c2ebd973fbd72cc5b1b450ccd31c0e87d9405e9dd6",
+		   "sms_date": $millis(),
+		   "insights": $string({
+			  "billerName": biller_name,
+			  "last_four_dig_cc": last_4_digits,
+			  "mobile__number": mobile_number
+			})
+		}`,
+	)
+	var batchProcessor batching.BatchProcessor[map[string]string, *int] = batching.NewBatchProcessor(
 		batchSize,
-		func(id models_dto.InsightData) *int {
-			status, err := makeRequest(&id, loadBalancer)
+		func(rawData map[string]string) *int {
+			transformed, err := transformer.Transform(rawData)
+			if err != nil {
+				zap.S().Error("Failed to transform data: %s", err)
+				return nil
+			}
+
+			status, err := makeRequest(&transformed, loadBalancer)
 			if err != nil {
 				return nil
 			}
@@ -64,14 +85,14 @@ func main() {
 	defer csv_parser.Close()
 
 	// Read CSV file and get headers and data channel
-	insight_channel, err := csv_parser.GetParsedDataStream(models_dto.FromRawData)
+	insight_channel, err := csv_parser.GetRawDataStream()
 	if err != nil {
 		zap.S().Error("failed to read CSV file: %s", err)
 	}
 	defer close(insight_channel)
 
 	// Process the InsightData in batches
-	responseChannel := batchProcessor.ProcessBatch(insight_channel)
+	responseChannel := batchProcessor.CreateProcessedBatchChannel(insight_channel)
 	defer close(responseChannel)
 
 	// Print the responses
@@ -81,7 +102,7 @@ func main() {
 }
 
 func makeRequest(
-	data *models_dto.InsightData,
+	data *interface{},
 	loadBalancer load_balancing.BaseClientLoadBalancer,
 ) (*int, error) {
 	restChannelRequest := models_dto_requests.NewRestChannelRequest(
@@ -90,7 +111,7 @@ func makeRequest(
 		map[string]string{
 			"Content-Type": "application/json",
 		},
-		data.ToPayload(),
+		data,
 	)
 	channelResponse, err := loadBalancer.Execute(restChannelRequest)
 	if err != nil {
