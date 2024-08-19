@@ -6,10 +6,10 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"time"
 
-	models_dto_requests "dhi13man.github.io/credit_card_bombardment/src/models/dto/requests"
-	models_dto_responses "dhi13man.github.io/credit_card_bombardment/src/models/dto/responses"
+	models_dto_clients "dhi13man.github.io/credit_card_bombardment/src/models/dto/clients"
+	"dhi13man.github.io/credit_card_bombardment/src/models/dto/clients/requests"
+	"dhi13man.github.io/credit_card_bombardment/src/models/dto/clients/responses"
 	models_enums "dhi13man.github.io/credit_card_bombardment/src/models/enums"
 	"go.uber.org/zap"
 )
@@ -24,29 +24,17 @@ type restChannelClient struct {
 
 // Creates a new REST client with the given timeouts.
 //
-// - dialTimeout is the maximum amount of time a dial will wait for a connect to complete.
-// - dialKeepAlive is the time a connection will be kept alive.
-// - tlsHandshakeTimeout is the maximum amount of time waiting to perform a TLS handshake.
-// - responseHeaderTimeout is the maximum amount of time waiting to read the response headers.
-// - expectContinueTimeout is the maximum amount of time waiting for a server's first response headers after fully writing the request headers.
-//
 // The returned HTTP client is safe for concurrent use by multiple goroutines.
-func NewRestClient(
-	dialTimeout time.Duration,
-	dialKeepAlive time.Duration,
-	tlsHandshakeTimeout time.Duration,
-	responseHeaderTimeout time.Duration,
-	expectContinueTimeout time.Duration,
-) RestChannelClient {
+func NewRestClient(context models_dto_clients.ClientContext) RestChannelClient {
 	dialer := &net.Dialer{
-		Timeout:   dialTimeout,
-		KeepAlive: dialKeepAlive,
+		Timeout:   context.DialTimeout,
+		KeepAlive: context.DialKeepAlive,
 	}
 	transport := &http.Transport{
 		Dial:                  dialer.Dial,
-		TLSHandshakeTimeout:   tlsHandshakeTimeout,
-		ResponseHeaderTimeout: responseHeaderTimeout,
-		ExpectContinueTimeout: expectContinueTimeout,
+		TLSHandshakeTimeout:   context.TlsHandshakeTimeout,
+		ResponseHeaderTimeout: context.ResponseHeaderTimeout,
+		ExpectContinueTimeout: context.ExpectContinueTimeout,
 	}
 	httpClient := &http.Client{
 		Transport: transport,
@@ -56,7 +44,7 @@ func NewRestClient(
 	}
 }
 
-func (c *restChannelClient) GetChannel() models_enums.Channel {
+func (c *restChannelClient) GetStrategy() models_enums.ClientChannel {
 	return models_enums.REST
 }
 

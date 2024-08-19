@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	models_dto_parsing "dhi13man.github.io/credit_card_bombardment/src/models/dto/parsing"
 	models_enums "dhi13man.github.io/credit_card_bombardment/src/models/enums"
 	"go.uber.org/zap"
 )
@@ -17,8 +18,8 @@ type csvParser[T any] struct {
 	file *os.File
 }
 
-func NewCsvParser[T any](filePath string) CsvFileParser[T] {
-	file, err := os.Open(filePath)
+func NewCsvParser[T any](parserContext models_dto_parsing.ParserContext) CsvFileParser[T] {
+	file, err := os.Open(parserContext.FilePath)
 	if err != nil {
 		zap.L().Fatal("Error opening file", zap.Error(err))
 	}
@@ -27,7 +28,7 @@ func NewCsvParser[T any](filePath string) CsvFileParser[T] {
 	}
 }
 
-func (c *csvParser[T]) GetRawDataStream() (rawChannel chan map[string]string, err error) {
+func (c *csvParser[T]) CreateRawDataStream() (rawChannel chan map[string]string, err error) {
 	r := csv.NewReader(c.file)
 	headers, err := r.Read()
 	if err != nil {
@@ -57,10 +58,10 @@ func (c *csvParser[T]) GetRawDataStream() (rawChannel chan map[string]string, er
 	return rawChannel, nil
 }
 
-func (c *csvParser[T]) GetParsedDataStream(
+func (c *csvParser[T]) CreateParsedDataStream(
 	mapper func(map[string]string) T,
 ) (ch chan T, err error) {
-	rawChannel, err := c.GetRawDataStream()
+	rawChannel, err := c.CreateRawDataStream()
 	if err != nil {
 		return nil, err
 	}

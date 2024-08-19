@@ -4,18 +4,19 @@ import (
 	"sync"
 
 	"dhi13man.github.io/credit_card_bombardment/src/domain/services/clients"
-	"dhi13man.github.io/credit_card_bombardment/src/models/dto/requests"
-	models_dto_responses "dhi13man.github.io/credit_card_bombardment/src/models/dto/responses"
-	"dhi13man.github.io/credit_card_bombardment/src/models/enums"
+	models_dto_requests "dhi13man.github.io/credit_card_bombardment/src/models/dto/clients/requests"
+	models_dto_responses "dhi13man.github.io/credit_card_bombardment/src/models/dto/clients/responses"
+	models_dto_load_balancing "dhi13man.github.io/credit_card_bombardment/src/models/dto/load_balancing"
+	models_enums "dhi13man.github.io/credit_card_bombardment/src/models/enums"
 )
 
 type RoundRobinLoadBalancer interface {
-	BaseClientLoadBalancer
+	BaseLoadBalancer
 }
 
 type roundRobinLoadBalancer struct {
 	client      clients.BaseChannelClient
-	baseUrls    []string
+	urls        []string
 	index       int
 	lbMutexLock sync.Mutex
 }
@@ -24,10 +25,13 @@ func (lb *roundRobinLoadBalancer) GetStrategy() models_enums.LoadBalancerStrateg
 	return models_enums.ROUND_ROBIN
 }
 
-func NewRoundRobinLoadBalancer(client clients.BaseChannelClient, baseUrls []string) RoundRobinLoadBalancer {
+func NewRoundRobinLoadBalancer(
+	lbContext models_dto_load_balancing.LoadBalancerContext,
+	client clients.BaseChannelClient,
+) RoundRobinLoadBalancer {
 	return &roundRobinLoadBalancer{
 		client:      client,
-		baseUrls:    baseUrls,
+		urls:        lbContext.Urls,
 		index:       0,
 		lbMutexLock: sync.Mutex{},
 	}
@@ -43,7 +47,7 @@ func (lb *roundRobinLoadBalancer) Execute(
 func (lb *roundRobinLoadBalancer) getNextUrl() string {
 	lb.lbMutexLock.Lock()
 	defer lb.lbMutexLock.Unlock()
-	url := lb.baseUrls[lb.index]
-	lb.index = (lb.index + 1) % len(lb.baseUrls)
+	url := lb.urls[lb.index]
+	lb.index = (lb.index + 1) % len(lb.urls)
 	return url
 }
