@@ -57,18 +57,18 @@ func (c *restChannelClient) Execute(
 	if err != nil {
 		return nil, err
 	}
-	zap.S().Info("Request created: %s", req)
+	zap.S().Debugf("Request created: %s", req)
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {
-		zap.L().Error("Request failed: %s", zap.Error(err))
+		zap.L().Error("Request failed: ", zap.Error(err))
 		return nil, err
 	}
 	defer response.Body.Close()
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		zap.L().Error("Response reading failed: %s", zap.Error(err))
+		zap.L().Error("Response reading failed: ", zap.Error(err))
 		return nil, err
 	}
 
@@ -86,7 +86,7 @@ func (*restChannelClient) generateHttpRequest(
 	// Marshal the payload.
 	payloadBytes, err := json.Marshal(restRequest.Body)
 	if err != nil {
-		zap.L().Error("Payload marshalling failed: %s", zap.Error(err))
+		zap.L().Error("Payload marshalling failed: ", zap.Error(err))
 		return nil, err
 	}
 
@@ -98,7 +98,7 @@ func (*restChannelClient) generateHttpRequest(
 		bytes.NewBuffer(payloadBytes),
 	)
 	if err != nil {
-		zap.L().Error("Request creation failed: %s", zap.Error(err))
+		zap.L().Error("Request creation failed: ", zap.Error(err))
 		return nil, err
 	}
 

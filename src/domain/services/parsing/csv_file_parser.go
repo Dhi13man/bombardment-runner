@@ -32,7 +32,7 @@ func (c *csvParser[T]) CreateRawDataStream() (rawChannel chan map[string]string,
 	r := csv.NewReader(c.file)
 	headers, err := r.Read()
 	if err != nil {
-		zap.L().Error("Error reading headers")
+		zap.L().Error("Error reading headers: ", zap.Error(err))
 		return nil, err
 	}
 
@@ -45,7 +45,7 @@ func (c *csvParser[T]) CreateRawDataStream() (rawChannel chan map[string]string,
 					zap.L().Debug("End of file " + c.file.Name())
 					break
 				}
-				zap.L().Error("Error reading record", zap.Error(err))
+				zap.L().Error("Error reading record: ", zap.Error(err))
 			}
 
 			rawData := make(map[string]string)

@@ -63,7 +63,11 @@ func (jt *jsonataTransformer) TransformRequest(data map[string]string) (
 
 	var headers map[string]string
 	if headersExpression := jt.headersExpression; headersExpression != nil {
-		headers = evalGracefully(headersExpression, data).(map[string]string)
+		headersRaw := evalGracefully(headersExpression, data).(map[string]interface{})
+		headers = make(map[string]string)
+		for key, value := range headersRaw {
+			headers[key] = value.(string)
+		}
 	}
 
 	var method string
@@ -98,7 +102,7 @@ func (jt *jsonataTransformer) createChannelRequest(
 func compileGracefully(expression string) *jsonata.Expr {
 	compiled, err := jsonata.Compile(expression)
 	if err != nil {
-		zap.L().Error("Error compiling jsonata expression", zap.Error(err))
+		zap.L().Error("Error compiling jsonata expression: ", zap.Error(err))
 		return nil
 	}
 
@@ -108,7 +112,7 @@ func compileGracefully(expression string) *jsonata.Expr {
 func evalGracefully(expression *jsonata.Expr, data map[string]string) interface{} {
 	result, err := expression.Eval(data)
 	if err != nil {
-		zap.L().Error("Error evaluating jsonata expression", zap.Error(err))
+		zap.L().Error("Error evaluating jsonata expression: ", zap.Error(err))
 		return nil
 	}
 
