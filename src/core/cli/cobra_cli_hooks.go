@@ -63,7 +63,7 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 	) error,
 ) CliHook {
 	var cliCommand = cobra.Command{
-		Use:     fmt.Sprintf("cli {-C|--%s} {-L|--%s} {-P|--%s} {-T|--%s}", CLIENT_CONTEXT_KEY, LOAD_BALANCER_CONTEXT_KEY, PARSER_CONTEXT_KEY, TRANSFORMER_CONTEXT_KEY),
+		Use:     fmt.Sprintf("cli {-C|--%s} {-D|--%s} {-L|--%s} {-P|--%s} {-T|--%s}", CLIENT_CONTEXT_KEY, DRIVER_CONTEXT_KEY, LOAD_BALANCER_CONTEXT_KEY, PARSER_CONTEXT_KEY, TRANSFORMER_CONTEXT_KEY),
 		Short:   "Run Bombardment in CLI mode",
 		GroupID: RUN_MODE_GROUP_ID,
 		Long:    "Run Bombardment in CLI mode. This mode requires the user to provide the context for the Client, Driver, Load Balancer, Parser, and Transformer as JSON string flags.",
@@ -84,6 +84,7 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 				--%s"{\"body_expression\":\"{\\n\\t\\t\\\"request_id\\\": \\\"bulk-create-\\\" & $number(row_id),\\n\\t\\t\\\"event_ts\\\": $millis(),\\n\\t\\\"user_account_id\\\": user_account_id,\\n\\t\\\"template_id\\\": \\\"4066f10464763823cc3e70c2ebd973fbd72cc5b1b450ccd31c0e87d9405e9dd6\\\",\\n\\t\\\"sms_date\\\": $millis(),\\n\\t\\\"insights\\\": $string({\\n\\t\\t\\\"billerName\\\": biller_name,\\n\\t\\t\\\"last_four_dig_cc\\\": last_4_digits,\\n\\t\\t\\\"mobile__number\\\": $floor($number(mobile_number))\\n\\t})\\n\\t}\",\"endpoint_expression\":\"\\\"/insight/v1/event/ingest\\\"\",\"headers_expression\":\"{ \\\"Content-Type\\\": \\\"application/json\\\" }\",\"method_expression\":\"\\\"POST\\\"\",\"strategy\":\"JSONATA\"}"
 			`,
 			CLIENT_CONTEXT_KEY,
+			DRIVER_CONTEXT_KEY,
 			LOAD_BALANCER_CONTEXT_KEY,
 			PARSER_CONTEXT_KEY,
 			TRANSFORMER_CONTEXT_KEY,
