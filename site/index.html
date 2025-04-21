@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bombardment - Lightweight Data Migration Automation</title>
+    <meta name="description" content="Bombardment is a lightweight, extensible automation tool for efficient data migrations and transformations.">
+    <meta name="keywords" content="data migration, automation, golang, concurrent processing, load balancing, REST, gRPC, JSONata">
+    <meta name="author" content="Dhiman Seal">
+    <meta name="robots" content="index, follow">
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://bombardment.work/">
+    <meta property="og:title" content="Bombardment - Data Migration Automation">
+    <meta property="og:description" content="Streamline data migrations with Bombardment's modular, concurrent, and extensible architecture.">
+    <meta property="og:image" content="assets/logo.png">
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Bombardment - Data Migration Automation">
+    <meta name="twitter:description" content="Streamline data migrations with Bombardment's modular, concurrent, and extensible architecture.">
+    <meta name="twitter:image" content="assets/logo.png">
+    <!-- Styles -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="src/styles/global-styles.css">
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fa-solid fa-bomb"></i>
+                    <h1>Bombardment</h1>
+                </div>
+                <p class="subtitle">Effortless, concurrent data migrations powered by Go</p>
+                <div class="cta-buttons">
+                    <a href="https://github.com/dhi13man/credit_card_bombardment" class="button primary-button" target="_blank" rel="noopener">View on GitHub</a>
+                    <a href="#features" class="button secondary-button">Learn More</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section id="features">
+        <div class="container">
+            <h2>Features</h2>
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-cubes"></i>
+                    </div>
+                    <h3 class="feature-title">Modular Architecture</h3>
+                    <p class="feature-description">Clean, layered design for easy extension and maintenance.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <h3 class="feature-title">Concurrent Processing</h3>
+                    <p class="feature-description">Batch jobs processed in parallel for high throughput.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-plug"></i>
+                    </div>
+                    <h3 class="feature-title">Flexible Channels</h3>
+                    <p class="feature-description">Support REST, gRPC, and custom channels out of the box.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-balance-scale"></i>
+                    </div>
+                    <h3 class="feature-title">Load Balancing</h3>
+                    <p class="feature-description">Client-side strategies like Round Robin ensure even distribution.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-code-branch"></i>
+                    </div>
+                    <h3 class="feature-title">Transformation Rules</h3>
+                    <p class="feature-description">Apply powerful JSONata-based rules for data transformations.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-tasks"></i>
+                    </div>
+                    <h3 class="feature-title">Job Management</h3>
+                    <p class="feature-description">Track, pause, resume, and stop migrations with a built-in state machine.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works">
+        <div class="container">
+            <div class="section-title">
+                <h2>How It Works</h2>
+                <p class="section-subtitle">Bombardment simplifies your data migration process in four steps</p>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Configure Your Source</h3>
+                        <p class="step-description">Define your source data format (CSV, JSON, or custom formats) and connection details.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Define Transformations</h3>
+                        <p class="step-description">Apply JSONata transformation rules to reshape your data for the target system.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Configure Target Channels</h3>
+                        <p class="step-description">Set up REST or gRPC endpoints with load balancing strategies.</p>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Execute & Monitor</h3>
+                        <p class="step-description">Run batched migration jobs and track progress through the state machine.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="get-started">
+        <div class="container">
+            <div class="section-title">
+                <h2>Get Started</h2>
+                <p class="section-subtitle">Install Bombardment and start migrating data in minutes</p>
+            </div>
+            <div class="code-container">
+                <div class="code-header">
+                    <span class="language-tag">bash</span>
+                    <button class="copy-button" onclick="copyToClipboard('installation-code')">
+                        <i class="fa-regular fa-copy"></i> Copy
+                    </button>
+                </div>
+                <pre id="installation-code"><code>go install github.com/dhi13man/credit_card_bombardment@latest
+bombardment run --help</code></pre>
+            </div>
+            <div class="quick-links">
+                <a href="https://github.com/dhi13man/credit_card_bombardment/wiki" class="button secondary-button" target="_blank" rel="noopener">
+                    <i class="fa-solid fa-book"></i> Documentation
+                </a>
+                <a href="https://github.com/dhi13man/credit_card_bombardment/issues" class="button secondary-button" target="_blank" rel="noopener">
+                    <i class="fa-solid fa-bug"></i> Report Issues
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="privacy-section">
+        <div class="container">
+            <div class="privacy-content">
+                <div class="privacy-icon">
+                    <i class="fa-solid fa-shield-alt"></i>
+                </div>
+                <div class="privacy-text">
+                    <h2>Your Privacy Matters</h2>
+                    <p>Bombardment runs entirely on your machine or server. No data is sent to external servers.</p>
+                    <a href="privacy-policy.html" class="button secondary-button">Read Privacy Policy</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Bombardment. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

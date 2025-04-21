@@ -6,8 +6,6 @@ type Bootstrap interface {
 	// Returns the bootstrap mode of the application
 	GetBootstrapMode() models_enums.BootstrapMode
 
-	// P
-
 	// Starts the application
 	Run()
 }
