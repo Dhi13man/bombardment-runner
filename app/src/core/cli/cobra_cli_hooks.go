@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	models_dto_clients "dhi13man.github.io/credit_card_bombardment/src/models/dto/clients"
-	models_dto_driver "dhi13man.github.io/credit_card_bombardment/src/models/dto/driver"
-	models_dto_load_balancing "dhi13man.github.io/credit_card_bombardment/src/models/dto/load_balancing"
-	models_dto_parsing "dhi13man.github.io/credit_card_bombardment/src/models/dto/parsing"
-	models_dto_transforming "dhi13man.github.io/credit_card_bombardment/src/models/dto/transforming"
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
+	models_dto_clients "github.dhi13man.com/bombardment-runner/src/models/dto/clients"
+	models_dto_driver "github.dhi13man.com/bombardment-runner/src/models/dto/driver"
+	models_dto_load_balancing "github.dhi13man.com/bombardment-runner/src/models/dto/load_balancing"
+	models_dto_parsing "github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
+	models_dto_transforming "github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
 )
 
 var (

@@ -3,11 +3,11 @@ package clients
 import (
 	"errors"
 
-	"dhi13man.github.io/credit_card_bombardment/src/domain/services"
-	models_dto_clients "dhi13man.github.io/credit_card_bombardment/src/models/dto/clients"
-	"dhi13man.github.io/credit_card_bombardment/src/models/dto/clients/requests"
-	"dhi13man.github.io/credit_card_bombardment/src/models/dto/clients/responses"
-	"dhi13man.github.io/credit_card_bombardment/src/models/enums"
+	"github.dhi13man.com/bombardment-runner/src/domain/services"
+	models_dto_clients "github.dhi13man.com/bombardment-runner/src/models/dto/clients"
+	models_dto_requests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
+	models_dto_responses "github.dhi13man.com/bombardment-runner/src/models/dto/clients/responses"
+	models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
 )
 
 type BaseChannelClient interface {

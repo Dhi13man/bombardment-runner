@@ -1,8 +1,8 @@
 package main
 
 import (
-	core_cli "dhi13man.github.io/credit_card_bombardment/src/core/cli"
-	"dhi13man.github.io/credit_card_bombardment/src/domain/services/driver"
+	core_cli "github.dhi13man.com/bombardment-runner/src/core/cli"
+	"github.dhi13man.com/bombardment-runner/src/domain/services/driver"
 	"go.uber.org/zap"
 )
 

@@ -3,9 +3,9 @@ package parsing
 import (
 	"errors"
 
-	"dhi13man.github.io/credit_card_bombardment/src/domain/services"
-	models_dto_parsing "dhi13man.github.io/credit_card_bombardment/src/models/dto/parsing"
-	models_enums "dhi13man.github.io/credit_card_bombardment/src/models/enums"
+	"github.dhi13man.com/bombardment-runner/src/domain/services"
+	models_dto_parsing "github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
+	models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
 )
 
 type BaseFileParser[T any] interface {

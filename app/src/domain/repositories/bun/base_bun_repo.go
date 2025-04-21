@@ -4,11 +4,11 @@ import (
 	"database/sql"
 	"time"
 
-	"dhi13man.github.io/credit_card_bombardment/src/domain/repositories"
 	"github.com/alexlast/bunzap"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
+	"github.dhi13man.com/bombardment-runner/src/domain/repositories"
 	"go.uber.org/zap"
 )
 

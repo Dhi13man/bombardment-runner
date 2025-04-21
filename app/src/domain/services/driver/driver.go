@@ -1,18 +1,18 @@
 package driver
 
 import (
-	"dhi13man.github.io/credit_card_bombardment/src/domain/services/batching"
-	"dhi13man.github.io/credit_card_bombardment/src/domain/services/clients"
-	"dhi13man.github.io/credit_card_bombardment/src/domain/services/load_balancing"
-	"dhi13man.github.io/credit_card_bombardment/src/domain/services/parsing"
-	"dhi13man.github.io/credit_card_bombardment/src/domain/services/transforming"
-	models_dto_clients "dhi13man.github.io/credit_card_bombardment/src/models/dto/clients"
-	models_dto_requests "dhi13man.github.io/credit_card_bombardment/src/models/dto/clients/requests"
-	models_dto_responses "dhi13man.github.io/credit_card_bombardment/src/models/dto/clients/responses"
-	models_dto_driver "dhi13man.github.io/credit_card_bombardment/src/models/dto/driver"
-	models_dto_load_balancing "dhi13man.github.io/credit_card_bombardment/src/models/dto/load_balancing"
-	models_dto_parsing "dhi13man.github.io/credit_card_bombardment/src/models/dto/parsing"
-	models_dto_transforming "dhi13man.github.io/credit_card_bombardment/src/models/dto/transforming"
+	"github.dhi13man.com/bombardment-runner/src/domain/services/batching"
+	"github.dhi13man.com/bombardment-runner/src/domain/services/clients"
+	"github.dhi13man.com/bombardment-runner/src/domain/services/load_balancing"
+	"github.dhi13man.com/bombardment-runner/src/domain/services/parsing"
+	"github.dhi13man.com/bombardment-runner/src/domain/services/transforming"
+	models_dto_clients "github.dhi13man.com/bombardment-runner/src/models/dto/clients"
+	models_dto_requests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
+	models_dto_responses "github.dhi13man.com/bombardment-runner/src/models/dto/clients/responses"
+	models_dto_driver "github.dhi13man.com/bombardment-runner/src/models/dto/driver"
+	models_dto_load_balancing "github.dhi13man.com/bombardment-runner/src/models/dto/load_balancing"
+	models_dto_parsing "github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
+	models_dto_transforming "github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
 	"go.uber.org/zap"
 )
 

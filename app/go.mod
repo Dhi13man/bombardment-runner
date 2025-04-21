@@ -1,4 +1,4 @@
-module dhi13man.github.io/credit_card_bombardment
+module github.dhi13man.com/bombardment-runner
 
 go 1.21.6
 

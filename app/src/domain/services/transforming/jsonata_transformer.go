@@ -3,10 +3,10 @@ package transforming
 import (
 	"errors"
 
-	models_dto_requests "dhi13man.github.io/credit_card_bombardment/src/models/dto/clients/requests"
-	models_dto_transforming "dhi13man.github.io/credit_card_bombardment/src/models/dto/transforming"
-	models_enums "dhi13man.github.io/credit_card_bombardment/src/models/enums"
 	jsonata "github.com/blues/jsonata-go"
+	models_dto_requests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
+	models_dto_transforming "github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
+	models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
 	"go.uber.org/zap"
 )
 

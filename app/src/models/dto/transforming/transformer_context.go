@@ -1,6 +1,6 @@
 package models_dto_transforming
 
-import models_enums "dhi13man.github.io/credit_card_bombardment/src/models/enums"
+import models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
 
 type TransformerContext struct {
 	Strategy           models_enums.TransformerStrategy `json:"strategy"`

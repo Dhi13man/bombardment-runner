@@ -3,7 +3,7 @@ package models_dto_clients
 import (
 	"time"
 
-	models_enums "dhi13man.github.io/credit_card_bombardment/src/models/enums"
+	models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
 )
 
 type ClientContext struct {

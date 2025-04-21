@@ -1,8 +1,8 @@
 package models_entities
 
 import (
-	models_enums "dhi13man.github.io/credit_card_bombardment/src/models/enums"
 	"github.com/uptrace/bun"
+	models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
 )
 
 type JobStatus string

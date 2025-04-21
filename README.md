@@ -23,7 +23,7 @@ Bombardment is a lightweight automation tool intended to pick up data, transform
 ## Installation
 
 ```bash
-go get dhi13man.github.io/credit_card_bombardment
+go get github.dhi13man.com/bombardment-runner
 ```
 
 ## Usage
@@ -31,7 +31,12 @@ go get dhi13man.github.io/credit_card_bombardment
 ### CLI Mode
 
 ```bash
-bombardment run [options]
+bombardment cli \
+    --client-context '{"channel":"REST"}' \
+    --driver-context '{"batch_size":100}' \
+    --load-balancer-context '{"strategy":"ROUND_ROBIN","urls":["https://api.example.com"]}' \
+    --parser-context '{"file_path":"./data.csv","strategy":"CSV"}' \
+    --transformer-context '{"strategy":"JSONATA"}'
 ```
 
 ## Project Structure
