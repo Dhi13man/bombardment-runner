@@ -10,6 +10,39 @@ Bombardment is a lightweight automation tool intended to pick up data, transform
 - Bombardment supports different channels (REST / GRPC etc) to send data to target systems
 - Bombardment supports different client-side load balancing strategies
 
+## Features
+
+- **Modular Architecture**: Built with clean, layered architecture for easy extension and maintenance
+- **Data Processing**: Supports various file formats through extensible parsers
+- **Transformation Rules**: Transform data using powerful rule engines like JSONata
+- **Multiple Client Channels**: REST API support with more channels planned
+- **Load Balancing**: Client-side load balancing with Round Robin strategy
+- **Concurrency**: Process data in batches concurrently for higher throughput
+- **Job Management**: Track and manage data migration jobs
+
+## Installation
+
+```bash
+go get dhi13man.github.io/credit_card_bombardment
+```
+
+## Usage
+
+### CLI Mode
+
+```bash
+bombardment run [options]
+```
+
+## Project Structure
+
+The project follows a clean architecture with:
+
+- **Core**: CLI and bootstrap functionality
+- **Domain**: Business logic, repositories, and services
+- **Models**: DTOs, entities, and enums
+- **App**: Application bootstrap and configuration
+
 ## To Do
 
 - [x] Initial setup with scalable architecture
