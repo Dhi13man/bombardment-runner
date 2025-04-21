@@ -1,41 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bombardment - Lightweight Data Migration Automation</title>
-    <meta name="description" content="Bombardment is a lightweight, extensible automation tool for efficient data migrations and transformations.">
-    <meta name="keywords" content="data migration, automation, golang, concurrent processing, load balancing, REST, gRPC, JSONata">
+    <meta name="description"
+        content="Bombardment is a lightweight, extensible automation tool for efficient data migrations and transformations.">
+    <meta name="keywords"
+        content="data migration, automation, golang, concurrent processing, load balancing, REST, gRPC, JSONata">
     <meta name="author" content="Dhiman Seal">
     <meta name="robots" content="index, follow">
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://bombardment.work/">
     <meta property="og:title" content="Bombardment - Data Migration Automation">
-    <meta property="og:description" content="Streamline data migrations with Bombardment's modular, concurrent, and extensible architecture.">
+    <meta property="og:description"
+        content="Streamline data migrations with Bombardment's modular, concurrent, and extensible architecture.">
     <meta property="og:image" content="assets/logo.png">
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Bombardment - Data Migration Automation">
-    <meta name="twitter:description" content="Streamline data migrations with Bombardment's modular, concurrent, and extensible architecture.">
+    <meta name="twitter:description"
+        content="Streamline data migrations with Bombardment's modular, concurrent, and extensible architecture.">
     <meta name="twitter:image" content="assets/logo.png">
     <!-- Styles -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="src/styles/global-styles.css">
     <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+    <!-- Animation Library -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <!-- Code Syntax Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+
 </head>
+
 <body>
     <header>
         <div class="container">
             <div class="header-content">
                 <div class="logo">
-                    <i class="fa-solid fa-bomb"></i>
-                    <h1>Bombardment</h1>
+                    <i class="fa-solid fa-bomb floating"></i>
+                    <h1 class="glow">Bombardment</h1>
                 </div>
-                <p class="subtitle">Effortless, concurrent data migrations powered by Go</p>
-                <div class="cta-buttons">
-                    <a href="https://github.com/dhi13man/credit_card_bombardment" class="button primary-button" target="_blank" rel="noopener">View on GitHub</a>
+                <p class="subtitle typing-effect">No more random last-minute scripts</p>
+                <p class="subtitle typing-effect">Switch to no-code, performant data migrations</p>
+                <div class="cta-buttons animate__animated animate__fadeInUp animate__delay-1s">
+                    <a href="mailto:dhiman.seal@hotmail.com" class="button primary-button"
+                        target="_blank" rel="noopener"><i class="fa-solid fa-envelope"></i> Contact Us</a>
                     <a href="#features" class="button secondary-button">Learn More</a>
                 </div>
             </div>
@@ -44,49 +59,51 @@
 
     <section id="features">
         <div class="container">
-            <h2>Features</h2>
+            <h2 class="fade-in">Features</h2>
             <div class="features">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <i class="fa-solid fa-cubes"></i>
-                    </div>
-                    <h3 class="feature-title">Modular Architecture</h3>
-                    <p class="feature-description">Clean, layered design for easy extension and maintenance.</p>
-                </div>
-                <div class="feature-card">
+                <div class="feature-card fade-in">
                     <div class="feature-icon">
                         <i class="fa-solid fa-bolt"></i>
                     </div>
                     <h3 class="feature-title">Concurrent Processing</h3>
                     <p class="feature-description">Batch jobs processed in parallel for high throughput.</p>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card fade-in">
                     <div class="feature-icon">
                         <i class="fa-solid fa-plug"></i>
                     </div>
                     <h3 class="feature-title">Flexible Channels</h3>
                     <p class="feature-description">Support REST, gRPC, and custom channels out of the box.</p>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card fade-in">
                     <div class="feature-icon">
                         <i class="fa-solid fa-balance-scale"></i>
                     </div>
                     <h3 class="feature-title">Load Balancing</h3>
                     <p class="feature-description">Client-side strategies like Round Robin ensure even distribution.</p>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card fade-in">
                     <div class="feature-icon">
                         <i class="fa-solid fa-code-branch"></i>
                     </div>
                     <h3 class="feature-title">Transformation Rules</h3>
                     <p class="feature-description">Apply powerful JSONata-based rules for data transformations.</p>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card fade-in">
                     <div class="feature-icon">
                         <i class="fa-solid fa-tasks"></i>
                     </div>
                     <h3 class="feature-title">Job Management</h3>
-                    <p class="feature-description">Track, pause, resume, and stop migrations with a built-in state machine.</p>
+                    <p class="feature-description">Track, pause, resume, and stop migrations with a built-in state machine.
+                    </p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <i class="fa-solid fa-cubes"></i>
+                    </div>
+                    <h3 class="feature-title">Modular Architecture</h3>
+                    <p class="feature-description">Clean, layered design for easy extension and maintenance.</p>
                 </div>
             </div>
         </div>
@@ -94,37 +111,40 @@
 
     <section class="how-it-works">
         <div class="container">
-            <div class="section-title">
+            <div class="section-title fade-in">
                 <h2>How It Works</h2>
                 <p class="section-subtitle">Bombardment simplifies your data migration process in four steps</p>
             </div>
             <div class="steps">
-                <div class="step">
+                <div class="step fade-in">
                     <div class="step-number">1</div>
                     <div class="step-content">
                         <h3 class="step-title">Configure Your Source</h3>
-                        <p class="step-description">Define your source data format (CSV, JSON, or custom formats) and connection details.</p>
+                        <p class="step-description">Define your source data format (CSV, JSON, or custom formats) and
+                            connection details.</p>
                     </div>
                 </div>
-                <div class="step">
+                <div class="step fade-in">
                     <div class="step-number">2</div>
                     <div class="step-content">
                         <h3 class="step-title">Define Transformations</h3>
-                        <p class="step-description">Apply JSONata transformation rules to reshape your data for the target system.</p>
+                        <p class="step-description">Apply JSONata transformation rules to reshape your data for the
+                            target system.</p>
                     </div>
                 </div>
-                <div class="step">
+                <div class="step fade-in">
                     <div class="step-number">3</div>
                     <div class="step-content">
                         <h3 class="step-title">Configure Target Channels</h3>
                         <p class="step-description">Set up REST or gRPC endpoints with load balancing strategies.</p>
                     </div>
                 </div>
-                <div class="step">
+                <div class="step fade-in">
                     <div class="step-number">4</div>
                     <div class="step-content">
                         <h3 class="step-title">Execute & Monitor</h3>
-                        <p class="step-description">Run batched migration jobs and track progress through the state machine.</p>
+                        <p class="step-description">Run batched migration jobs and track progress through the state
+                            machine.</p>
                     </div>
                 </div>
             </div>
@@ -133,41 +153,74 @@
 
     <section class="get-started">
         <div class="container">
-            <div class="section-title">
+            <div class="section-title fade-in">
                 <h2>Get Started</h2>
                 <p class="section-subtitle">Install Bombardment and start migrating data in minutes</p>
             </div>
-            <div class="code-container">
+            <div class="code-container fade-in">
                 <div class="code-header">
                     <span class="language-tag">bash</span>
-                    <button class="copy-button" onclick="copyToClipboard('installation-code')">
+                    <button class="copy-button" onclick="copyToClipboard('basic-code')">
                         <i class="fa-regular fa-copy"></i> Copy
                     </button>
                 </div>
-                <pre id="installation-code"><code>go install github.com/dhi13man/credit_card_bombardment@latest
-bombardment run --help</code></pre>
+                <pre id="basic-code" class="line-numbers">
+<code class="language-bash"># Run Bombardment in CLI mode with minimal settings
+bombardment cli \
+    --client-context '{"channel":"REST"}' \
+    --driver-context '{"batch_size":100}' \
+    --load-balancer-context '{"strategy":"ROUND_ROBIN","urls":["https://api.example.com"]}' \
+    --parser-context '{"file_path":"./data.csv","strategy":"CSV"}' \
+    --transformer-context '{"strategy":"JSONATA"}'
+</code>
+                </pre>
             </div>
-            <div class="quick-links">
-                <a href="https://github.com/dhi13man/credit_card_bombardment/wiki" class="button secondary-button" target="_blank" rel="noopener">
-                    <i class="fa-solid fa-book"></i> Documentation
-                </a>
-                <a href="https://github.com/dhi13man/credit_card_bombardment/issues" class="button secondary-button" target="_blank" rel="noopener">
-                    <i class="fa-solid fa-bug"></i> Report Issues
-                </a>
+        </div>
+    </section>
+
+    <section class="how-it-works" id="why-switch">
+        <div class="container">
+            <div class="section-title fade-in">
+                <h2>Why Switch to Bombardment?</h2>
+                <p class="section-subtitle">Discover how Bombardment outperforms traditional data migration solutions</p>
+            </div>
+            <div class="steps">
+                <div class="step fade-in">
+                    <div class="step-number">01</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Lightning-Fast Performance</h3>
+                        <p class="step-description">Built with Golang, Bombardment processes large data volumes with minimal resource usage, resulting in migration speeds up to 10x faster than traditional tools.</p>
+                    </div>
+                </div>
+                <div class="step fade-in">
+                    <div class="step-number">02</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Advanced Load Balancing</h3>
+                        <p class="step-description">Built-in client-side load balancing distributes requests across multiple endpoints, preventing bottlenecks and ensuring reliable throughput even under heavy loads.</p>
+                    </div>
+                </div>
+                <div class="step fade-in">
+                    <div class="step-number">03</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Cost-Effective Solution</h3>
+                        <p class="step-description">Open-source with zero licensing fees, Bombardment reduces infrastructure costs by efficiently utilizing your existing resources instead of requiring additional servers.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
     <section class="privacy-section">
         <div class="container">
-            <div class="privacy-content">
+            <div class="privacy-content fade-in">
                 <div class="privacy-icon">
                     <i class="fa-solid fa-shield-alt"></i>
                 </div>
                 <div class="privacy-text">
-                    <h2>Your Privacy Matters</h2>
-                    <p>Bombardment runs entirely on your machine or server. No data is sent to external servers.</p>
-                    <a href="privacy-policy.html" class="button secondary-button">Read Privacy Policy</a>
+                    <h2>Data Privacy & Security</h2>
+                    <p>Bombardment runs entirely on your machine or server. No data is ever sent to external servers or stored in the cloud without your explicit configuration.</p>
+                    <p>Your sensitive business data stays within your infrastructure, giving you complete control over your information.</p>
+                    <a href="privacy-policy.html" class="button primary-button privacy-cta"><i class="fa-solid fa-lock"></i> Read Our Privacy Policy</a>
                 </div>
             </div>
         </div>
@@ -178,5 +231,76 @@ bombardment run --help</code></pre>
             <p>&copy; 2025 Bombardment. All rights reserved.</p>
         </div>
     </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+
+    <script>
+        // Copy to clipboard functionality
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+
+            navigator.clipboard.writeText(text).then(() => {
+                const button = element.parentElement.querySelector('.copy-button');
+                const originalIcon = button.innerHTML;
+                button.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+
+                setTimeout(() => {
+                    button.innerHTML = originalIcon;
+                }, 2000);
+            });
+        }
+
+        // Tab switching functionality
+        document.querySelectorAll('.code-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+
+                // Deactivate all tabs
+                document.querySelectorAll('.code-tab').forEach(t => {
+                    t.classList.remove('active');
+                });
+                document.querySelectorAll('.code-content').forEach(c => {
+                    c.classList.remove('active');
+                });
+
+                // Activate the clicked tab
+                tab.classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+
+                // Rehighlight the code
+                Prism.highlightAll();
+            });
+        });
+
+        // Intersection Observer for fade-in animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, {
+            root: null,
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        });
+
+        document.querySelectorAll('.fade-in').forEach(element => {
+            observer.observe(element);
+        });
+
+        // Initialize Prism.js syntax highlighting
+        document.addEventListener('DOMContentLoaded', () => {
+            Prism.highlightAll();
+        });
+    </script>
 </body>
+
 </html>
