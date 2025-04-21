@@ -253,6 +253,9 @@ bombardment cli \
                 setTimeout(() => {
                     button.innerHTML = originalIcon;
                 }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                alert('Failed to copy text. Please try again.');
             });
         }
 
