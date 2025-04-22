@@ -806,6 +806,97 @@ h2 {
     font-size: 1.25rem;
 }
 
+/* Use Case Clarification Section */
+.use-case-clarification {
+    background-color: var(--color-gray-100);
+}
+
+.use-case-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.use-case-column {
+    background-color: var(--color-white);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.use-case-column:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+}
+
+.use-case-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+}
+
+.use-case-header i {
+    font-size: 1.75rem;
+}
+
+.use-case-header i.fa-check-circle {
+    color: var(--color-primary);
+}
+
+.use-case-header i.fa-database {
+    color: var(--color-gray-700);
+}
+
+.use-case-header h3 {
+    font-size: 1.25rem;
+    color: var(--color-gray-900);
+    font-weight: 600;
+    margin: 0;
+}
+
+.use-case-body ul {
+    list-style: none;
+    margin: 1rem 0;
+    padding-left: 0.5rem;
+}
+
+.use-case-body ul li {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-gray-700);
+}
+
+.use-case-body ul li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: var(--color-primary);
+}
+
+.use-case-highlight {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background-color: var(--color-primary-light);
+    color: var(--color-gray-900);
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+}
+
+/* Responsive styles for use case section */
+@media (max-width: 768px) {
+    .use-case-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .use-case-column:first-child {
+        margin-bottom: 1rem;
+    }
+}
+
 /* Footer */
 footer {
     background-color: var(--color-gray-900);
