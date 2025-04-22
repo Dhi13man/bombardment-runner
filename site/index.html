@@ -52,7 +52,10 @@
                 <div id="subtitle-container">
                     <p class="subtitle typing-animation"></p>
                 </div>
-                <div class="cta-buttons animate__animated animate__fadeInUp animate__delay-1s">
+                <div class="hero-description animate__animated animate__fadeIn">
+                    <p>Transform and bombard bulk data to your target Systems</p>
+                </div>
+                <div class="cta-buttons animate__animated animate__fadeInUp">
                     <a href="mailto:dhiman.seal@hotmail.com" class="button primary-button"
                         target="_blank" rel="noopener"><i class="fa-solid fa-envelope"></i> Contact Us</a>
                     <a href="#features" class="button secondary-button">Learn More</a>
@@ -113,72 +116,6 @@
         </div>
     </section>
 
-    <section class="how-it-works">
-        <div class="container">
-            <div class="section-title fade-in">
-                <h2>How It Works</h2>
-                <p class="section-subtitle">Bombardment simplifies your data migration process in four steps</p>
-            </div>
-            <div class="steps">
-                <div class="step fade-in">
-                    <div class="step-number">1</div>
-                    <div class="step-content">
-                        <h3 class="step-title">Configure Your Source</h3>
-                        <p class="step-description">Define your source data format (CSV, JSON, or custom formats) and
-                            connection details.</p>
-                    </div>
-                </div>
-                <div class="step fade-in">
-                    <div class="step-number">2</div>
-                    <div class="step-content">
-                        <h3 class="step-title">Define Transformations</h3>
-                        <p class="step-description">Apply JSONata transformation rules to reshape your data for the
-                            target system.</p>
-                    </div>
-                </div>
-                <div class="step fade-in">
-                    <div class="step-number">3</div>
-                    <div class="step-content">
-                        <h3 class="step-title">Configure Target Channels</h3>
-                        <p class="step-description">Set up REST or gRPC endpoints with load balancing strategies.</p>
-                    </div>
-                </div>
-                <div class="step fade-in">
-                    <div class="step-number">4</div>
-                    <div class="step-content">
-                        <h3 class="step-title">Execute & Monitor</h3>
-                        <p class="step-description">Run batched migration jobs and track progress through the state
-                            machine.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="get-started">
-        <div class="container">
-            <div class="section-title fade-in">
-                <h2>Get Started</h2>
-                <p class="section-subtitle">Install Bombardment and start migrating data in minutes</p>
-            </div>
-            <div class="code-container fade-in">
-                <div class="code-header">
-                    <span class="language-tag">bash</span>
-                    <button class="copy-button" onclick="copyToClipboard('basic-code')">
-                        <i class="fa-regular fa-copy"></i> Copy
-                    </button>
-                </div>
-                <pre id="basic-code" class="line-numbers"><code class="language-bash"># Run Bombardment in CLI mode with minimal settings
-bombardment cli \
-    --client-context '{"channel":"REST"}' \
-    --driver-context '{"batch_size":100}' \
-    --load-balancer-context '{"strategy":"ROUND_ROBIN","urls":["https://api.example.com"]}' \
-    --parser-context '{"file_path":"./data.csv","strategy":"CSV"}' \
-    --transformer-context '{"strategy":"JSONATA"}'</code></pre>
-            </div>
-        </div>
-    </section>
-
     <section class="how-it-works" id="why-switch">
         <div class="container">
             <div class="section-title fade-in">
@@ -204,7 +141,73 @@ bombardment cli \
                     <div class="step-number">03</div>
                     <div class="step-content">
                         <h3 class="step-title">Cost-Effective Solution</h3>
-                        <p class="step-description">Open-source with zero licensing fees, Bombardment reduces infrastructure costs by efficiently utilizing your existing resources instead of requiring additional servers.</p>
+                        <p class="step-description">Bombardment reduces infrastructure costs by efficiently utilizing your existing resources instead of requiring additional servers.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="get-started">
+        <div class="container">
+            <div class="section-title fade-in">
+                <h2>Get Started</h2>
+                <p class="section-subtitle">Install Bombardment and start migrating data in minutes</p>
+            </div>
+            <div class="code-container fade-in">
+                <div class="code-header">
+                    <span class="language-tag">bash</span>
+                    <button class="copy-button" onclick="copyToClipboard('basic-code')" type="button">
+                        <i class="fa-regular fa-copy"></i> Copy
+                    </button>
+                </div>
+                <pre id="basic-code" class="line-numbers"><code class="language-bash"># Run Bombardment in CLI mode with minimal settings
+bombardment cli \
+    --client-context '{"channel":"REST"}' \
+    --driver-context '{"batch_size":100}' \
+    --load-balancer-context '{"strategy":"ROUND_ROBIN","urls":["https://api.example.com"]}' \
+    --parser-context '{"file_path":"./data.csv","strategy":"CSV"}' \
+    --transformer-context '{"strategy":"JSONATA"}'</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works">
+        <div class="container">
+            <div class="section-title fade-in">
+                <h2>How It Works</h2>
+                <p class="section-subtitle">Bombardment simplifies your data migration process in four steps</p>
+            </div>
+            <div class="steps">
+                <div class="step fade-in">
+                    <div class="step-number">01</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Configure Your Source</h3>
+                        <p class="step-description">Define your source data format (CSV, JSON, or custom formats) and
+                            connection details.</p>
+                    </div>
+                </div>
+                <div class="step fade-in">
+                    <div class="step-number">02</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Define Transformations</h3>
+                        <p class="step-description">Apply JSONata transformation rules to reshape your data for the
+                            target system.</p>
+                    </div>
+                </div>
+                <div class="step fade-in">
+                    <div class="step-number">03</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Configure Target Channels</h3>
+                        <p class="step-description">Set up REST or gRPC endpoints with load balancing strategies.</p>
+                    </div>
+                </div>
+                <div class="step fade-in">
+                    <div class="step-number">04</div>
+                    <div class="step-content">
+                        <h3 class="step-title">Execute & Monitor</h3>
+                        <p class="step-description">Run batched migration jobs and track progress through the state
+                            machine.</p>
                     </div>
                 </div>
             </div>

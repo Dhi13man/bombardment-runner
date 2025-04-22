@@ -125,6 +125,20 @@ h1 {
     align-items: center;
 }
 
+/* Hero description styling */
+.hero-description {
+    max-width: 700px;
+    margin: 0 auto 2rem;
+    text-align: center;
+}
+
+.hero-description p {
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 1.1rem;
+    line-height: 1.6;
+    font-weight: 400;
+}
+
 .typing-animation {
     position: relative;
     margin: 0 auto 1rem;
@@ -145,6 +159,7 @@ h1 {
 /* Buttons */
 .cta-buttons {
     display: flex;
+    gap: 1rem;
     justify-content: center;
 }
 
@@ -448,7 +463,7 @@ h2 {
 
 .screenshot-content {
     display: none;
-    animation: fadeZoomIn 0.6s ease;
+    animation: fadeZoomIn 0.3s ease;
     transform-origin: center;
 }
 
@@ -711,7 +726,7 @@ h2 {
     display: none;
     max-width: 700px;
     margin: 0 auto;
-    animation: fadeIn 0.5s ease;
+    animation: fadeIn 0.2s ease;
 }
 
 .browser-content.active {
@@ -958,12 +973,11 @@ a:hover {
     }
 }
 
-/* Code block styles have been simplified since we no longer use tabs */
 
 .fade-in {
     opacity: 0;
     transform: translateY(20px);
-    transition: opacity 0.8s ease, transform 0.8s ease;
+    transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
 .fade-in.visible {

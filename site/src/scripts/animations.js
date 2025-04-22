@@ -18,7 +18,12 @@ const subtitles = [
     "No more random last-minute scripts",
     "Switch to no-code, performant, data migrations",
     "Transform your data migration process",
-    "Save time with efficient automation"
+    "Fast, lightweight and scalable data processing",
+    "Process data in batches concurrently",
+    "Client-side load balancing built-in",
+    "Modular design for easy extension",
+    "Multiple channels for target systems",
+    "Golang powered: for maximum performance"
 ];
 
 // State variables for typing animation
