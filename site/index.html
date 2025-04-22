@@ -49,8 +49,9 @@
                     <i class="fa-solid fa-rocket floating"></i>
                     <h1 class="glow">Bombardment</h1>
                 </div>
-                <p class="subtitle typing-effect">No more random last-minute scripts</p>
-                <p class="subtitle typing-effect">Switch to no-code, performant, data migrations</p>
+                <div id="subtitle-container">
+                    <p class="subtitle typing-animation"></p>
+                </div>
                 <div class="cta-buttons animate__animated animate__fadeInUp animate__delay-1s">
                     <a href="mailto:dhiman.seal@hotmail.com" class="button primary-button"
                         target="_blank" rel="noopener"><i class="fa-solid fa-envelope"></i> Contact Us</a>
@@ -238,72 +239,9 @@ bombardment cli \
         src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
-
-    <script>
-        // Copy to clipboard functionality
-        function copyToClipboard(elementId) {
-            const element = document.getElementById(elementId);
-            const text = element.textContent;
-
-            navigator.clipboard.writeText(text).then(() => {
-                const button = element.parentElement.querySelector('.copy-button');
-                const originalIcon = button.innerHTML;
-                button.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
-
-                setTimeout(() => {
-                    button.innerHTML = originalIcon;
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy text: ', err);
-                alert('Failed to copy text. Please try again.');
-            });
-        }
-
-        // Tab switching functionality
-        document.querySelectorAll('.code-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const tabId = tab.getAttribute('data-tab');
-
-                // Deactivate all tabs
-                document.querySelectorAll('.code-tab').forEach(t => {
-                    t.classList.remove('active');
-                });
-                document.querySelectorAll('.code-content').forEach(c => {
-                    c.classList.remove('active');
-                });
-
-                // Activate the clicked tab
-                tab.classList.add('active');
-                document.getElementById(tabId).classList.add('active');
-
-                // Rehighlight the code
-                Prism.highlightAll();
-            });
-        });
-
-        // Intersection Observer for fade-in animations
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, {
-            root: null,
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        });
-
-        document.querySelectorAll('.fade-in').forEach(element => {
-            observer.observe(element);
-        });
-
-        // Initialize Prism.js syntax highlighting
-        document.addEventListener('DOMContentLoaded', () => {
-            Prism.highlightAll();
-        });
-    </script>
+    
+    <!-- Custom scripts -->
+    <script src="src/scripts/animations.js"></script>
 </body>
 
 </html>

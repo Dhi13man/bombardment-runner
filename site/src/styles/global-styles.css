@@ -117,12 +117,35 @@ h1 {
     opacity: 0.9;
 }
 
+/* Typing animation for subtitle */
+#subtitle-container {
+    min-height: 120px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.typing-animation {
+    position: relative;
+    margin: 0 auto 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    border-right: 3px solid rgba(255, 255, 255, 0.75);
+    animation: blinkCursor 0.8s step-end infinite;
+    font-size: 1.5rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+
+@keyframes blinkCursor {
+    from, to { border-color: transparent; }
+    50% { border-color: rgba(255, 255, 255, 0.75); }
+}
+
 /* Buttons */
 .cta-buttons {
     display: flex;
     justify-content: center;
-    gap: 1rem;
-    margin-top: 2rem;
 }
 
 .button {
@@ -904,20 +927,20 @@ a:hover {
 
 
 .floating {
-    animation: floating 3s ease-in-out infinite;
+    animation: floating 2.5s ease-in-out infinite;
 }
 
 @keyframes floating {
     0% {
-        transform: translateY(0px);
+        transform: translateX(0px) translateY(7px);
     }
 
     50% {
-        transform: translateY(-15px);
+        transform: translateX(14px) translateY(-7px);
     }
 
     100% {
-        transform: translateY(0px);
+        transform: translateX(0px) translateY(7px);
     }
 }
 
@@ -970,32 +993,24 @@ a:hover {
     }
 }
 
-.typing-effect {
-    overflow: hidden;
-    white-space: nowrap;
-    margin: 0 auto;
-    letter-spacing: .15em;
-    animation: typing 3.5s steps(40, end) 0s, blink-caret .75s step-end infinite;
-}
-
-@keyframes typing {
-    from {
-        width: 0
-    }
-
-    to {
-        width: 100%
-    }
-}
-
 /* Responsive styles */
 @media (max-width: 768px) {
     h1 {
         font-size: 2.5rem;
     }
 
+    .header-content {
+        padding: 0 10px;
+    }
+
+    .subtitle {
+        font-size: 1.1rem;
+        padding: 0 10px;
+    }
+
     .features {
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        padding: 0 10px;
     }
 
     .step {
@@ -1006,6 +1021,9 @@ a:hover {
     }
 
     .step-number {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
         margin-right: 0;
         margin-bottom: 0;
         position: absolute;
@@ -1017,19 +1035,31 @@ a:hover {
         content: '';
         position: absolute;
         top: 35px;
-        left: 35px;
+        left: 25px;
         height: calc(100% - 35px);
         width: 2px;
         background-color: var(--color-primary-light);
     }
 
     .step-content {
-        margin-left: 50px;
+        margin-left: 10px;
     }
 
     .cta-buttons {
         flex-direction: column;
         align-items: center;
+        gap: 1rem;
+    }
+
+    .button {
+        width: 80%;
+        max-width: 300px;
+    }
+
+    .privacy-content {
+        flex-direction: column;
+        text-align: center;
+        padding: 0 15px;
     }
 
     .browser-tabs {
@@ -1046,6 +1076,11 @@ a:hover {
 
     .browser-tab.active::after {
         bottom: 0;
+    }
+    
+    .code-container {
+        margin: 2rem 15px;
+        width: auto;
     }
 }
 
