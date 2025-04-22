@@ -123,6 +123,8 @@ h1 {
     display: flex;
     justify-content: center;
     align-items: center;
+    width: 100%;
+    padding: 0 1rem;
 }
 
 /* Hero description styling */
@@ -142,13 +144,26 @@ h1 {
 .typing-animation {
     position: relative;
     margin: 0 auto 1rem;
-    white-space: nowrap;
-    overflow: hidden;
-    border-right: 3px solid rgba(255, 255, 255, 0.75);
-    animation: blinkCursor 0.8s step-end infinite;
+    white-space: normal;
+    overflow: visible;
     font-size: 1.5rem;
     font-weight: 500;
     letter-spacing: 0.02em;
+    text-align: center;
+    width: 100%;
+    min-height: 3.5rem;
+    display: block;
+}
+
+.typing-animation::after {
+    content: '';
+    position: relative;
+    display: inline-block;
+    height: 1.4em;
+    margin-left: 3px;
+    border-right: 3px solid rgba(255, 255, 255, 0.75);
+    animation: blinkCursor 0.8s step-end infinite;
+    vertical-align: text-top;
 }
 
 @keyframes blinkCursor {
