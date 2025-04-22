@@ -164,16 +164,13 @@
                         <i class="fa-regular fa-copy"></i> Copy
                     </button>
                 </div>
-                <pre id="basic-code" class="line-numbers">
-<code class="language-bash"># Run Bombardment in CLI mode with minimal settings
+                <pre id="basic-code" class="line-numbers"><code class="language-bash"># Run Bombardment in CLI mode with minimal settings
 bombardment cli \
     --client-context '{"channel":"REST"}' \
     --driver-context '{"batch_size":100}' \
     --load-balancer-context '{"strategy":"ROUND_ROBIN","urls":["https://api.example.com"]}' \
     --parser-context '{"file_path":"./data.csv","strategy":"CSV"}' \
-    --transformer-context '{"strategy":"JSONATA"}'
-</code>
-                </pre>
+    --transformer-context '{"strategy":"JSONATA"}'</code></pre>
             </div>
         </div>
     </section>

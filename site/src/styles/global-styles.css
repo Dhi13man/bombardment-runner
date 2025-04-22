@@ -536,6 +536,7 @@ h2 {
     border-radius: var(--border-radius);
     overflow: hidden;
     box-shadow: var(--shadow-md);
+    background-color: var(--color-gray-900);
 }
 
 .code-header {
@@ -543,15 +544,16 @@ h2 {
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem 1rem;
-    background-color: var(--color-gray-800);
+    background-color: var(--color-gray-900);
     color: var(--color-white);
-    border-bottom: 1px solid var(--color-gray-700);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .language-tag {
-    font-family: monospace;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     font-size: 0.875rem;
-    color: var(--color-gray-300);
+    color: var(--color-primary-light);
+    font-weight: 500;
 }
 
 .copy-button {
@@ -563,29 +565,44 @@ h2 {
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    transition: color 0.2s;
+    transition: all 0.2s;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
 }
 
 .copy-button:hover {
     color: var(--color-white);
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .get-started pre {
     margin: 0;
-    padding: 1rem 1.5rem;
+    padding: 1.25rem 1.5rem;
     background-color: var(--color-gray-900);
     overflow-x: auto;
-    line-height: 1.5;
+    line-height: 1.6;
+    border-top: none;
 }
 
 .get-started code {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     color: var(--color-gray-100);
-    line-height: 1.5;
+    line-height: 1.6;
     font-size: 0.95rem;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     display: block;
     white-space: pre;
+}
+
+.get-started code .comment {
+    color: var(--color-gray-500);
+}
+
+.get-started code .command {
+    color: var(--color-primary-light);
+}
+
+.get-started code .param {
+    color: var(--color-secondary-light);
 }
 
 /* Privacy Section */
