@@ -55,7 +55,7 @@ function typeSubtitle() {
         // Pause at the end of typing before starting to delete
         isDeleting = true;
         typingSpeed = ANIMATION.TYPING.PAUSE_DURATION;
-    } else if (isDeleting && currentCharIndex === 0) {
+    } else if (isDeleting && currentCharIndex === 1) {
         // Move to the next subtitle
         isDeleting = false;
         currentSubtitleIndex = (currentSubtitleIndex + 1) % subtitles.length;
