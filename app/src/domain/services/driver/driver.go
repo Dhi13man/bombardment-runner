@@ -92,7 +92,7 @@ func (b *bombardmentDriver) CreateBombardment(
 
 	// Print the responses
 	for response := range responseChannel {
-		zap.S().Debugf("Response Code: %v", *response)
+		zap.S().Debugf("Response Code: %v", response)
 	}
 	return nil
 }
