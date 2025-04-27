@@ -39,6 +39,50 @@ bombardment cli \
     --transformer-context '{"strategy":"JSONATA"}'
 ```
 
+## How it Works
+
+1. **Configure Your Source**  
+   Define where your data comes from and how it’s parsed.
+
+   **Possible values:**
+   - `strategy`: "CSV", "JSON" (extensible: PARQUET, custom)
+   - `file_path`: string (e.g., "./data.csv")
+
+2. **Define Transformations**  
+   Apply rules to reshape data before sending.
+
+   **Possible values:**
+   - `strategy`: "JSONATA", "GOTEMPLATE" (extensible: custom)
+
+3. **Configure Target Channels**  
+   Choose how and where data is sent.
+
+   **Possible values:**
+   - `channel`: "REST", "GRPC", "KAFKA"
+   - `load_balancer_strategy`: "RANDOM", "ROUND_ROBIN", "LEAST_CONNECTION"
+   - `urls`: array of endpoint URLs (e.g., `["https://api.example.com"]`)
+
+4. **Execute & Monitor**  
+   Run migration jobs and track progress through the state machine.
+
+   **Contexts:**
+   - **Driver context:**
+     - `batch_size` (int)
+     - `should_store_responses` (bool)
+   - **State machine events:** `Start`, `Pause`, `Resume`, `Stop`
+
+**Example CLI command:**
+
+```bash
+# Run Bombardment in CLI mode
+bombardment cli \
+  --client_context '{"channel":"REST","dial_keep_alive":10000000000,"dial_timeout":5000000000}' \
+  --data_context '{"batch_size":100,"should_store_responses":false}' \
+  --load_balancer '{"strategy":"ROUND_ROBIN","urls":["https://api.example.com","https://api-backup.example.com"]}' \
+  --parser_context '{"file_path":"./data.csv","strategy":"CSV"}' \
+  --transformation_context '{"strategy":"JSONATA","method_expression":"\"POST\"","endpoint_expression":"\"/api/v1/\" & resource","headers_expression":"{ \"Content-Type\": \"application/json\", \"X-Request-ID\": request_id }","body_expression":"{ \"id\": $number(id), \"timestamp\": $millis() }"}'
+```
+
 ## Project Structure
 
 The project follows a clean architecture with:
