@@ -127,6 +127,25 @@ function setupFadeInAnimations() {
     });
 }
 
+// Usage tab switching functionality
+function showUsageTab(tabId) {
+    // Hide all tabs
+    document.querySelectorAll('.usage-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Deactivate all tab buttons
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('active');
+    });
+    
+    // Show the selected tab
+    document.getElementById(tabId).classList.add('active');
+    
+    // Activate the clicked button
+    document.querySelector(`.tab-button[onclick="showUsageTab('${tabId}')"]`).classList.add('active');
+}
+
 // Initialize all functionality when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Start the typing animation with a small delay

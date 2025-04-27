@@ -514,6 +514,107 @@ h2 {
     margin-right: auto;
 }
 
+/* Usage Options Tabs */
+.usage-options {
+    margin-bottom: 2rem;
+}
+
+.usage-tabs {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+}
+
+.tab-button {
+    padding: 0.75rem 1.5rem;
+    background-color: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--color-gray-700);
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.tab-button::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background-color: var(--color-primary);
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+.tab-button:hover::after {
+    width: 80%;
+}
+
+.tab-button.active::after {
+    width: 100%;
+}
+
+.tab-button.active {
+    background-color: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+.tab-button:hover:not(.active) {
+    background-color: var(--color-gray-100);
+}
+
+.usage-tab {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.usage-tab.active {
+    display: block;
+}
+
+/* GUI Screenshot Styling */
+.gui-container {
+    background-color: var(--color-white);
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.image-container {
+    margin-top: 1.5rem;
+    position: relative;
+}
+
+.gui-screenshot {
+    width: 100%;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-gray-200);
+}
+
+.image-caption {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: var(--color-gray-600);
+    text-align: center;
+    font-style: italic;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 /* How it works */
 .how-it-works {
     background-color: var(--color-gray-100);
