@@ -1,6 +1,6 @@
-package app_bootstrap
+package bootstrap
 
-import models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
+import "github.dhi13man.com/bombardment-runner/src/models/enums"
 
 type Bootstrap interface {
 	// Returns the bootstrap mode of the application
