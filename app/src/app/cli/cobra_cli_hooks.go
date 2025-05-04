@@ -33,9 +33,9 @@ const (
 
 	ClientContextExampleJSON       string = `'{"channel":"REST","dial_keep_alive":10000000000,"dial_timeout":5000000000}'`
 	DriverContextExampleJSON       string = `'{"batch_size":100,"should_store_responses":false}'`
-	LoadBalancerContextExampleJSON string = `'{"strategy":"ROUND_ROBIN","urls":["http://api.bombardment.org","http://mirror-1.bombardment.org","http://mirror-2.bombardment.org"]}'`
+	LoadBalancerContextExampleJSON string = `'{"strategy":"ROUND_ROBIN","urls":["https://api.example.com","https://api-backup.example.com"]}'`
 	ParserContextExampleJSON       string = `'{"file_path":"./private/file_path.csv","strategy":"CSV"}'`
-	TransformerContextExampleJSON  string = `'{"body_expression":"{\\n\\t\\t\\\"request_id\\\": \\\"bulk-create-\\\" & $number(row_id),\\n\\t\\t\\\"event_ts\\\": $millis(),\\n\\t\\t\\\"user_account_id\\\": user_account_id,\\n\\t\\t\\\"template_id\\\": \\\"4066f10464763823cc5b1b450ccd31c0e87d9405e9dd6\\\",\\n\\t\\t\\\"sms_date\\\": $millis(),\\n\\t\\t\\\"insights\\\": $string({\\n\\t\\t\\\"billerName\\\": biller_name,\\n\\t\\t\\\"last_four_dig_cc\\\": last_4_digits,\\n\\t\\t\\\"mobile__number\\\": $floor($number(mobile_number))\\n\\t\\t})\\n\\t}\\",\\"endpoint_expression\\":\\"/insight/v1/event/ingest\\\",\\"headers_expression\\":\\"{ \\\"Content-Type\\\": \\\"application/json\\\" }\\",\\"method_expression\\":\\"POST\\\",\\"strategy\\":\\"JSONATA\\"}'`
+	TransformerContextExampleJSON  string = `'{"strategy":"JSONATA","method_expression":"\"POST\"","endpoint_expression":"\"/api/v1/\" & resource","headers_expression":"{ \"Content-Type\": \"application/json\", \"X-Request-ID\": request_id }","body_expression":"{ \"id\": $number(id), \"timestamp\": $millis() }"}'`
 
 	DEFAULT_SERVER_BIND_ADDR string = "127.0.0.1"
 	DEFAULT_SERVER_PORT      int    = 8080
