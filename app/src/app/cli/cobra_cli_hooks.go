@@ -255,7 +255,7 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 				- headers_expression: The expression to use for the headers of the request. Eg. { "Content-Type": "application/json" } (if the strategy is JSONATA)
 				- method_expression: The expression to use for the method of the request. Eg. "POST" (if the strategy is JSONATA)
 				- body_expression: The expression to use for the body of the request. Eg. "{\"request_id\": \"bulk-create-\" & $number(row_id),\"event_ts\": $millis(),\"user_account_id\": user_account_id,\"template_id\": \"T123\",\"sms_date\": $millis(),\"insights\": $string({\"billerName\": biller_name,\"last_four_dig_cc\": last_4_digits,\"mobile__number\": $floor($number(mobile_number))})\"}" (if the strategy is JSONATA)
-			Eg. "{\"body_expression\":\"{\\n\\t\\t\\\"request_id\\\": \\\"bulk-create-\\\" & $number(row_id),\\n\\t\\t\\\"event_ts\\\": $millis(),\\n\\t\\\"user_account_id\\\": user_account_id,\\n\\t\\\"template_id\\\": \\\"4066f10464763823cc3e70c2ebd973fbd72cc5b1b450ccd31c0e87d9405e9dd6\\\",\\n\\t\\\"sms_date\\\": $millis(),\\n\\t\\\"insights\\\": $string({\\n\\t\\t\\\"billerName\\\": biller_name,\\n\\t\\\"last_four_dig_cc\\\": last_4_digits,\\n\\t\\\"mobile__number\\\": $floor($number(mobile_number))\\n\\t})\\n\\t}\",\"endpoint_expression\":\"\\\"/insight/v1/event/ingest\\\"\",\"headers_expression\":\"{ \\\"Content-Type\\\": \\\"application/json\\\" }\",\"`,
+			Eg. "--transformation_context '{"strategy":"JSONATA","method_expression":"\"POST\"","endpoint_expression":"\"/api/v1/\" & resource","headers_expression":"{ \"Content-Type\": \"application/json\", \"X-Request-ID\": request_id }","body_expression":"{ \"id\": $number(id), \"timestamp\": $millis() }"}"`,
 		),
 	)
 	c.rootCmd.AddCommand(&cliCommand)
