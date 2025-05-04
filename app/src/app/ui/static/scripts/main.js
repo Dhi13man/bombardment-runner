@@ -40,10 +40,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 50);
     }, 200);
     
-    // Update buttons
-    prevBtn.hidden = step === 1;
-    nextBtn.hidden = step >= totalSteps;
-    submitBtn.hidden = step !== totalSteps;
+    // Update buttons visibility via classes
+    prevBtn.classList.toggle('hidden', step === 1);             // Hide Back on first step
+    nextBtn.classList.toggle('hidden', step === totalSteps);   // Hide Next on last step
+    submitBtn.classList.toggle('hidden', step !== totalSteps); // Show Run only on last step
     
     // Populate review if last step
     if (step === totalSteps) populateReview();
