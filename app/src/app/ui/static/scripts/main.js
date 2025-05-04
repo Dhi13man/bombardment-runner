@@ -61,7 +61,30 @@ const validationState = {
   step1: false,
   step2: false,
   step3: false,
-  step4: false
+  step4: false,
+  
+  // Detailed validation states for review
+  source: {
+    valid: false,
+    errors: []
+  },
+  transform: {
+    valid: false,
+    errors: []
+  },
+  target: {
+    valid: false,
+    errors: []
+  },
+  driver: {
+    valid: false,
+    errors: []
+  },
+  
+  // Helper to get overall status
+  get isValid() {
+    return this.step1 && this.step2 && this.step3 && this.step4;
+  }
 };
 
 // Debounce function for validation
@@ -87,6 +110,7 @@ function init() {
   initForm();
   initTransformInfoListener();
   initValidation();
+  initConfigurationIssues();
 }
 
 // --- Fade‑in ------------------------------------------------------------
@@ -130,7 +154,21 @@ function initWizard() {
     btns.next.classList.toggle('hidden', step === total);
     btns.submit.classList.toggle('hidden', step !== total);
 
-    if (step === total) populateReview();
+    if (step === total) {
+      populateReview(); 
+      // Initialize issues section when reaching review step
+      const issuesSection = $('#issues-section');
+      if (issuesSection) {
+        setTimeout(() => {
+          displayConfigurationIssues();
+          // Show issues section if there are issues
+          const issueCount = $('#issue-count');
+          if (issueCount && parseInt(issueCount.textContent) > 0) {
+            issuesSection.classList.remove('hidden');
+          }
+        }, 300); // Slight delay to ensure the review summary is populated
+      }
+    }
 
     indicators.items.forEach((it, i) => it.classList.toggle('step-active', i < step));
     indicators.circles.forEach((c, i) => {
@@ -297,51 +335,199 @@ function populateReview() {
   const trans  = getVal('#trans-strategy');
   const method = getVal('#method-expr');
   const endpoint = getVal('#endpoint-expr');
+  const headers = getVal('#headers-expr');
+  const body = getVal('#body-expr');
   const clientChannel = checkedVal('client_channel');
   const dial = getVal('#dial-timeout');
   const keep = getVal('#keepalive-timeout');
   const lbStrat = checkedVal('lb_strategy');
-  const urls = $$('.lb-url input').map(i => i.value.trim()).filter(Boolean).join(', ');
+  const urlsArray = $$('.lb-url input').map(i => i.value.trim()).filter(Boolean);
+  const batchSize = getVal('#batch-size');
+  const storeResponses = $('#store-responses').checked;
+  
+  // Validate URLs
+  const validUrls = urlsArray.filter(url => validateUrl(url));
+  const invalidUrls = urlsArray.filter(url => !validateUrl(url) && url.trim() !== '');
+  
+  // Validate expressions
+  const methodValid = validateExpression(method);
+  const endpointValid = validateExpression(endpoint);
+  const headersValid = validateExpression(headers);
+  const bodyValid = validateExpression(body);
+  
+  // Generate URL list HTML
+  let urlListHtml = '';
+  if (urlsArray.length > 0) {
+    urlListHtml = '<div class="urls-list">';
+    urlsArray.forEach((url, index) => {
+      const isValid = validateUrl(url);
+      urlListHtml += `
+        <div class="url-item">
+          <i class="fas fa-link"></i>
+          <span>${url}</span>
+          ${isValid 
+            ? '<span class="validation-indicator validation-success"><i class="fas fa-check"></i></span>' 
+            : '<span class="validation-indicator validation-error"><i class="fas fa-times"></i></span>'}
+        </div>
+      `;
+    });
+    urlListHtml += '</div>';
+  }
 
   summary.innerHTML = `
-    <!-- Source -->
-    <div class="flex items-center mb-3 pb-2 border-b">
-      <span class="bg-orange-100 text-orange-600 p-1.5 rounded-md mr-2">
-        <i class="fas fa-file-import"></i>
-      </span>
-      <div>
-        <h5 class="font-medium">Source</h5>
-        <p class="text-gray-600">${parser} (file: ${file})</p>
+    <!-- Source Configuration Card -->
+    <div class="config-card">
+      <div class="config-card-header">
+        <div class="icon-container source-icon-bg">
+          <i class="fas fa-file-import"></i>
+        </div>
+        <h5>Source Configuration</h5>
       </div>
-    </div>
-    <!-- Transform -->
-    <div class="flex items-center mb-3 pb-2 border-b">
-      <span class="bg-orange-100 text-orange-600 p-1.5 rounded-md mr-2">
-        <i class="fas fa-sliders-h"></i>
-      </span>
-      <div>
-        <h5 class="font-medium">Transform</h5>
-        <p class="text-gray-600">Strategy: ${trans}</p>
-        <p class="text-gray-600">Method: ${method}, Endpoint: ${endpoint}</p>
-        <div class="text-xs mt-1 text-gray-500">
-          ${trans === 'custom' ? 'Headers and body expressions configured' : 'Default expressions applied'}
+      <div class="config-card-body">
+        <div class="config-item">
+          <div class="config-item-label">
+            <i class="fas fa-code"></i>
+            Format
+          </div>
+          <div class="config-item-value">
+            <span class="tag tag-blue">${parser}</span>
+          </div>
+        </div>
+        <div class="config-item">
+          <div class="config-item-label">
+            <i class="fas fa-folder"></i>
+            File Path
+          </div>
+          <div class="config-item-value">
+            ${file}
+          </div>
         </div>
       </div>
     </div>
-    <!-- Target -->
-    <div class="flex items-center">
-      <span class="bg-orange-100 text-orange-600 p-1.5 rounded-md mr-2">
-        <i class="fas fa-bullseye"></i>
-      </span>
-      <div>
-        <h5 class="font-medium">Target</h5>
-        <p class="text-gray-600">
-          Channel: ${clientChannel}, Dial: ${dial}ms, KeepAlive: ${keep}ms
-        </p>
-        <p class="text-gray-600">Load Balancer: ${lbStrat}</p>
-        <div class="text-xs mt-1 ${urls ? 'text-gray-500' : 'text-red-500'}">
-          ${urls || 'No target URLs configured!'}
+    
+    <!-- Transform Configuration Card -->
+    <div class="config-card">
+      <div class="config-card-header">
+        <div class="icon-container transform-icon-bg">
+          <i class="fas fa-sliders-h"></i>
         </div>
+        <h5>Transform Configuration</h5>
+      </div>
+      <div class="config-card-body">
+        <div class="config-item">
+          <div class="config-item-label">
+            <i class="fas fa-code-branch"></i>
+            Strategy
+          </div>
+          <div class="config-item-value">
+            <span class="tag tag-purple">${trans}</span>
+          </div>
+        </div>
+        <div class="config-item">
+          <div class="config-item-label">
+            <i class="fas fa-terminal"></i>
+            Method
+          </div>
+          <div class="config-item-value">
+            ${method}
+          </div>
+        </div>
+        <div class="config-item">
+          <div class="config-item-label">
+            <i class="fas fa-link"></i>
+            Endpoint
+          </div>
+          <div class="config-item-value">
+            ${endpoint}
+          </div>
+        </div>
+        <div class="config-item">
+          <div class="config-item-label">
+            <i class="fas fa-tags"></i>
+            Headers
+          </div>
+          <div class="config-item-value">
+            Configured
+          </div>
+        </div>
+        <div class="config-item">
+          <div class="config-item-label">
+            <i class="fas fa-file-alt"></i>
+            Body
+          </div>
+          <div class="config-item-value">
+            Configured
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Target Configuration Card -->
+    <div class="config-card">
+      <div class="config-card-header">
+        <div class="icon-container target-icon-bg">
+          <i class="fas fa-bullseye"></i>
+        </div>
+        <h5>Target Configuration</h5>
+      </div>
+      <div class="config-card-body">
+        <div class="config-item">
+          <div class="config-item-label">
+            <i class="fas fa-plug"></i>
+            Channel
+          </div>
+          <div class="config-item-value">
+            <span class="tag tag-orange">${clientChannel}</span>
+          </div>
+        </div>
+        <div class="config-item">
+          <div class="config-item-label">
+            <i class="fas fa-clock"></i>
+            Dial Timeout
+          </div>
+          <div class="config-item-value">
+            ${dial} ms
+          </div>
+        </div>
+        <div class="config-item">
+          <div class="config-item-label">
+            <i class="fas fa-heartbeat"></i>
+            Keep Alive
+          </div>
+          <div class="config-item-value">
+            ${keep} ms
+          </div>
+        </div>
+        <div class="config-item">
+          <div class="config-item-label">
+            <i class="fas fa-balance-scale"></i>
+            Load Balancer
+          </div>
+          <div class="config-item-value">
+            <span class="tag tag-green">${lbStrat}</span>
+          </div>
+        </div>
+        <div class="config-item">
+          <div class="config-item-label">
+            <i class="fas fa-server"></i>
+            Target URLs
+          </div>
+          <div class="config-item-value">
+            <span class="tag tag-blue">${urlsArray.length}</span> URLs configured
+          </div>
+        </div>
+        ${urlsArray.length > 0 ? `
+        <div class="config-item" style="display: block;">
+          <div class="urls-list">
+            ${urlsArray.map(url => `
+              <div class="url-item">
+                <i class="fas fa-link"></i>
+                <span>${url}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        ` : ''}
       </div>
     </div>
   `;
@@ -358,6 +544,271 @@ function initTransformInfoListener() {
   const sel = $(SELECTORS.transStrategy);
   const info = $(SELECTORS.transformInfo);
   sel?.addEventListener('change', () => updateTransformInfo(sel.value, info));
+}
+
+// --- Configuration Issues -----------------------------------------------
+function initConfigurationIssues() {
+  const viewIssuesBtn = $('#view-issues-btn');
+  const checkConfigBtn = $('#check-config-btn');
+  const closeIssuesBtn = $('#close-issues-btn');
+  const issuesSection = $('#issues-section');
+  
+  if (!viewIssuesBtn || !checkConfigBtn || !closeIssuesBtn || !issuesSection) return;
+  
+  // Show issues section when view-issues button is clicked
+  viewIssuesBtn.addEventListener('click', () => {
+    const issuesContainer = $('#configuration-issues');
+    if (!issuesContainer.innerHTML) {
+      displayConfigurationIssues();
+    }
+    issuesSection.classList.remove('hidden');
+  });
+  
+  // Refresh issues when check-config button is clicked
+  checkConfigBtn.addEventListener('click', () => {
+    displayConfigurationIssues();
+  });
+  
+  // Hide issues section when close-issues button is clicked
+  closeIssuesBtn.addEventListener('click', () => {
+    issuesSection.classList.add('hidden');
+  });
+  
+  // Check for issues when reaching the review step
+  const steps = $$(SELECTORS.steps);
+  if (steps.length >= 4) {
+    const reviewStep = steps[3]; // Fourth step (0-indexed)
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.attributeName === 'class' && 
+            !reviewStep.classList.contains('hidden') && 
+            reviewStep.classList.contains('visible')) {
+          displayConfigurationIssues();
+        }
+      });
+    });
+    
+    observer.observe(reviewStep, { attributes: true });
+  }
+}
+
+// --- Configuration Issues ------------------------------------------------
+function displayConfigurationIssues() {
+  // Collect all validation issues
+  const issues = [];
+  
+  // Check source configuration
+  const filePath = getVal('#file-path');
+  if (!validateFilePath(filePath)) {
+    issues.push({ category: 'Source', message: 'Invalid file path format', severity: 'error' });
+  }
+  
+  // Check transform configuration
+  const methodExpr = getVal('#method-expr');
+  const endpointExpr = getVal('#endpoint-expr');
+  const headersExpr = getVal('#headers-expr');
+  const bodyExpr = getVal('#body-expr');
+  
+  if (!validateExpression(methodExpr)) {
+    issues.push({ category: 'Transform', message: 'Invalid method expression', severity: 'error' });
+  }
+  if (!validateExpression(endpointExpr)) {
+    issues.push({ category: 'Transform', message: 'Invalid endpoint expression', severity: 'error' });
+  }
+  if (!validateExpression(headersExpr)) {
+    issues.push({ category: 'Transform', message: 'Headers expression has unbalanced quotes or brackets', severity: 'error' });
+  }
+  if (!validateExpression(bodyExpr)) {
+    issues.push({ category: 'Transform', message: 'Body expression has unbalanced quotes or brackets', severity: 'error' });
+  }
+  
+  // Check target configuration
+  const dialTimeout = getVal('#dial-timeout');
+  const keepaliveTimeout = getVal('#keepalive-timeout');
+  const urlInputs = $$('.lb-url input');
+  const urlsArray = urlInputs.map(i => i.value.trim()).filter(Boolean);
+  
+  if (!validateNumberRange(dialTimeout, VALIDATION.MIN_TIMEOUT, VALIDATION.MAX_TIMEOUT)) {
+    issues.push({ 
+      category: 'Target', 
+      message: `Dial timeout must be between ${VALIDATION.MIN_TIMEOUT} and ${VALIDATION.MAX_TIMEOUT} ms`,
+      severity: 'error' 
+    });
+  }
+  
+  if (!validateNumberRange(keepaliveTimeout, VALIDATION.MIN_TIMEOUT, VALIDATION.MAX_TIMEOUT)) {
+    issues.push({ 
+      category: 'Target', 
+      message: `Keep alive timeout must be between ${VALIDATION.MIN_TIMEOUT} and ${VALIDATION.MAX_TIMEOUT} ms`,
+      severity: 'error' 
+    });
+  }
+  
+  if (urlsArray.length === 0) {
+    issues.push({ category: 'Target', message: 'No target URLs configured', severity: 'error' });
+  } else {
+    urlsArray.forEach((url, index) => {
+      if (!validateUrl(url)) {
+        issues.push({ 
+          category: 'Target', 
+          message: `Invalid URL format at position ${index + 1}: ${url}`,
+          severity: 'error' 
+        });
+      }
+    });
+  }
+  
+  // We don't check driver configuration in the summary view 
+  // since it's already shown separately on the review screen
+  
+  // Display issues
+  const issuesContainer = $('#configuration-issues');
+  if (!issuesContainer) return;
+  
+  // Clear previous issues
+  issuesContainer.innerHTML = '';
+  
+  if (issues.length === 0) {
+    issuesContainer.innerHTML = `
+      <div class="flex items-center p-4 bg-green-50 text-green-700 rounded-lg mb-4 animate__animated animate__fadeIn">
+        <i class="fas fa-check-circle text-xl mr-3"></i>
+        <p class="font-medium">No configuration issues found. You're ready to run the bombardment!</p>
+      </div>
+    `;
+    $('#issue-count').textContent = '0';
+    $('#issue-badge').classList.add('hidden');
+    return;
+  }
+  
+  // Update the issue count
+  $('#issue-count').textContent = issues.length;
+  $('#issue-badge').classList.remove('hidden');
+  
+  // Group issues by category
+  const issuesByCategory = issues.reduce((acc, issue) => {
+    if (!acc[issue.category]) {
+      acc[issue.category] = [];
+    }
+    acc[issue.category].push(issue);
+    return acc;
+  }, {});
+  
+  // Create issues list with expandable sections
+  const errorCount = issues.filter(i => i.severity === 'error').length;
+  const warningCount = issues.filter(i => i.severity === 'warning').length;
+  
+  // Add summary header
+  issuesContainer.innerHTML = `
+    <div class="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-between">
+      <div class="flex items-center">
+        <i class="fas fa-exclamation-triangle text-orange-500 mr-2"></i>
+        <h3 class="font-medium">Configuration Issues Found</h3>
+      </div>
+      <div class="flex items-center gap-2">
+        ${errorCount > 0 ? `<span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">${errorCount} ${errorCount === 1 ? 'Error' : 'Errors'}</span>` : ''}
+        ${warningCount > 0 ? `<span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">${warningCount} ${warningCount === 1 ? 'Warning' : 'Warnings'}</span>` : ''}
+      </div>
+    </div>
+  `;
+  
+  // Create accordion for each category
+  Object.keys(issuesByCategory).forEach((category, index) => {
+    const categoryIssues = issuesByCategory[category];
+    const hasErrors = categoryIssues.some(i => i.severity === 'error');
+    
+    const categorySection = document.createElement('div');
+    categorySection.className = 'mb-3 border border-gray-200 rounded-lg overflow-hidden animate__animated animate__fadeIn';
+    categorySection.style.animationDelay = `${index * 0.1}s`;
+    
+    // Create header
+    const header = document.createElement('div');
+    header.className = `flex items-center justify-between p-3 cursor-pointer ${hasErrors ? 'bg-red-50' : 'bg-gray-50'}`;
+    header.innerHTML = `
+      <div class="flex items-center">
+        <i class="fas fa-${
+          category === 'Source' ? 'file-import' : 
+          category === 'Transform' ? 'sliders-h' : 
+          category === 'Target' ? 'bullseye' : 
+          'cog'
+        } mr-2 ${hasErrors ? 'text-red-500' : 'text-gray-700'}"></i>
+        <h4 class="font-medium">${category} Configuration</h4>
+      </div>
+      <div class="flex items-center">
+        <span class="mr-2 text-sm text-gray-500">${categoryIssues.length} ${categoryIssues.length === 1 ? 'issue' : 'issues'}</span>
+        <i class="fas fa-chevron-down category-toggle-icon transition-transform"></i>
+      </div>
+    `;
+    
+    // Create issues list
+    const issuesList = document.createElement('div');
+    issuesList.className = 'category-issues hidden';
+    
+    categoryIssues.forEach(issue => {
+      const issueElement = document.createElement('div');
+      issueElement.className = `p-3 border-t border-gray-200 ${
+        issue.severity === 'error' ? 'bg-red-50' : 
+        issue.severity === 'warning' ? 'bg-yellow-50' : 
+        'bg-blue-50'
+      }`;
+      
+      issueElement.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <i class="mr-2 fas fa-${
+              issue.severity === 'error' ? 'times-circle text-red-500' : 
+              issue.severity === 'warning' ? 'exclamation-circle text-yellow-500' : 
+              'info-circle text-blue-500'
+            }"></i>
+            <span>${issue.message}</span>
+          </div>
+          <span class="px-2 py-1 rounded-full text-xs font-semibold uppercase ${
+            issue.severity === 'error' ? 'bg-red-100 text-red-800' : 
+            issue.severity === 'warning' ? 'bg-yellow-100 text-yellow-800' : 
+            'bg-blue-100 text-blue-800'
+          }">${issue.severity}</span>
+        </div>
+      `;
+      
+      issuesList.appendChild(issueElement);
+    });
+    
+    categorySection.appendChild(header);
+    categorySection.appendChild(issuesList);
+    
+    // Toggle functionality
+    header.addEventListener('click', () => {
+      const icon = header.querySelector('.category-toggle-icon');
+      const content = header.nextElementSibling;
+      
+      icon.classList.toggle('rotate-180');
+      content.classList.toggle('hidden');
+      
+      // Auto-expand the first section
+      if (index === 0 && content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        icon.classList.add('rotate-180');
+      }
+    });
+    
+    issuesContainer.appendChild(categorySection);
+    
+    // Auto-expand the first section with errors
+    if ((index === 0 || hasErrors) && categoryIssues.length > 0) {
+      header.click();
+    }
+  });
+  
+  // Add helpful tip at the bottom
+  const tipElement = document.createElement('div');
+  tipElement.className = 'mt-4 text-sm text-gray-600 italic flex items-center animate__animated animate__fadeIn animate__delay-1s';
+  tipElement.innerHTML = `
+    <i class="fas fa-lightbulb mr-1 text-yellow-500"></i>
+    Tip: Fix the issues in each category and then click "Check Configuration" to verify your changes.
+  `;
+  issuesContainer.appendChild(tipElement);
+  
+  // Reveal issues section if hidden
+  $('#issues-section').classList.remove('hidden');
 }
 
 // --- Response -----------------------------------------------------------

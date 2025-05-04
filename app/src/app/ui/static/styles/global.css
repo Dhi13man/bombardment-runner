@@ -37,6 +37,12 @@
   animation: pulse 2s infinite;
 }
 
+/* Driver icon background */
+.driver-icon-bg {
+  background-color: rgba(37, 99, 235, 0.15);
+  color: #2563eb;
+}
+
 @keyframes pulse {
   0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
   70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }

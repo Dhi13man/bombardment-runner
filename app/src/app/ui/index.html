@@ -36,10 +36,18 @@
 
   <!-- Animate CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  
+  <!-- Initialize Animate CSS classes -->
+  <style>
+    .animate__animated {
+      --animate-duration: 0.5s;
+    }
+  </style>
 
   <!-- Application Styles -->
   <link rel="stylesheet" href="/static/styles/global.css">
   <link rel="stylesheet" href="/static/styles/validation.css">
+  <link rel="stylesheet" href="/static/styles/config-summary.css">
 </head>
 
 <body class="h-full text-base-content">
@@ -326,19 +334,43 @@
               <h3 id="step-4-label" class="text-xl font-semibold text-gray-800">Review Configuration</h3>
             </div>
             
-            <div class="p-6 mb-6 bg-gray-50 border border-gray-100 rounded-lg">
-              <h4 class="font-semibold text-gray-700 mb-4 flex items-center">
-                <i class="fas fa-list-check mr-2 text-orange-500"></i>
-                Configuration Summary
-              </h4>
-              <div id="review-summary" class="space-y-3 text-sm">
+            <div class="mb-6 animate__animated animate__fadeIn">
+              <div id="review-summary" class="config-summary-container">
                 <!-- Will be populated by JavaScript -->
               </div>
             </div>
             
-            <div id="driver-config-review" class="p-6 border border-gray-100 rounded-lg bg-gray-50">
+            <!-- Configuration Issues Section -->
+            <div id="issues-section" class="mb-8 hidden">
+              <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center">
+                  <button id="view-issues-btn" type="button" class="flex items-center bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-exclamation-triangle mr-2 text-orange-500"></i>
+                    Issues
+                    <span id="issue-badge" class="ml-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center hidden">
+                      <span id="issue-count">0</span>
+                    </span>
+                  </button>
+                  <button id="check-config-btn" type="button" class="ml-3 flex items-center bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-lg px-4 py-2 hover:bg-indigo-100 transition-colors">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    Check Configuration
+                  </button>
+                </div>
+                <button id="close-issues-btn" type="button" class="text-gray-500 hover:text-gray-700" title="Close issues panel">
+                  <i class="fas fa-times"></i>
+                  <span class="sr-only">Close issues panel</span>
+                </button>
+              </div>
+              <div id="configuration-issues" class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <!-- Will be populated by JavaScript -->
+              </div>
+            </div>
+            
+            <div id="driver-config-review" class="p-6 border border-gray-100 rounded-lg bg-white shadow-sm mt-8">
               <h4 class="font-semibold text-gray-700 mb-4 flex items-center">
-                <i class="fas fa-cog mr-2 text-orange-500"></i>
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center mr-2 driver-icon-bg">
+                  <i class="fas fa-cog"></i>
+                </div>
                 Driver Configuration
               </h4>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
