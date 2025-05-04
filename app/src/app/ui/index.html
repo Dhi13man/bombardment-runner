@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bombardment UI</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- ApexCharts -->
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+  <!-- FontAwesome -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+
+<body class="h-full text-base-content">
+  <div class="min-h-screen bg-gray-50">
+    <!-- Sidebar Navigation -->
+    <div id="sidebar" class="bg-white w-64 border-r border-gray-200 fixed left-0 top-0 bottom-0 overflow-y-auto shadow-sm z-20">
+      <div class="p-4">
+        <div class="flex items-center gap-2 mb-6">
+          <i class="fa-solid fa-bomb text-orange-500 text-2xl"></i>
+          <h1 class="text-xl font-semibold text-gray-800">Bombardment</h1>
+        </div>
+        <!-- jobs nav -->
+        <div class="mt-8">
+          <div class="mb-4">
+            <div class="flex items-center text-sm text-gray-500 font-medium mb-2">
+              <i class="fa-solid fa-rocket mr-2"></i> Jobs
+            </div>
+            <ul class="space-y-1 pl-6">
+              <li><span class="block text-sm text-orange-500 font-medium py-1.5 cursor-pointer">Create Job</span></li>
+              <li><span class="block text-sm text-gray-700 py-1.5 hover:text-orange-500 cursor-pointer">Job History</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="ml-64 p-6">
+      <header class="bg-white border-b border-gray-200 py-4 px-6 flex items-center justify-between">
+        <h1 class="text-xl font-semibold text-gray-800">Create Bombardment Job</h1>
+      </header>
+      <form id="bombard-form" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-6 space-y-6">
+        <!-- Client Configuration -->
+        <div>
+          <h3 class="text-lg font-medium text-gray-800 mb-4">Client Configuration</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Channel</label>
+              <div class="flex items-center space-x-4">
+                <label class="inline-flex items-center">
+                  <input type="radio" name="client_channel" value="REST" checked class="form-radio text-orange-500">
+                  <span class="ml-2">REST</span>
+                </label>
+                <label class="inline-flex items-center">
+                  <input type="radio" name="client_channel" value="gRPC" class="form-radio text-orange-500">
+                  <span class="ml-2">gRPC</span>
+                </label>
+                <label class="inline-flex items-center">
+                  <input type="radio" name="client_channel" value="GraphQL" class="form-radio text-orange-500">
+                  <span class="ml-2">GraphQL</span>
+                </label>
+              </div>
+            </div>
+            <div>
+              <label for="dial-timeout" class="block text-sm font-medium text-gray-700 mb-1">Dial Timeout (ms)</label>
+              <input id="dial-timeout" type="number" placeholder="5000" title="Dial timeout in ms" value="5000" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500">
+            </div>
+          </div>
+          <div class="mt-4">
+            <label for="keepalive-timeout" class="block text-sm font-medium text-gray-700 mb-1">Keep Alive Timeout (ms)</label>
+            <input id="keepalive-timeout" type="number" placeholder="10000" title="Keep alive timeout in ms" value="10000" class="w-1/2 border border-gray-300 rounded-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500">
+          </div>
+        </div>
+
+        <!-- Driver Configuration -->
+        <div>
+          <h3 class="text-lg font-medium text-gray-800 mb-4">Driver Configuration</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            <div>
+              <label for="batch-size" class="block text-sm font-medium text-gray-700 mb-1">Batch Size</label>
+              <input id="batch-size" type="number" placeholder="100" title="Batch size per request" value="100" class="w-32 border border-gray-300 rounded-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500">
+            </div>
+            <div class="flex items-center">
+              <input id="store-responses" type="checkbox" class="form-checkbox text-orange-500">
+              <label for="store-responses" class="ml-2 text-sm text-gray-700">Store API responses</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Parser Configuration -->
+        <div>
+          <h3 class="text-lg font-medium text-gray-800 mb-4">Parser Configuration</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Strategy</label>
+              <div class="flex space-x-4">
+                <label class="cursor-pointer inline-flex items-center">
+                  <input type="radio" name="parser_strategy" value="CSV" checked class="form-radio text-orange-500">
+                  <span class="ml-2">CSV</span>
+                </label>
+                <label class="inline-flex items-center">
+                  <input type="radio" name="parser_strategy" value="JSON" class="form-radio text-orange-500">
+                  <span class="ml-2">JSON</span>
+                </label>
+                <label class="inline-flex items-center">
+                  <input type="radio" name="parser_strategy" value="XML" class="form-radio text-orange-500">
+                  <span class="ml-2">XML</span>
+                </label>
+                <label class="inline-flex items-center">
+                  <input type="radio" name="parser_strategy" value="YAML" class="form-radio text-orange-500">
+                  <span class="ml-2">YAML</span>
+                </label>
+              </div>
+            </div>
+            <div>
+              <label for="file-path" class="block text-sm font-medium text-gray-700 mb-1">File Path</label>
+              <input id="file-path" type="text" placeholder="./data.csv" title="Path to data file" value="./data.csv" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500">
+            </div>
+          </div>
+        </div>
+
+        <!-- Load Balancer Configuration -->
+        <div>
+          <h3 class="text-lg font-medium text-gray-800 mb-4">Load Balancer Configuration</h3>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Strategy</label>
+            <div class="flex space-x-4">
+              <label class="inline-flex items-center">
+                <input type="radio" name="lb_strategy" value="ROUND_ROBIN" checked class="form-radio text-orange-500">
+                <span class="ml-2">Round Robin</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="radio" name="lb_strategy" value="RANDOM" class="form-radio text-orange-500">
+                <span class="ml-2">Random</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="radio" name="lb_strategy" value="LEAST_CONNECTIONS" class="form-radio text-orange-500">
+                <span class="ml-2">Least Connections</span>
+              </label>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Target URLs</label>
+            <div id="urls-container" class="space-y-2">
+              <div class="lb-url flex items-center">
+                <input type="text" placeholder="https://api.example.com" title="Target URL" value="https://api.example.com" class="flex-1 border border-gray-300 rounded-l-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500">
+                <button type="button" aria-label="Remove URL" class="bg-gray-100 border border-gray-300 border-l-0 rounded-r-md px-3 py-2 hover:bg-gray-200 remove-url">
+                  <i class="fa-solid fa-trash-alt text-gray-600"></i>
+                </button>
+              </div>
+            </div>
+            <button id="add-url" type="button" class="mt-2 text-sm text-orange-600 hover:text-orange-700 flex items-center">
+              <i class="fa-solid fa-plus mr-1"></i> Add URL
+            </button>
+          </div>
+        </div>
+
+        <!-- Transformation Configuration -->
+        <div>
+          <h3 class="text-lg font-medium text-gray-800 mb-4">Transformation Configuration</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label for="trans-strategy" class="block text-sm font-medium text-gray-700 mb-1">Strategy</label>
+              <select id="trans-strategy" title="Transformation strategy" class="w-full border border-gray-300 rounded-md py-2 pl-3 pr-10 focus:ring-orange-500 focus:border-orange-500">
+                <option>JSONATA</option>
+                <option>JMESPATH</option>
+                <option>JAVASCRIPT</option>
+              </select>
+            </div>
+            <div>
+              <label for="method-expr" class="block text-sm font-medium text-gray-700 mb-1">HTTP Method Expression</label>
+              <input id="method-expr" type="text" placeholder='\"POST\"' title="HTTP method expression" value='\"POST\"' class="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500">
+            </div>
+            <div>
+              <label for="endpoint-expr" class="block text-sm font-medium text-gray-700 mb-1">Endpoint Expression</label>
+              <input id="endpoint-expr" type="text" placeholder='\"/api/v1/\" & resource' title="Endpoint expression" value='\"/api/v1/\" & resource' class="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500">
+            </div>
+            <div>
+              <label for="headers-expr" class="block text-sm font-medium text-gray-700 mb-1">Headers Expression</label>
+              <textarea id="headers-expr" rows="2" placeholder="{ &quot;Content-Type&quot;: &quot;application/json&quot;, &quot;X-Request-ID&quot;: request_id }" title="Headers expression" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500">{ "Content-Type": "application/json", "X-Request-ID": request_id }</textarea>
+            </div>
+          </div>
+          <div class="mt-4">
+            <label for="body-expr" class="block text-sm font-medium text-gray-700 mb-1">Body Expression</label>
+            <textarea id="body-expr" rows="4" placeholder="{ &quot;id&quot;: $number(id), &quot;timestamp&quot;: $millis() }" title="Body expression" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500">{ "id": $number(id), "timestamp": $millis() }</textarea>
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-6 rounded-md shadow-sm">Run Bombardment</button>
+        </div>
+      </form>
+      <div id="response-message" class="mt-4 text-center"></div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-4 px-6 text-center text-gray-500 text-sm mt-8">
+      <p>Bombardment - Lightweight Data Migration Tool &copy; 2025</p>
+    </footer>
+  </div>
+
+  <!-- App Scripts -->
+  <script src="/static/js/main.js"></script>
+</body>
+
+</html>

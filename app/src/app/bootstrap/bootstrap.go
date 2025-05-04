@@ -65,6 +65,13 @@ func (s *bootstrapImpl) RunCli(
 func (s *bootstrapImpl) RunServer(bindAddr string, port int) {
 	r := gin.Default()
 
+	// Serve frontend static files
+	r.Static("/static", "src/app/ui/static")
+	// Serve the index HTML
+	r.GET("/", func(c *gin.Context) {
+		c.File("src/app/ui/index.html")
+	})
+
 	// Swagger endpoint
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
