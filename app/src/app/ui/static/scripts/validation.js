@@ -8,8 +8,17 @@ function validateTextField(input, validationFn, errorMessage) {
   const value = input.value.trim();
   const isValid = validationFn(value);
   
+  // Find the parent container that contains the field group
+  // Move up two levels to get out of the flex container
+  const closestDiv = input.closest('div');
+  const fieldContainer = closestDiv ? closestDiv.parentElement : null;
+  if (!fieldContainer) {
+    console.error('Parent container not found for input:', input);
+    return false;
+  }
+  
   // Remove any existing error message
-  const existingError = input.parentElement.querySelector('.validation-error');
+  const existingError = fieldContainer.querySelector('.validation-error');
   if (existingError) {
     existingError.remove();
   }
@@ -24,9 +33,46 @@ function validateTextField(input, validationFn, errorMessage) {
     
     // Add error message
     const errorEl = document.createElement('div');
-    errorEl.className = 'validation-error text-xs text-red-500 mt-1 flex items-center';
+    errorEl.className = 'validation-error text-xs text-red-500 mt-1 flex items-center w-full';
     errorEl.innerHTML = `<i class="fas fa-exclamation-circle mr-1"></i>${errorMessage}`;
-    input.parentElement.appendChild(errorEl);
+    fieldContainer.appendChild(errorEl);
+    return false;
+  } else if (value.length > 0) {
+    // Add success styling for non-empty inputs
+    input.classList.add('border-green-500', 'focus:border-green-500', 'focus:ring-green-500');
+    return true;
+  }
+  
+  return value.length === 0 ? false : true; // Empty inputs are invalid unless explicitly allowed
+}
+
+// Validate textarea fields that have different structure than input fields
+function validateTextArea(input, validationFn, errorMessage) {
+  const value = input.value.trim();
+  const isValid = validationFn(value);
+  
+  // Find the parent container (for textareas it's the div with 'relative' class)
+  const fieldContainer = input.closest('div').parentElement;
+  
+  // Remove any existing error message
+  const existingError = fieldContainer.querySelector('.validation-error');
+  if (existingError) {
+    existingError.remove();
+  }
+  
+  // Clear existing styling
+  input.classList.remove('border-red-500', 'border-green-500', 'focus:border-red-500', 'focus:border-green-500');
+  input.classList.remove('focus:ring-red-500', 'focus:ring-green-500');
+  
+  if (!isValid) {
+    // Add error styling and message
+    input.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+    
+    // Add error message
+    const errorEl = document.createElement('div');
+    errorEl.className = 'validation-error text-xs text-red-500 mt-1 flex items-center w-full';
+    errorEl.innerHTML = `<i class="fas fa-exclamation-circle mr-1"></i>${errorMessage}`;
+    fieldContainer.appendChild(errorEl);
     return false;
   } else if (value.length > 0) {
     // Add success styling for non-empty inputs
@@ -102,9 +148,10 @@ function validateUrlField(input) {
     // Create error message element that will appear below the URL field
     const errorEl = document.createElement('div');
     errorEl.className = 'validation-error text-xs text-red-500 mt-1 flex items-center w-full';
-    errorEl.innerHTML = `<i class="fas fa-exclamation-circle mr-1"></i>Please enter a valid URL (e.g., https://example.com, localhost:3000, or custom-domain)`;
+    errorEl.innerHTML = `<i class="fas fa-exclamation-circle mr-1"></i>Please enter a valid URL (e.g., http://example.com, https://example.com, localhost:3000, or http://custom-domain)`;
     
-    // Append the error message to the URL container (after the input field and delete button)
+    // Append the error message to the URL container (after the input field)
+    // This ensures it appears below the field, not to the right
     urlContainer.appendChild(errorEl);
     return false;
   } else if (value.length > 0) {
@@ -128,7 +175,7 @@ function addFeedbackContainer(elementId, containerId) {
   // Create new container
   container = document.createElement('div');
   container.id = containerId;
-  container.className = 'mt-2 text-sm';
+  container.className = 'mt-2 text-sm w-full';
   
   // Insert after the element
   element.parentNode.insertBefore(container, element.nextSibling);
@@ -143,7 +190,8 @@ function showValidationMessage(containerId, isValid, message) {
   const iconType = isValid ? 'SUCCESS' : 'ERROR';
   const textColorClass = isValid ? 'text-green-600' : 'text-red-500';
   
-  container.className = `mt-2 text-sm ${textColorClass}`;
+  // Ensure messages appear below fields, with full width
+  container.className = `mt-2 text-sm ${textColorClass} w-full`;
   container.innerHTML = `${ICON[iconType]}<span>${message}</span>`;
 }
 
@@ -208,13 +256,13 @@ function validateStep2(showErrors = false) {
     'Endpoint expression is invalid'
   );
   
-  const headersValid = validateTextField(
+  const headersValid = validateTextArea(
     headersInput,
     validateExpression,
     'Headers expression has unbalanced quotes or brackets'
   );
   
-  const bodyValid = validateTextField(
+  const bodyValid = validateTextArea(
     bodyInput,
     validateExpression,
     'Body expression has unbalanced quotes or brackets'
@@ -264,11 +312,11 @@ function validateStep3(showErrors = false) {
   if (urlsMessageContainer) {
     if (!hasValidUrl && (showErrors || urlInputs.length > 0)) {
       urlsMessageContainer.classList.remove('hidden');
-      urlsMessageContainer.className = 'mt-2 text-sm text-red-500 flex items-center';
+      urlsMessageContainer.className = 'mt-2 text-sm text-red-500 flex items-center w-full';
       urlsMessageContainer.innerHTML = `<i class="fas fa-exclamation-circle mr-1"></i>At least one valid URL is required`;
     } else if (hasValidUrl) {
       urlsMessageContainer.classList.remove('hidden');
-      urlsMessageContainer.className = 'mt-2 text-sm text-green-500 flex items-center';
+      urlsMessageContainer.className = 'mt-2 text-sm text-green-500 flex items-center w-full';
       urlsMessageContainer.innerHTML = `<i class="fas fa-check-circle mr-1"></i>URLs are valid`;
     } else {
       urlsMessageContainer.classList.add('hidden');
