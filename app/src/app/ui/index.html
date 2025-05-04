@@ -39,53 +39,6 @@
 
   <!-- Application Styles -->
   <link rel="stylesheet" href="/static/styles/global.css">
-  
-  <style>
-    .bg-gradient-primary {
-      background: linear-gradient(135deg, #F97316 0%, #C75A1D 100%);
-    }
-    
-    .shadow-card {
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    }
-    
-    .step-progress-bar {
-      height: 4px;
-      background-color: #e5e7eb;
-      transition: width 0.3s ease;
-    }
-    
-    .step-active .step-circle {
-      animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
-      70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
-    }
-    
-    .floating {
-      animation: floating 3s ease-in-out infinite;
-    }
-    
-    @keyframes floating {
-      0% { transform: translate(0, 0px); }
-      50% { transform: translate(0, 10px); }
-      100% { transform: translate(0, 0px); }
-    }
-    
-    .fade-in {
-      opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 0.5s ease, transform 0.5s ease;
-    }
-    
-    .fade-in.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  </style>
 </head>
 
 <body class="h-full text-base-content">
@@ -94,7 +47,7 @@
     <div id="sidebar" class="bg-white w-64 border-r border-gray-200 fixed left-0 top-0 bottom-0 overflow-y-auto shadow-sm z-20">
       <div class="p-4">
         <div class="flex items-center gap-2 mb-6">
-          <i class="fa-solid fa-bomb text-orange-500 text-2xl floating"></i>
+          <i class="fa-solid fa-rocket text-orange-500 text-2xl floating"></i>
           <h1 class="text-xl font-semibold text-gray-800">Bombardment</h1>
         </div>
         <!-- jobs nav -->
@@ -270,7 +223,7 @@
                 <i class="fas fa-code absolute top-3 left-3 text-gray-500"></i>
                 <textarea id="body-expr" rows="4" placeholder="{ &quot;id&quot;: $number(id), &quot;timestamp&quot;: $millis() }" title="Body expression" class="w-full border border-gray-300 rounded-md py-2 pl-10 pr-3 focus:ring-orange-500 focus:border-orange-500">{ "id": $number(id), "timestamp": $millis() }</textarea>
               </div>
-              <div class="mt-2 flex items-center text-sm text-gray-500">
+              <div id="transform-info-text" class="mt-2 flex items-center text-sm text-gray-500">
                 <i class="fas fa-info-circle mr-1"></i>
                 <span>Use JSONata expressions to transform your data</span>
               </div>
@@ -433,16 +386,6 @@
 
   <!-- Application Scripts -->
   <script src="/static/scripts/main.js"></script>
-  <script>
-    // Initialize fade-in elements
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(() => {
-        document.querySelectorAll('.fade-in').forEach(el => {
-          el.classList.add('visible');
-        });
-      }, 200);
-    });
-  </script>
 </body>
 
 </html>

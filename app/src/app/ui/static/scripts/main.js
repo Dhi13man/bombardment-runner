@@ -1,6 +1,13 @@
 // UI logic for Bombardment form (wizard + URL add/remove + submission)
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize fade-in elements
+  setTimeout(() => {
+    document.querySelectorAll('.fade-in').forEach(el => {
+      el.classList.add('visible');
+    });
+  }, 200);
+
   // Wizard setup
   const wizard = document.getElementById('wizard');
   const steps = wizard.querySelectorAll('.step');
@@ -35,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Update buttons
     prevBtn.hidden = step === 1;
-    nextBtn.hidden = step === totalSteps;
+    nextBtn.hidden = step >= totalSteps;
     submitBtn.hidden = step !== totalSteps;
     
     // Populate review if last step
@@ -73,6 +80,13 @@ document.addEventListener('DOMContentLoaded', () => {
         label.classList.add('text-gray-500');
       }
     });
+    
+    // Update expression info text based on selected transformation strategy
+    if (step === 2) {
+      const transStrategy = document.getElementById('trans-strategy').value;
+      const infoText = document.getElementById('transform-info-text');
+      updateTransformInfoText(transStrategy, infoText);
+    }
   }
 
   function populateReview() {
@@ -112,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <h5 class="font-medium">Transform</h5>
           <p class="text-gray-600">Strategy: ${transStrategy}</p>
           <p class="text-gray-600">Method: ${methodExpr}, Endpoint: ${endpointExpr}</p>
-          <div class="text-xs mt-1 text-gray-500">Headers and body expressions configured</div>
+          <div class="text-xs mt-1 text-gray-500">${transStrategy === 'custom' ? 'Headers and body expressions configured' : 'Default expressions applied'}</div>
         </div>
       </div>
       
@@ -185,8 +199,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Prevent submission until last step is reached
     if (currentStep !== totalSteps) {
-      respEl.textContent = 'Please complete all steps before submitting.';
-      respEl.className = 'text-red-600';
+      respEl.innerHTML = '<div class="p-2 bg-red-100 text-red-600 rounded-md inline-flex items-center"><i class="fas fa-exclamation-circle mr-2"></i> Please complete all steps before submitting</div>';
+      respEl.className = 'mt-4 text-center';
+      // Force user back to the first step
+      currentStep = 1;
+      showStep(currentStep);
       return;
     }
     
@@ -257,4 +274,30 @@ document.addEventListener('DOMContentLoaded', () => {
   if (urlsContainer.querySelectorAll('.lb-url').length === 0) {
     urlsContainer.appendChild(createUrlField());
   }
+
+  // Function to update transform info text
+  function updateTransformInfoText(strategy, infoText) {
+    if (infoText) {
+      switch(strategy) {
+        case 'JSONATA':
+          infoText.innerHTML = '<i class="fas fa-info-circle mr-1"></i><span>Use JSONata expressions to transform your data</span>';
+          break;
+        case 'GOTMPL':
+          infoText.innerHTML = '<i class="fas fa-info-circle mr-1"></i><span>Use Go templates to transform your data</span>';
+          break;
+        case 'JAVASCRIPT':
+          infoText.innerHTML = '<i class="fas fa-info-circle mr-1"></i><span>Use JavaScript to transform your data</span>';
+          break;
+        default:
+          infoText.innerHTML = '<i class="fas fa-info-circle mr-1"></i><span>Use expressions to transform your data</span>';
+      }
+    }
+  }
+
+  // Add change event listener to transformation strategy selector
+  const transStrategy = document.getElementById('trans-strategy');
+  transStrategy.addEventListener('change', () => {
+    const infoText = document.getElementById('transform-info-text');
+    updateTransformInfoText(transStrategy.value, infoText);
+  });
 });

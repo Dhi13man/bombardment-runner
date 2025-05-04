@@ -18,6 +18,52 @@
   z-index: 1000;
 }
 
+/* Bombardment UI Styles */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #F97316 0%, #C75A1D 100%);
+}
+
+.shadow-card {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.step-progress-bar {
+  height: 4px;
+  background-color: #e5e7eb;
+  transition: width 0.3s ease;
+}
+
+.step-active .step-circle {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+}
+
+.floating {
+  animation: floating 3s ease-in-out infinite;
+}
+
+@keyframes floating {
+  0% { transform: translate(0, 0px); }
+  50% { transform: translate(0, 10px); }
+  100% { transform: translate(0, 0px); }
+}
+
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* Light theme color variables */
 :root {
   --color-base: #ffffff;
@@ -260,4 +306,14 @@
   --color-error-900: #fef2f2;
   --color-error-focus: #ef4444;
   --color-error-content: #1f2937;
+}
+
+/* Tailwind color overrides */
+:root {
+  --primary: #F97316;
+  --primary-light: #FFAC6A;
+  --primary-dark: #C75A1D;
+  --secondary: #FDAE42;
+  --secondary-light: #FFE3B8;
+  --accent: #FF6C37;
 }
