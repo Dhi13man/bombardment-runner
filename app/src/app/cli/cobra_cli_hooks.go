@@ -13,7 +13,7 @@ import (
 	models_dto_transforming "github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
 )
 
-var (
+const (
 	RUN_MODE_GROUP_ID string = "run-mode"
 
 	BIND_ADDR_LONG_KEY              string = "bind-addr"
@@ -30,6 +30,12 @@ var (
 	PORT_SHORT_KEY                  string = "p"
 	TRANSFORMER_CONTEXT_LONG_KEY    string = "transformer-context"
 	TRANSFORMER_CONTEXT_SHORT_KEY   string = "T"
+
+	ClientContextExampleJSON       string = `'{"channel":"REST","dial_keep_alive":10000000000,"dial_timeout":5000000000}'`
+	DriverContextExampleJSON       string = `'{"batch_size":100,"should_store_responses":false}'`
+	LoadBalancerContextExampleJSON string = `'{"strategy":"ROUND_ROBIN","urls":["http://api.bombardment.org","http://mirror-1.bombardment.org","http://mirror-2.bombardment.org"]}'`
+	ParserContextExampleJSON       string = `'{"file_path":"./private/file_path.csv","strategy":"CSV"}'`
+	TransformerContextExampleJSON  string = `'{"body_expression":"{\\n\\t\\t\\\"request_id\\\": \\\"bulk-create-\\\" & $number(row_id),\\n\\t\\t\\\"event_ts\\\": $millis(),\\n\\t\\t\\\"user_account_id\\\": user_account_id,\\n\\t\\t\\\"template_id\\\": \\\"4066f10464763823cc5b1b450ccd31c0e87d9405e9dd6\\\",\\n\\t\\t\\\"sms_date\\\": $millis(),\\n\\t\\t\\\"insights\\\": $string({\\n\\t\\t\\\"billerName\\\": biller_name,\\n\\t\\t\\\"last_four_dig_cc\\\": last_4_digits,\\n\\t\\t\\\"mobile__number\\\": $floor($number(mobile_number))\\n\\t\\t})\\n\\t}\\",\\"endpoint_expression\\":\\"/insight/v1/event/ingest\\\",\\"headers_expression\\":\\"{ \\\"Content-Type\\\": \\\"application/json\\\" }\\",\\"method_expression\\":\\"POST\\\",\\"strategy\\":\\"JSONATA\\"}'`
 
 	DEFAULT_SERVER_BIND_ADDR string = "127.0.0.1"
 	DEFAULT_SERVER_PORT      int    = 8080
@@ -83,28 +89,38 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 		Example: heredoc.Docf(
 			`# Run Bombardment in CLI mode for a REST API, with a ROUND_ROBIN load balancer, CSV parser, and JSONATA transformer
 			bombardment cli \
-				--%s "{\"channel\":\"REST\",\"dial_keep_alive\":10000000000,\"dial_timeout\":5000000000,\"expect_continue_timeout\":500000,\"response_header_timeout\":5000000000,\"tls_handshake_timeout\":5000000000}" \
-				--%s "{\"batch_size\":1000,\"should_store_responses\":false}" \
-				--%s "{\"strategy\":\"ROUND_ROBIN\",\"urls\":[\"http://api.bombardment.org\",\"http://mirror-1.bombardment.org\",\"http://mirror-2.bombardment.org\"]}" \
-				--%s "{\"file_path\":\"./private/file_path.csv\",\"strategy\":\"CSV\"}" \
-				--%s "{\"body_expression\":\"{\\n\\t\\t\\\"request_id\\\": \\\"bulk-create-\\\" & $number(row_id),\\n\\t\\t\\\"event_ts\\\": $millis(),\\n\\t\\\"user_account_id\\\": user_account_id,\\n\\t\\\"template_id\\\": \\\"4066f10464763823cc3e70c2ebd973fbd72cc5b1b450ccd31c0e87d9405e9dd6\\\",\\n\\t\\\"sms_date\\\": $millis(),\\n\\t\\\"insights\\\": $string({\\n\\t\\t\\\"billerName\\\": biller_name,\\n\\t\\\"last_four_dig_cc\\\": last_4_digits,\\n\\t\\\"mobile__number\\\": $floor($number(mobile_number))\\n\\t})\\n\\t}\",\"endpoint_expression\":\"\\\"/insight/v1/event/ingest\\\"\",\"headers_expression\":\"{ \\\"Content-Type\\\": \\\"application/json\\\" }\",\"method_expression\":\"\\\"POST\\\"\",\"strategy\":\"JSONATA\"}"
+				--%s %s \
+				--%s %s \
+				--%s %s \
+				--%s %s \
+				--%s %s
 			# or
 			bombardment cli \
-				-%s "{\"channel\":\"REST\",\"dial_keep_alive\":10000000000,\"dial_timeout\":5000000000,\"expect_continue_timeout\":500000,\"response_header_timeout\":5000000000,\"tls_handshake_timeout\":5000000000}" \
-				-%s "{\"batch_size\":1000,\"should_store_responses\":false}" \
-				-%s "{\"strategy\":\"ROUND_ROBIN\",\"urls\":[\"http://api.bombardment.org\",\"http://mirror-1.bombardment.org\",\"http://mirror-2.bombardment.org\"]}" \
-				-%s "{\"file_path\":\"./private/file_path.csv\",\"strategy\":\"CSV\"}" \
-				-%s "{\"body_expression\":\"{\\n\\t\\t\\\"request_id\\\": \\\"bulk-create-\\\" & $number(row_id),\\n\\t\\t\\\"event_ts\\\": $millis(),\\n\\t\\\"user_account_id\\\": user_account_id,\\n\\t\\\"template_id\\\": \\\"4066f10464763823cc3e70c2ebd973fbd72cc5b1b450ccd31c0e87d9405e9dd6\\\",\\n\\t\\\"sms_date\\\": $millis(),\\n\\t\\\"insights\\\": $string({\\n\\t\\t\\\"billerName\\\": biller_name,\\n\\t\\\"last_four_dig_cc\\\": last_4_digits,\\n\\t\\\"mobile__number\\\": $floor($number(mobile_number))\\n\\t})\\n\\t}\",\"endpoint_expression\":\"\\\"/insight/v1/event/ingest\\\"\",\"headers_expression\":\"{ \\\"Content-Type\\\": \\\"application/json\\\" }\",\"method_expression\":\"\\\"POST\\\"\",\"strategy\":\"JSONATA\"}"`,
+				-%s %s \
+				-%s %s \
+				-%s %s \
+				-%s %s \
+				-%s %s`,
 			CLIENT_CONTEXT_LONG_KEY,
+			ClientContextExampleJSON,
 			DRIVER_CONTEXT_LONG_KEY,
+			DriverContextExampleJSON,
 			LOAD_BALANCER_CONTEXT_LONG_KEY,
+			LoadBalancerContextExampleJSON,
 			PARSER_CONTEXT_LONG_KEY,
+			ParserContextExampleJSON,
 			TRANSFORMER_CONTEXT_LONG_KEY,
+			TransformerContextExampleJSON,
 			CLIENT_CONTEXT_SHORT_KEY,
+			ClientContextExampleJSON,
 			DRIVER_CONTEXT_SHORT_KEY,
+			DriverContextExampleJSON,
 			LOAD_BALANCER_CONTEXT_SHORT_KEY,
+			LoadBalancerContextExampleJSON,
 			PARSER_CONTEXT_SHORT_KEY,
+			ParserContextExampleJSON,
 			TRANSFORMER_CONTEXT_SHORT_KEY,
+			TransformerContextExampleJSON,
 		),
 		Args: func(cmd *cobra.Command, args []string) error {
 			// Get the Flags
@@ -195,7 +211,7 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 		CLIENT_CONTEXT_LONG_KEY,
 		CLIENT_CONTEXT_SHORT_KEY,
 		"",
-		heredoc.Doc(
+		heredoc.Docf(
 			`The Context to use for the Client that will make the calls.
 			Client Context is a JSON string that contains the following keys:
 				- channel: The channel to use for the client. Possible values are {REST, GRPC}
@@ -204,58 +220,63 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 				- expect_continue_timeout: The duration for which to wait for a server's FIRST response headers after fully writing the request headers. Post the timeout, the request will be sent without the Expect: 100-continue header. Eg. 500000 (500 milliseconds)
 				- response_header_timeout: The duration for which to wait for the response headers. Eg. 5000000000 (5 seconds)
 				- tls_handshake_timeout: The duration for the TLS handshake to complete. Post the timeout, the connection will be closed. Eg. 5000000000 (5 seconds)
-			Eg. "{\"channel\":\"REST\",\"dial_keep_alive\":10000000000,\"dial_timeout\":5000000000,\"expect_continue_timeout\":500000,\"response_header_timeout\":5000000000,\"tls_handshake_timeout\":5000000000}"`,
+			Eg. %s`,
+			ClientContextExampleJSON,
 		),
 	)
 	cliCommand.Flags().StringP(
 		DRIVER_CONTEXT_LONG_KEY,
 		DRIVER_CONTEXT_SHORT_KEY,
 		"",
-		heredoc.Doc(
+		heredoc.Docf(
 			`The Context to use for the Driver that will orchestrate the Bombardment.
 			Driver Context is a JSON string that contains the following keys:
 				- batch_size: The number of records to send in a single batch. Eg. 1000
 				- should_store_responses: A boolean flag to indicate if the responses should be stored. Default is false.
-			Eg. "{\"batch_size\":1000,\"should_store_responses\":false}"`,
+			Eg. %s`,
+			DriverContextExampleJSON,
 		),
 	)
 	cliCommand.Flags().StringP(
 		LOAD_BALANCER_CONTEXT_LONG_KEY,
 		LOAD_BALANCER_CONTEXT_SHORT_KEY,
 		"",
-		heredoc.Doc(
+		heredoc.Docf(
 			`The Context to use for Load Balancing requests across servers. All servers must support the same API contract. Eg. Different pods of the same service.
 			Load Balancer Context is a JSON string that contains the following keys:
 				- strategy: The strategy to use for the load balancer. Possible values are {ROUND_ROBIN}
 				- urls: The list of URLs to use for the load balancer.
-			Eg. "{\"strategy\":\"ROUND_ROBIN\",\"urls\":[\"http://api.bombardment.org\",\"http://mirror-1.bombardment.org\",\"http://mirror-2.bombardment.org\"]}"`,
+			Eg. %s`,
+			LoadBalancerContextExampleJSON,
 		),
 	)
 	cliCommand.Flags().StringP(
 		PARSER_CONTEXT_LONG_KEY,
 		PARSER_CONTEXT_SHORT_KEY,
 		"",
-		heredoc.Doc(
+		heredoc.Docf(
 			`The Context to use for Parsing the input data.
 			Parser Context is a JSON string that contains the following keys:
 				- strategy: The strategy to use for parsing the file. Possible values are {CSV, JSON}
 				- file_path: The path to the file to parse. Eg. ./private/gupi_sms_credit_card.csv (if the strategy is CSV)
-			Eg. "{\"file_path\":\"./private/file_path.csv\",\"strategy\":\"CSV\"}"`,
+			Eg. %s`,
+			ParserContextExampleJSON,
 		),
 	)
 	cliCommand.Flags().StringP(
 		TRANSFORMER_CONTEXT_LONG_KEY,
 		TRANSFORMER_CONTEXT_SHORT_KEY,
 		"",
-		heredoc.Doc(
+		heredoc.Docf(
 			`The Context to use for Transforming the parsed data.
 			Transformer Context is a JSON string that contains the following keys:
 				- strategy: The strategy to use for transforming the data. Possible values are {JSONATA}
 				- endpoint_expression: The expression to use for the endpoint of the request. Eg. "/insight/v1/event/ingest" (if the strategy is JSONATA)
 				- headers_expression: The expression to use for the headers of the request. Eg. { "Content-Type": "application/json" } (if the strategy is JSONATA)
 				- method_expression: The expression to use for the method of the request. Eg. "POST" (if the strategy is JSONATA)
-				- body_expression: The expression to use for the body of the request. Eg. "{\"request_id\": \"bulk-create-\" & $number(row_id),\"event_ts\": $millis(),\"user_account_id\": user_account_id,\"template_id\": \"T123\",\"sms_date\": $millis(),\"insights\": $string({\"billerName\": biller_name,\"last_four_dig_cc\": last_4_digits,\"mobile__number\": $floor($number(mobile_number))})\"}" (if the strategy is JSONATA)
-			Eg. "--transformation_context '{"strategy":"JSONATA","method_expression":"\"POST\"","endpoint_expression":"\"/api/v1/\" & resource","headers_expression":"{ \"Content-Type\": \"application/json\", \"X-Request-ID\": request_id }","body_expression":"{ \"id\": $number(id), \"timestamp\": $millis() }"}"`,
+				- body_expression: The expression to use for the body of the request. Eg. 
+			Eg. %s`,
+			TransformerContextExampleJSON,
 		),
 	)
 	c.rootCmd.AddCommand(&cliCommand)
