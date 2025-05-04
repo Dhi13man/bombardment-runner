@@ -6,7 +6,8 @@ const TIME = {
   STEP_HIDE: 150,
   STEP_SHOW_DELAY: 200,
   STEP_VISIBLE: 50,
-  URL_REMOVE_ANIM: 300
+  URL_REMOVE_ANIM: 300,
+  VALIDATION_DEBOUNCE: 300
 };
 
 const SELECTORS = {
@@ -34,13 +35,47 @@ const TRANSFORM_INFO = {
   DEFAULT: 'Use expressions to transform your data'
 };
 
-const ICON = '<i class="fas fa-info-circle mr-1"></i>';
+const VALIDATION = {
+  FILE_PATH_REGEX: /^(\.[\/\\])?([a-zA-Z0-9_\-\/\\]+)\.([a-zA-Z0-9]+)$/,
+  URL_REGEX: /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/,
+  MIN_BATCH_SIZE: 1,
+  MAX_BATCH_SIZE: 10000,
+  MIN_TIMEOUT: 100,
+  MAX_TIMEOUT: 60000
+};
+
+const ICON = {
+  INFO: '<i class="fas fa-info-circle mr-1"></i>',
+  ERROR: '<i class="fas fa-exclamation-circle mr-1"></i>',
+  SUCCESS: '<i class="fas fa-check-circle mr-1"></i>'
+};
 
 // DOM helpers
 const $ = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
-const getVal = (sel, parser = v => v) => parser($(sel).value.trim());
-const checkedVal = name => document.querySelector(`input[name="${name}"]:checked`).value;
+const getVal = (sel, parser = v => v) => parser($(sel)?.value?.trim() || '');
+const checkedVal = name => document.querySelector(`input[name="${name}"]:checked`)?.value;
+
+// Validation state
+const validationState = {
+  step1: false,
+  step2: false,
+  step3: false,
+  step4: false
+};
+
+// Debounce function for validation
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
 
 // --- Initialization -----------------------------------------------------
 document.addEventListener('DOMContentLoaded', init);
@@ -51,6 +86,7 @@ function init() {
   initUrlFields();
   initForm();
   initTransformInfoListener();
+  initValidation();
 }
 
 // --- Fade‑in ------------------------------------------------------------
@@ -106,11 +142,32 @@ function initWizard() {
       l.classList.toggle('text-gray-500', i >= step);
     });
 
+    // Run validation for the current step
+    validateStep(step);
+    
+    // Update button states based on validation
+    updateNextButtonState(step);
+    
     if (step === 2) updateTransformInfo(getVal(SELECTORS.transStrategy), $(SELECTORS.transformInfo));
   };
 
+  // Only allow navigation to next step if validation passes
   btns.prev.addEventListener('click', () => current > 1 && show(--current));
-  btns.next.addEventListener('click', () => current < total && show(++current));
+  btns.next.addEventListener('click', () => {
+    const stepKey = `step${current}`;
+    if (validationState[stepKey] && current < total) {
+      show(++current);
+    } else {
+      // Shake the button to indicate validation issues
+      btns.next.classList.add('animate__animated', 'animate__headShake');
+      setTimeout(() => {
+        btns.next.classList.remove('animate__animated', 'animate__headShake');
+      }, 500);
+      
+      // Force validation to show error messages
+      validateStep(current, true);
+    }
+  });
   show(current);
 }
 
@@ -127,6 +184,14 @@ function initUrlFields() {
       <button type="button" class="bg-gray-100 border rounded-r-md px-3 py-2 hover:bg-gray-200 remove-url">
         <i class="fa-solid fa-trash-alt text-gray-600"></i>
       </button>`;
+    
+    // Add validation to the input field
+    const input = div.querySelector('input');
+    input.addEventListener('input', debounce(() => {
+      validateUrlField(input);
+      validateStep(3);
+    }, TIME.VALIDATION_DEBOUNCE));
+    
     attachRemove(div.querySelector('.remove-url'), div);
     return div;
   };
@@ -134,11 +199,19 @@ function initUrlFields() {
   const attachRemove = (btn, parent) => {
     btn.addEventListener('click', () => {
       parent.classList.replace('animate__fadeIn', 'animate__fadeOut');
-      setTimeout(() => parent.remove(), TIME.URL_REMOVE_ANIM);
+      setTimeout(() => {
+        parent.remove();
+        validateStep(3); // Revalidate after removal
+      }, TIME.URL_REMOVE_ANIM);
     });
   };
 
-  addBtn.addEventListener('click', () => container.appendChild(createField()));
+  addBtn.addEventListener('click', () => {
+    const field = createField();
+    container.appendChild(field);
+    field.querySelector('input').focus();
+  });
+  
   $$('.remove-url').forEach(btn => attachRemove(btn, btn.closest('.lb-url')));
   if (!container.querySelector('.lb-url')) container.appendChild(createField());
 }
@@ -152,6 +225,17 @@ function initForm() {
     if ($(SELECTORS.submitBtn).classList.contains('hidden')) {
       return showResponse('error', 'Please complete all steps before submitting', resp, true);
     }
+    
+    // Validate all steps before submission
+    validateStep1(true);
+    validateStep2(true);
+    validateStep3(true);
+    validateStep4(true);
+    
+    if (!validationState.step4) {
+      return showResponse('error', 'Please fix validation errors before submitting', resp);
+    }
+    
     const urls = $$('.lb-url input').map(i => i.value.trim()).filter(Boolean);
     if (!urls.length) {
       return showResponse('error', 'Please add at least one target URL', resp);
@@ -265,7 +349,7 @@ function populateReview() {
 function updateTransformInfo(strategy, el) {
   if (!el) return;
   const text = TRANSFORM_INFO[strategy] || TRANSFORM_INFO.DEFAULT;
-  el.innerHTML = `${ICON}<span>${text}</span>`;
+  el.innerHTML = `${ICON.INFO}<span>${text}</span>`;
 }
 
 function initTransformInfoListener() {
