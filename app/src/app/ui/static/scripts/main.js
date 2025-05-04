@@ -9,6 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const prevBtn = document.getElementById('prev-btn');
   const nextBtn = document.getElementById('next-btn');
   const submitBtn = document.getElementById('submit-btn');
+  const stepIndicatorItems = document.querySelectorAll('#step-indicator li');
+  // Cache circle and label elements for easier updates
+  const stepCircles = Array.from(document.querySelectorAll('#step-indicator .step-circle'));
+  const stepLabels = Array.from(document.querySelectorAll('#step-indicator .step-label'));
 
   function showStep(step) {
     steps.forEach(s => s.classList.add('hidden'));
@@ -17,6 +21,21 @@ document.addEventListener('DOMContentLoaded', () => {
     nextBtn.hidden = step === totalSteps;
     submitBtn.hidden = step !== totalSteps;
     if (step === totalSteps) populateReview();
+    // Update step indicator styling
+    stepCircles.forEach((circle, idx) => {
+      if (idx < step) {
+        circle.classList.replace('bg-gray-300', 'bg-orange-500');
+      } else {
+        circle.classList.replace('bg-orange-500', 'bg-gray-300');
+      }
+    });
+    stepLabels.forEach((label, idx) => {
+      if (idx < step) {
+        label.classList.replace('text-gray-500', 'text-gray-700');
+      } else {
+        label.classList.replace('text-gray-700', 'text-gray-500');
+      }
+    });
   }
 
   function populateReview() {
@@ -80,7 +99,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const respEl = document.getElementById('response-message');
 
   form.addEventListener('submit', async e => {
-    e.preventDefault(); respEl.textContent = '';
+    e.preventDefault();
+    // Prevent submission until last step is reached
+    if (currentStep !== totalSteps) {
+      respEl.textContent = 'Please complete all steps before submitting.';
+      respEl.className = 'text-red-600';
+      return;
+    }
+    respEl.textContent = '';
     const payload = {
       client_context: {
         channel: document.querySelector('input[name="client_channel"]:checked').value,

@@ -22,7 +22,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous"></script>
 
   <!-- Application Styles -->
-  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet" href="/static/styles/global.css">
 </head>
 
 <body class="h-full text-base-content">
@@ -51,10 +51,56 @@
 
     <!-- Main Content -->
     <div id="main-content" class="ml-64 p-6">
+      <!-- Step Progress Indicator -->
+      <div class="mb-8">
+        <ul id="step-indicator" class="flex items-center justify-between">
+          <li class="flex-1 relative text-center">
+            <div class="relative flex flex-col items-center bg-white px-2">
+              <div class="w-10 h-10 flex items-center justify-center rounded-full bg-orange-500 text-white step-circle">
+                <i class="fas fa-file-import"></i>
+              </div>
+              <span class="mt-2 text-sm font-medium text-gray-700 step-label">Source</span>
+            </div>
+          </li>
+          <li class="flex-1 relative">
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div class="w-full h-1 bg-gray-300"></div>
+            </div>
+            <div class="relative flex flex-col items-center bg-white px-2">
+              <div class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-300 text-white step-circle">
+                <i class="fas fa-sliders-h"></i>
+              </div>
+              <span class="mt-2 text-sm font-medium text-gray-500 step-label">Transform</span>
+            </div>
+          </li>
+          <li class="flex-1 relative">
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div class="w-full h-1 bg-gray-300"></div>
+            </div>
+            <div class="relative flex flex-col items-center bg-white px-2">
+              <div class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-300 text-white step-circle">
+                <i class="fas fa-bullseye"></i>
+              </div>
+              <span class="mt-2 text-sm font-medium text-gray-500 step-label">Target</span>
+            </div>
+          </li>
+          <li class="flex-1 relative">
+            <div class="absolute inset-0 flex items-center justify-center">
+              <div class="w-full h-1 bg-gray-300"></div>
+            </div>
+            <div class="relative flex flex-col items-center bg-white px-2">
+              <div class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-300 text-white step-circle">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <span class="mt-2 text-sm font-medium text-gray-500 step-label">Review</span>
+            </div>
+          </li>
+        </ul>
+      </div>
       <header class="bg-white border-b border-gray-200 py-4 px-6 flex items-center justify-between">
         <h1 class="text-xl font-semibold text-gray-800">Create Bombardment Job</h1>
       </header>
-      <form id="bombard-form" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-6 space-y-6">
+      <form id="bombard-form" class="bg-white rounded-xl shadow-lg border border-gray-200 p-8 mt-6 space-y-8">
         <div id="wizard">
           <div class="step" data-step="1">
             <!-- Parser Configuration -->
@@ -206,10 +252,16 @@
             </div>
           </div>
         </div>
-        <div id="nav-buttons" class="flex justify-between mt-4">
-          <button id="prev-btn" type="button" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-md" hidden>Back</button>
-          <button id="next-btn" type="button" class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-md">Next</button>
-          <button id="submit-btn" type="submit" class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-6 rounded-md shadow-sm" hidden>Run Bombardment</button>
+        <div id="nav-buttons" class="flex justify-between mt-6">
+          <button id="prev-btn" type="button" class="flex items-center bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg" hidden>
+            <i class="fas fa-arrow-left mr-2"></i>Back
+          </button>
+          <button id="next-btn" type="button" class="flex items-center bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg">
+            Next<i class="fas fa-arrow-right ml-2"></i>
+          </button>
+          <button id="submit-btn" type="submit" class="flex items-center bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-6 rounded-lg shadow-md" hidden>
+            <i class="fas fa-play mr-2"></i>Run Bombardment
+          </button>
         </div>
       </form>
       <div id="response-message" class="mt-4 text-center"></div>
