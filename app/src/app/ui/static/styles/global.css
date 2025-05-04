@@ -8,6 +8,11 @@
   display: none;
 }
 
+/* Animate CSS custom settings */
+.animate__animated {
+  --animate-duration: 0.5s;
+}
+
 /* Highlighted section and edit-button helpers */
 .highlighted-section {
   outline: 2px solid #3F20FB;

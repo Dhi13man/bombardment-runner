@@ -1,17 +1,23 @@
 /* Validation styles */
-.border-red-500 {
+/* Border styles for form validation */
+.border-red-500,
+*[class*="border-red-500"] {
   border-color: #ef4444 !important;
 }
 
-.border-green-500 {
+.border-green-500,
+*[class*="border-green-500"] {
   border-color: #10b981 !important;
 }
 
-.focus\:ring-red-500:focus {
+/* Focus styles for form fields */
+.focus\:ring-red-500:focus,
+*[class*="focus:ring-red-500"]:focus {
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
 }
 
-.focus\:ring-green-500:focus {
+.focus\:ring-green-500:focus,
+*[class*="focus:ring-green-500"]:focus {
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
 }
 
