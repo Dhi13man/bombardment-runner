@@ -3,5 +3,306 @@
     "info": {
         "contact": {}
     },
-    "paths": {}
+    "paths": {
+        "/bombardment": {
+            "post": {
+                "description": "Accept contexts payload and trigger processing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bombardment"
+                ],
+                "summary": "Trigger bombardment process",
+                "parameters": [
+                    {
+                        "description": "Bombardment contexts",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.BombardmentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ping": {
+            "get": {
+                "description": "Returns pong",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Health check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dto.BombardmentRequest": {
+            "type": "object",
+            "properties": {
+                "client_context": {
+                    "$ref": "#/definitions/models_dto_clients.ClientContext"
+                },
+                "driver_context": {
+                    "$ref": "#/definitions/models_dto_driver.DriverContext"
+                },
+                "load_balancer_context": {
+                    "$ref": "#/definitions/models_dto_load_balancing.LoadBalancerContext"
+                },
+                "parser_context": {
+                    "$ref": "#/definitions/models_dto_parsing.ParserContext"
+                },
+                "transformer_context": {
+                    "$ref": "#/definitions/models_dto_transforming.TransformerContext"
+                }
+            }
+        },
+        "models_dto_clients.ClientContext": {
+            "type": "object",
+            "properties": {
+                "channel": {
+                    "$ref": "#/definitions/models_enums.ClientChannel"
+                },
+                "dial_keep_alive": {
+                    "description": "Maximum time a connection will be kept alive.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                },
+                "dial_timeout": {
+                    "description": "Maximum time a dial will wait for a connect to complete.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                },
+                "expect_continue_timeout": {
+                    "description": "Maximum time waiting for a server's first response headers after fully writing the request headers.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                },
+                "response_header_timeout": {
+                    "description": "Maximum time waiting to read the response headers.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                },
+                "tls_handshake_timeout": {
+                    "description": "Maximum time waiting to perform a TLS handshake.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                }
+            }
+        },
+        "models_dto_driver.DriverContext": {
+            "type": "object",
+            "properties": {
+                "batch_size": {
+                    "type": "integer"
+                },
+                "should_store_responses": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "models_dto_load_balancing.LoadBalancerContext": {
+            "type": "object",
+            "properties": {
+                "strategy": {
+                    "$ref": "#/definitions/models_enums.LoadBalancerStrategy"
+                },
+                "urls": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "models_dto_parsing.ParserContext": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string"
+                },
+                "strategy": {
+                    "$ref": "#/definitions/models_enums.ParserStrategy"
+                }
+            }
+        },
+        "models_dto_transforming.TransformerContext": {
+            "type": "object",
+            "properties": {
+                "body_expression": {
+                    "type": "string"
+                },
+                "endpoint_expression": {
+                    "type": "string"
+                },
+                "headers_expression": {
+                    "type": "string"
+                },
+                "method_expression": {
+                    "type": "string"
+                },
+                "strategy": {
+                    "$ref": "#/definitions/models_enums.TransformerStrategy"
+                }
+            }
+        },
+        "models_enums.ClientChannel": {
+            "type": "string",
+            "enum": [
+                "REST",
+                "GRPC",
+                "KAFKA"
+            ],
+            "x-enum-varnames": [
+                "REST",
+                "GRPC",
+                "KAFKA"
+            ]
+        },
+        "models_enums.LoadBalancerStrategy": {
+            "type": "string",
+            "enum": [
+                "RANDOM",
+                "ROUND_ROBIN",
+                "LEAST_CONNECTION"
+            ],
+            "x-enum-varnames": [
+                "RANDOM",
+                "ROUND_ROBIN",
+                "LEAST_CONNECTION"
+            ]
+        },
+        "models_enums.ParserStrategy": {
+            "type": "string",
+            "enum": [
+                "CSV",
+                "JSON"
+            ],
+            "x-enum-varnames": [
+                "CSV",
+                "JSON"
+            ]
+        },
+        "models_enums.TransformerStrategy": {
+            "type": "string",
+            "enum": [
+                "JSONATA",
+                "GOTEMPLATE"
+            ],
+            "x-enum-varnames": [
+                "JSONATA",
+                "GO_TEMPLATE"
+            ]
+        },
+        "time.Duration": {
+            "type": "integer",
+            "enum": [
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000
+            ],
+            "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour"
+            ]
+        }
+    }
 }

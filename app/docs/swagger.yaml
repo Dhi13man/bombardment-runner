@@ -1,4 +1,209 @@
+definitions:
+  dto.BombardmentRequest:
+    properties:
+      client_context:
+        $ref: '#/definitions/models_dto_clients.ClientContext'
+      driver_context:
+        $ref: '#/definitions/models_dto_driver.DriverContext'
+      load_balancer_context:
+        $ref: '#/definitions/models_dto_load_balancing.LoadBalancerContext'
+      parser_context:
+        $ref: '#/definitions/models_dto_parsing.ParserContext'
+      transformer_context:
+        $ref: '#/definitions/models_dto_transforming.TransformerContext'
+    type: object
+  models_dto_clients.ClientContext:
+    properties:
+      channel:
+        $ref: '#/definitions/models_enums.ClientChannel'
+      dial_keep_alive:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: Maximum time a connection will be kept alive.
+      dial_timeout:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: Maximum time a dial will wait for a connect to complete.
+      expect_continue_timeout:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: Maximum time waiting for a server's first response headers after
+          fully writing the request headers.
+      response_header_timeout:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: Maximum time waiting to read the response headers.
+      tls_handshake_timeout:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: Maximum time waiting to perform a TLS handshake.
+    type: object
+  models_dto_driver.DriverContext:
+    properties:
+      batch_size:
+        type: integer
+      should_store_responses:
+        type: boolean
+    type: object
+  models_dto_load_balancing.LoadBalancerContext:
+    properties:
+      strategy:
+        $ref: '#/definitions/models_enums.LoadBalancerStrategy'
+      urls:
+        items:
+          type: string
+        type: array
+    type: object
+  models_dto_parsing.ParserContext:
+    properties:
+      file_path:
+        type: string
+      strategy:
+        $ref: '#/definitions/models_enums.ParserStrategy'
+    type: object
+  models_dto_transforming.TransformerContext:
+    properties:
+      body_expression:
+        type: string
+      endpoint_expression:
+        type: string
+      headers_expression:
+        type: string
+      method_expression:
+        type: string
+      strategy:
+        $ref: '#/definitions/models_enums.TransformerStrategy'
+    type: object
+  models_enums.ClientChannel:
+    enum:
+    - REST
+    - GRPC
+    - KAFKA
+    type: string
+    x-enum-varnames:
+    - REST
+    - GRPC
+    - KAFKA
+  models_enums.LoadBalancerStrategy:
+    enum:
+    - RANDOM
+    - ROUND_ROBIN
+    - LEAST_CONNECTION
+    type: string
+    x-enum-varnames:
+    - RANDOM
+    - ROUND_ROBIN
+    - LEAST_CONNECTION
+  models_enums.ParserStrategy:
+    enum:
+    - CSV
+    - JSON
+    type: string
+    x-enum-varnames:
+    - CSV
+    - JSON
+  models_enums.TransformerStrategy:
+    enum:
+    - JSONATA
+    - GOTEMPLATE
+    type: string
+    x-enum-varnames:
+    - JSONATA
+    - GO_TEMPLATE
+  time.Duration:
+    enum:
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    type: integer
+    x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
 info:
   contact: {}
-paths: {}
+paths:
+  /bombardment:
+    post:
+      consumes:
+      - application/json
+      description: Accept contexts payload and trigger processing
+      parameters:
+      - description: Bombardment contexts
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.BombardmentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Trigger bombardment process
+      tags:
+      - bombardment
+  /ping:
+    get:
+      description: Returns pong
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - health
 swagger: "2.0"
