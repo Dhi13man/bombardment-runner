@@ -55,16 +55,16 @@ func NewCobraCliHooks() CliHook {
 			
 			Bombardment supports concurrent processing of data, client-side load balancing strategies, and is designed to be extensible and reusable.
 
-			Options:
+			Modes:
 			cli     Run Bombardment in CLI mode. This mode reads data from a file, transforms it, and sends it to the server in batches.
 			server  Run Bombardment in Server mode. This mode starts a server that listens for incoming data and sends it to the server in batches.`,
 		),
 		Example: heredoc.Doc(
 			`# Run Bombardment in CLI mode
-			bombardment cli <flags>
+			bombardment cli --help
 
 			# Run Bombardment in Server mode
-			bombardment server <flags>`,
+			bombardment server --help`,
 		),
 		Version: "v0.0.1",
 	}
