@@ -21,7 +21,7 @@ type CliHook interface {
 	) CliHook
 
 	// Attaches the Server Run Command to the Root Command
-	AttachServerRunCommand(runServerCallback func()) CliHook
+	AttachServerRunCommand(runServerCallback func(bindAddr string, port int)) CliHook
 
 	// Executes the CLI Hooks
 	Execute()

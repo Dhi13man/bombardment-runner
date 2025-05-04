@@ -1,30 +1,20 @@
 package driver
 
 import (
-	"github.dhi13man.com/bombardment-runner/src/domain/services/batching"
-	"github.dhi13man.com/bombardment-runner/src/domain/services/clients"
-	"github.dhi13man.com/bombardment-runner/src/domain/services/load_balancing"
-	"github.dhi13man.com/bombardment-runner/src/domain/services/parsing"
-	"github.dhi13man.com/bombardment-runner/src/domain/services/transforming"
-	models_dto_clients "github.dhi13man.com/bombardment-runner/src/models/dto/clients"
+	"github.dhi13man.com/bombardment-runner/src/models/dto"
 	models_dto_requests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
 	models_dto_responses "github.dhi13man.com/bombardment-runner/src/models/dto/clients/responses"
-	models_dto_driver "github.dhi13man.com/bombardment-runner/src/models/dto/driver"
-	models_dto_load_balancing "github.dhi13man.com/bombardment-runner/src/models/dto/load_balancing"
-	models_dto_parsing "github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
-	models_dto_transforming "github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
+	"github.dhi13man.com/bombardment-runner/src/services/batching"
+	"github.dhi13man.com/bombardment-runner/src/services/clients"
+	"github.dhi13man.com/bombardment-runner/src/services/load_balancing"
+	"github.dhi13man.com/bombardment-runner/src/services/parsing"
+	"github.dhi13man.com/bombardment-runner/src/services/transforming"
 	"go.uber.org/zap"
 )
 
 type BombardmentDriver interface {
 	// Create a Bombardment
-	CreateBombardment(
-		clientContext models_dto_clients.ClientContext,
-		driverContext models_dto_driver.DriverContext,
-		loadBalancerContext models_dto_load_balancing.LoadBalancerContext,
-		parserContext models_dto_parsing.ParserContext,
-		transformerContext models_dto_transforming.TransformerContext,
-	) error
+	CreateBombardment(bombardmentRequest dto.BombardmentRequest) error
 }
 
 type bombardmentDriver struct {
@@ -35,36 +25,38 @@ func NewBombardmentDriver() BombardmentDriver {
 }
 
 func (b *bombardmentDriver) CreateBombardment(
-	clientContext models_dto_clients.ClientContext,
-	driverContext models_dto_driver.DriverContext,
-	loadBalancerContext models_dto_load_balancing.LoadBalancerContext,
-	parserContext models_dto_parsing.ParserContext,
-	transformerContext models_dto_transforming.TransformerContext,
+	bombardmentRequest dto.BombardmentRequest,
 ) error {
 	// Initialise and inject dependencies
-	parser, err := parsing.CreateFileParser[map[string]string](parserContext)
+	parser, err := parsing.CreateFileParser[map[string]string](bombardmentRequest.Parser)
 	if err != nil {
 		return err
 	}
 	defer parser.Close()
 
-	client, err := clients.CreateChannelClient(clientContext)
+	client, err := clients.CreateChannelClient(bombardmentRequest.Client)
 	if err != nil {
 		return err
 	}
 
-	transformer, err := transforming.CreateTransformer(clientContext.Channel, transformerContext)
+	transformer, err := transforming.CreateTransformer(
+		bombardmentRequest.Client.Channel,
+		bombardmentRequest.Transformer,
+	)
 	if err != nil {
 		return err
 	}
 
-	loadBalancer, err := load_balancing.CreateLoadBalancer(loadBalancerContext, client)
+	loadBalancer, err := load_balancing.CreateLoadBalancer(
+		bombardmentRequest.LoadBalancer,
+		client,
+	)
 	if err != nil {
 		return err
 	}
 
 	var batchProcessor batching.BatchProcessor[map[string]string, *int] = batching.NewBatchProcessor(
-		driverContext.BatchSize,
+		bombardmentRequest.Driver.BatchSize,
 		func(rawData map[string]string) *int {
 			transformed, err := transformer.TransformRequest(rawData)
 			if err != nil {

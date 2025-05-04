@@ -1,9 +1,9 @@
 package main
 
 import (
-	appBootstrap "github.dhi13man.com/bombardment-runner/src/bootstrap"
-	core_cli "github.dhi13man.com/bombardment-runner/src/core/cli"
-	"github.dhi13man.com/bombardment-runner/src/domain/services/driver"
+	core_bootstrap "github.dhi13man.com/bombardment-runner/src/app/bootstrap"
+	core_cli "github.dhi13man.com/bombardment-runner/src/app/cli"
+	"github.dhi13man.com/bombardment-runner/src/services/driver"
 	"go.uber.org/zap"
 )
 
@@ -18,9 +18,12 @@ func main() {
 	bombardmentDriver := driver.NewBombardmentDriver()
 	cliHooks := core_cli.NewCobraCliHooks()
 
+	// Prepare  Bootstrap
+	bootstrap := core_bootstrap.NewBootstrap(bombardmentDriver)
+
 	// Attach CLI and Server Hooks
 	cliHooks.
-		AttachCliRunCommand(bombardmentDriver.CreateBombardment).
-		AttachServerRunCommand(appBootstrap.NewServerBootstrap(bombardmentDriver).Run).
+		AttachCliRunCommand(bootstrap.RunCli).
+		AttachServerRunCommand(bootstrap.RunServer).
 		Execute()
 }

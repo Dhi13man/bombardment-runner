@@ -3,11 +3,11 @@ package load_balancing
 import (
 	"sync"
 
-	"github.dhi13man.com/bombardment-runner/src/domain/services/clients"
 	models_dto_requests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
 	models_dto_responses "github.dhi13man.com/bombardment-runner/src/models/dto/clients/responses"
 	models_dto_load_balancing "github.dhi13man.com/bombardment-runner/src/models/dto/load_balancing"
 	models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
+	"github.dhi13man.com/bombardment-runner/src/services/clients"
 )
 
 type RoundRobinLoadBalancer interface {

@@ -74,14 +74,14 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 				-D "{\"batch_size\":1000,\"should_store_responses\":false}" \
 				-L "{\"strategy\":\"ROUND_ROBIN\",\"urls\":[\"http://api.bombardment.org\",\"http://mirror-1.bombardment.org\",\"http://mirror-2.bombardment.org\"]}" \
 				-P "{\"file_path\":\"./private/file_path.csv\",\"strategy\":\"CSV\"}" \
-				-T "{\"body_expression\":\"{\\n\\t\\t\\\"request_id\\\": \\\"bulk-create-\\\" & $number(row_id),\\n\\t\\t\\\"event_ts\\\": $millis(),\\n\\t\\\"user_account_id\\\": user_account_id,\\n\\t\\\"template_id\\\": \\\"4066f10464763823cc3e70c2ebd973fbd72cc5b1b450ccd31c0e87d9405e9dd6\\\",\\n\\t\\\"sms_date\\\": $millis(),\\n\\t\\\"insights\\\": $string({\\n\\t\\t\\\"billerName\\\": biller_name,\\n\\t\\t\\\"last_four_dig_cc\\\": last_4_digits,\\n\\t\\t\\\"mobile__number\\\": $floor($number(mobile_number))\\n\\t})\\n\\t}\",\"endpoint_expression\":\"\\\"/insight/v1/event/ingest\\\"\",\"headers_expression\":\"{ \\\"Content-Type\\\": \\\"application/json\\\" }\",\"method_expression\":\"\\\"POST\\\"\",\"strategy\":\"JSONATA\"}"
+				-T "{\"body_expression\":\"{\\n\\t\\t\\\"request_id\\\": \\\"bulk-create-\\\" & $number(row_id),\\n\\t\\t\\\"event_ts\\\": $millis(),\\n\\t\\\"user_account_id\\\": user_account_id,\\n\\t\\\"template_id\\\": \\\"4066f10464763823cc3e70c2ebd973fbd72cc5b1b450ccd31c0e87d9405e9dd6\\\",\\n\\t\\\"sms_date\\\": $millis(),\\n\\t\\\"insights\\\": $string({\\n\\t\\t\\\"billerName\\\": biller_name,\\n\\t\\\"last_four_dig_cc\\\": last_4_digits,\\n\\t\\\"mobile__number\\\": $floor($number(mobile_number))\\n\\t})\\n\\t}\",\"endpoint_expression\":\"\\\"/insight/v1/event/ingest\\\"\",\"headers_expression\":\"{ \\\"Content-Type\\\": \\\"application/json\\\" }\",\"method_expression\":\"\\\"POST\\\"\",\"strategy\":\"JSONATA\"}"
 			# or
 			bombardment cli \
 				--%s "{\"channel\":\"REST\",\"dial_keep_alive\":10000000000,\"dial_timeout\":5000000000,\"expect_continue_timeout\":500000,\"response_header_timeout\":5000000000,\"tls_handshake_timeout\":5000000000}" \
 				--%s "{\"batch_size\":1000,\"should_store_responses\":false}" \
 				--%s "{\"strategy\":\"ROUND_ROBIN\",\"urls\":[\"http://api.bombardment.org\",\"http://mirror-1.bombardment.org\",\"http://mirror-2.bombardment.org\"]}" \
 				--%s "{\"file_path\":\"./private/file_path.csv\",\"strategy\":\"CSV\"}" \
-				--%s "{\"body_expression\":\"{\\n\\t\\t\\\"request_id\\\": \\\"bulk-create-\\\" & $number(row_id),\\n\\t\\t\\\"event_ts\\\": $millis(),\\n\\t\\\"user_account_id\\\": user_account_id,\\n\\t\\\"template_id\\\": \\\"4066f10464763823cc3e70c2ebd973fbd72cc5b1b450ccd31c0e87d9405e9dd6\\\",\\n\\t\\\"sms_date\\\": $millis(),\\n\\t\\\"insights\\\": $string({\\n\\t\\t\\\"billerName\\\": biller_name,\\n\\t\\t\\\"last_four_dig_cc\\\": last_4_digits,\\n\\t\\t\\\"mobile__number\\\": $floor($number(mobile_number))\\n\\t})\\n\\t}\",\"endpoint_expression\":\"\\\"/insight/v1/event/ingest\\\"\",\"headers_expression\":\"{ \\\"Content-Type\\\": \\\"application/json\\\" }\",\"method_expression\":\"\\\"POST\\\"\",\"strategy\":\"JSONATA\"}"
+				--%s "{\"body_expression\":\"{\\n\\t\\t\\\"request_id\\\": \\\"bulk-create-\\\" & $number(row_id),\\n\\t\\t\\\"event_ts\\\": $millis(),\\n\\t\\\"user_account_id\\\": user_account_id,\\n\\t\\\"template_id\\\": \\\"4066f10464763823cc3e70c2ebd973fbd72cc5b1b450ccd31c0e87d9405e9dd6\\\",\\n\\t\\\"sms_date\\\": $millis(),\\n\\t\\\"insights\\\": $string({\\n\\t\\t\\\"billerName\\\": biller_name,\\n\\t\\\"last_four_dig_cc\\\": last_4_digits,\\n\\t\\\"mobile__number\\\": $floor($number(mobile_number))\\n\\t})\\n\\t}\",\"endpoint_expression\":\"\\\"/insight/v1/event/ingest\\\"\",\"headers_expression\":\"{ \\\"Content-Type\\\": \\\"application/json\\\" }\",\"method_expression\":\"\\\"POST\\\"\",\"strategy\":\"JSONATA\"}"
 			`,
 			CLIENT_CONTEXT_KEY,
 			DRIVER_CONTEXT_KEY,
@@ -240,18 +240,44 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 	return c
 }
 
-func (c *cobraCliHooks) AttachServerRunCommand(runServerCallback func()) CliHook {
+func (c *cobraCliHooks) AttachServerRunCommand(
+	runServerCallback func(bindAddr string, port int),
+) CliHook {
 	var serverCommand = cobra.Command{
 		Use:     "server",
 		Short:   "Run Bombardment in Server mode",
 		GroupID: RUN_MODE_GROUP_ID,
-		Long:    "Run Bombardment in Server mode. This mode starts a server that listens for incoming data and sends it to the server in batches.",
-		Example: "bombardment server",
-		Version: "v0.0.1",
-		Run: func(cmd *cobra.Command, args []string) {
-			runServerCallback()
+		Long:    heredoc.Doc(`Run Bombardment in Server mode. This mode starts an HTTP server that listens on the specified address and port for incoming data and processes it in batches.`),
+		Example: heredoc.Doc(`
+		# Run server on default 127.0.0.1:8080
+		bombardment server
+
+		# Run server on custom address and port
+		bombardment server \ 
+		  --bind-addr 127.0.0.1 \ 
+		  --port 9090
+		`),
+		Args: func(cmd *cobra.Command, args []string) error {
+			port, err := cmd.Flags().GetInt("port")
+			if err != nil {
+				return err
+			}
+			if port < 1 || port > 65535 {
+				return fmt.Errorf("invalid port: %d", port)
+			}
+			return nil
 		},
+		Run: func(cmd *cobra.Command, args []string) {
+			bindAddr, _ := cmd.Flags().GetString("bind-addr")
+			port, _ := cmd.Flags().GetInt("port")
+
+			runServerCallback(bindAddr, port)
+		},
+		Version: "v0.0.1",
 	}
+	// Define flags for server command
+	serverCommand.Flags().StringP("bind-addr", "b", "127.0.0.1", "Bind address for the server (default 127.0.0.1)")
+	serverCommand.Flags().IntP("port", "p", 8080, "Port for the server (default 8080)")
 	c.rootCmd.AddCommand(&serverCommand)
 	return c
 }

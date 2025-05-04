@@ -3,4 +3,4 @@ go mod tidy && go fmt ./...
 
 # Generate the swagger documentation
 swag fmt
-swag init -g ./src/bootstrap/server_bootstrap.go -o ./docs --parseDependency
+swag init -g ./src/app/bootstrap/bootstrap.go -o ./docs --parseDependency

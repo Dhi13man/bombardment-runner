@@ -3,10 +3,10 @@ package transforming
 import (
 	"errors"
 
-	"github.dhi13man.com/bombardment-runner/src/domain/services"
 	models_dto_requests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
 	models_dto_transforming "github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
 	models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
+	"github.dhi13man.com/bombardment-runner/src/services"
 )
 
 type BaseTransformer interface {
