@@ -37,7 +37,7 @@ const TRANSFORM_INFO = {
 
 const VALIDATION = {
   FILE_PATH_REGEX: /^(\.[\/\\])?([a-zA-Z0-9_\-\/\\]+)\.([a-zA-Z0-9]+)$/,
-  URL_REGEX: /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/,
+  URL_REGEX: /^(https?:\/\/)?([a-zA-Z0-9][-a-zA-Z0-9]*(\.[a-zA-Z0-9][-a-zA-Z0-9]*)+|localhost)(:[0-9]{1,5})?(\/[-a-zA-Z0-9()@:%_\+.~#?&//=]*)?$/,
   MIN_BATCH_SIZE: 1,
   MAX_BATCH_SIZE: 10000,
   MIN_TIMEOUT: 100,
@@ -178,12 +178,14 @@ function initUrlFields() {
 
   const createField = () => {
     const div = document.createElement('div');
-    div.className = 'lb-url flex items-center mb-2 animate__animated animate__fadeIn';
+    div.className = 'lb-url field-container mb-2 animate__animated animate__fadeIn';
     div.innerHTML = `
-      <input type="text" placeholder="https://" class="flex-1 border rounded-l-md py-2 px-3 focus:ring-orange-500">
-      <button type="button" class="bg-gray-100 border rounded-r-md px-3 py-2 hover:bg-gray-200 remove-url">
-        <i class="fa-solid fa-trash-alt text-gray-600"></i>
-      </button>`;
+      <div class="flex items-center">
+        <input type="text" placeholder="https://" class="flex-1 border rounded-l-md py-2 px-3 focus:ring-orange-500">
+        <button type="button" class="bg-gray-100 border rounded-r-md px-3 py-2 hover:bg-gray-200 remove-url">
+          <i class="fa-solid fa-trash-alt text-gray-600"></i>
+        </button>
+      </div>`;
     
     // Add validation to the input field
     const input = div.querySelector('input');

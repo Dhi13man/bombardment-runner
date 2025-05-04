@@ -79,11 +79,41 @@ function validateNumberRange(value, min, max) {
 
 // Validate a URL field
 function validateUrlField(input) {
-  return validateTextField(
-    input,
-    validateUrl,
-    'Please enter a valid URL (e.g., https://example.com)'
-  );
+  const urlContainer = input.closest('.lb-url');
+  
+  // Remove any existing error message in this URL container
+  const existingError = urlContainer.querySelector('.validation-error');
+  if (existingError) {
+    existingError.remove();
+  }
+  
+  // Clear existing styling
+  input.classList.remove('border-red-500', 'border-green-500', 'focus:border-red-500', 'focus:border-green-500');
+  input.classList.remove('focus:ring-red-500', 'focus:ring-green-500');
+  
+  // Validate the URL
+  const value = input.value.trim();
+  const isValid = validateUrl(value);
+  
+  if (!isValid && value.length > 0) {
+    // Add error styling to the input
+    input.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+    
+    // Create error message element that will appear below the URL field
+    const errorEl = document.createElement('div');
+    errorEl.className = 'validation-error text-xs text-red-500 mt-1 flex items-center w-full';
+    errorEl.innerHTML = `<i class="fas fa-exclamation-circle mr-1"></i>Please enter a valid URL (e.g., https://example.com, localhost:3000, or custom-domain)`;
+    
+    // Append the error message to the URL container (after the input field and delete button)
+    urlContainer.appendChild(errorEl);
+    return false;
+  } else if (value.length > 0) {
+    // Add success styling for non-empty inputs
+    input.classList.add('border-green-500', 'focus:border-green-500', 'focus:ring-green-500');
+    return true;
+  }
+  
+  return value.length > 0;
 }
 
 // Add feedback container below an element
@@ -201,6 +231,7 @@ function validateStep3(showErrors = false) {
   const urlInputs = document.querySelectorAll('.lb-url input');
   let urlsValid = urlInputs.length > 0; // We need at least one URL field
   
+  // Individual field validation
   urlInputs.forEach(input => {
     const isValid = validateUrlField(input);
     urlsValid = urlsValid && (isValid || input.value.trim() === '');
@@ -227,17 +258,21 @@ function validateStep3(showErrors = false) {
     `Keep alive timeout must be between ${VALIDATION.MIN_TIMEOUT} and ${VALIDATION.MAX_TIMEOUT} ms`
   );
   
-  // Show URL list validation message if necessary
-  const urlsContainer = document.getElementById('urls-container');
-  const urlsMessageId = 'urls-validation-message';
-  const urlsMessageContainer = addFeedbackContainer('urls-container', urlsMessageId);
+  // Show global URL list validation message if necessary
+  const urlsMessageContainer = document.getElementById('urls-validation-message');
   
-  if (!hasValidUrl && showErrors) {
-    showValidationMessage(urlsMessageId, false, 'At least one valid URL is required');
-  } else if (hasValidUrl) {
-    showValidationMessage(urlsMessageId, true, 'URLs are valid');
-  } else {
-    clearValidationMessage(urlsMessageId);
+  if (urlsMessageContainer) {
+    if (!hasValidUrl && (showErrors || urlInputs.length > 0)) {
+      urlsMessageContainer.classList.remove('hidden');
+      urlsMessageContainer.className = 'mt-2 text-sm text-red-500 flex items-center';
+      urlsMessageContainer.innerHTML = `<i class="fas fa-exclamation-circle mr-1"></i>At least one valid URL is required`;
+    } else if (hasValidUrl) {
+      urlsMessageContainer.classList.remove('hidden');
+      urlsMessageContainer.className = 'mt-2 text-sm text-green-500 flex items-center';
+      urlsMessageContainer.innerHTML = `<i class="fas fa-check-circle mr-1"></i>URLs are valid`;
+    } else {
+      urlsMessageContainer.classList.add('hidden');
+    }
   }
   
   validationState.step3 = urlsValid && hasValidUrl && dialTimeoutValid && keepaliveTimeoutValid;

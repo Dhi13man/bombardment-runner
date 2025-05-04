@@ -17,6 +17,24 @@
 
 .validation-error {
   animation: fadeIn 0.3s ease;
+  margin-top: 0.25rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* Make field containers position relative for better error message positioning */
+.field-container {
+  position: relative;
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Ensure the input row stays on top */
+.field-container .flex.items-center {
+  width: 100%;
 }
 
 @keyframes fadeIn {
@@ -61,7 +79,7 @@ button[disabled].bg-gradient-primary {
 }
 
 button[disabled].bg-gradient-primary:hover::after {
-  content: 'Please fill all details';
+  content: 'Please complete all validations';
   position: absolute;
   bottom: -30px;
   left: 50%;

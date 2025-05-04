@@ -307,17 +307,9 @@
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Target URLs</label>
                 <div id="urls-container" class="space-y-2">
-                  <div class="lb-url flex items-center">
-                    <input type="text" placeholder="https://" title="Target URL" class="flex-1 border border-gray-300 rounded-l-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500 border-red-500 focus:ring-red-500 focus:border-red-500">
-                    <button type="button" aria-label="Remove URL" class="bg-gray-100 border border-gray-300 border-l-0 rounded-r-md px-3 py-2 hover:bg-gray-200 remove-url">
-                      <i class="fa-solid fa-trash-alt text-gray-600"></i>
-                    </button>
-                  </div>
-                  <div id="urls-validation-message" class="mt-2 text-sm text-red-500">
-                    <i class="fas fa-exclamation-circle mr-1"></i>
-                    <span>At least one valid URL is required</span>
-                  </div>
+                  <!-- URL fields will be dynamically added here -->
                 </div>
+                <div id="urls-validation-message" class="mt-2 hidden" aria-live="polite"></div>
                 <button id="add-url" type="button" class="mt-3 flex items-center text-orange-600 hover:text-orange-700 font-medium py-2 px-3 rounded-md hover:bg-orange-50 transition-colors">
                   <i class="fa-solid fa-plus mr-1"></i> Add URL
                 </button>
