@@ -298,8 +298,8 @@ function initForm() {
     const payload = {
       client_context: {
         channel: checkedVal('client_channel'),
-        dial_timeout: Number(getVal('#dial-timeout')),
-        keep_alive_timeout: Number(getVal('#keepalive-timeout'))
+        dial_timeout: 1e9 * Number(getVal('#dial-timeout')),
+        keep_alive_timeout: 1e9 * Number(getVal('#keepalive-timeout'))
       },
       driver_context: {
         batch_size: Number(getVal('#batch-size')),
