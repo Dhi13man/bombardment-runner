@@ -32,7 +32,7 @@ const (
 	TRANSFORMER_CONTEXT_SHORT_KEY   string = "T"
 
 	ClientContextExampleJSON       string = `'{"channel":"REST","dial_keep_alive":10000000000,"dial_timeout":5000000000}'`
-	DriverContextExampleJSON       string = `'{"batch_size":100,"should_store_responses":false}'`
+	DriverContextExampleJSON       string = `'{"batch_size":100,"should_store_responses":false,"responses_storage_path":"./responses"}'`
 	LoadBalancerContextExampleJSON string = `'{"strategy":"ROUND_ROBIN","urls":["https://api.example.com","https://api-backup.example.com"]}'`
 	ParserContextExampleJSON       string = `'{"file_path":"./private/file_path.csv","strategy":"CSV"}'`
 	TransformerContextExampleJSON  string = `'{"strategy":"JSONATA","method_expression":"\"POST\"","endpoint_expression":"\"/api/v1/\" & resource","headers_expression":"{ \"Content-Type\": \"application/json\", \"X-Request-ID\": request_id }","body_expression":"{ \"id\": $number(id), \"timestamp\": $millis() }"}'`
@@ -233,6 +233,7 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 			Driver Context is a JSON string that contains the following keys:
 				- batch_size: The number of records to send in a single batch. Eg. 1000
 				- should_store_responses: A boolean flag to indicate if the responses should be stored. Default is false.
+				- responses_storage_path: Optional path where response files will be stored if should_store_responses is true. Default is "./responses".
 			Eg. %s`,
 			DriverContextExampleJSON,
 		),

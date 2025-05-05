@@ -373,6 +373,19 @@ function validateStep3(showErrors = false) {
   return validationState.step3;
 }
 
+// Validate a file path string
+function validateStoragePath(path) {
+  // Basic validation - not empty and reasonable length
+  if (!path || path.trim() === '') return false;
+  if (path.length > 255) return false; // Most file systems have limits
+  
+  // Check for invalid characters in the path
+  const invalidChars = /[<>:"|?*\x00-\x1F]/;
+  if (invalidChars.test(path)) return false;
+  
+  return true;
+}
+
 // Validate Step 4 - Review Configuration
 function validateStep4(showErrors = false) {
   const batchSizeInput = document.getElementById('batch-size');
@@ -383,10 +396,23 @@ function validateStep4(showErrors = false) {
     `Batch size must be between ${VALIDATION.MIN_BATCH_SIZE} and ${VALIDATION.MAX_BATCH_SIZE}`
   );
   
+  // Validate storage path if responses should be stored
+  let storagePathValid = true;
+  const storeResponses = document.getElementById('store-responses');
+  
+  if (storeResponses && storeResponses.checked) {
+    const storagePathInput = document.getElementById('responses-path');
+    storagePathValid = validateTextField(
+      storagePathInput,
+      validateStoragePath,
+      'Please enter a valid storage path'
+    );
+  }
+  
   // Check other steps are also valid
   const allPreviousStepsValid = validationState.step1 && validationState.step2 && validationState.step3;
   
-  validationState.step4 = batchSizeValid && allPreviousStepsValid;
+  validationState.step4 = batchSizeValid && storagePathValid && allPreviousStepsValid;
   updateNextButtonState(4);
   return validationState.step4;
 }

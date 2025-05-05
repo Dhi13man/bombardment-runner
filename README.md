@@ -69,6 +69,7 @@ bombardment cli \
    - **Driver context:**
      - `batch_size` (int)
      - `should_store_responses` (bool)
+     - `responses_storage_path` (string)
    - **State machine events:** `Start`, `Pause`, `Resume`, `Stop`
 
 **Example CLI command:**
@@ -77,7 +78,7 @@ bombardment cli \
 # Run Bombardment in CLI mode
 bombardment cli \
   --client_context '{"channel":"REST","dial_keep_alive":10000000000,"dial_timeout":5000000000}' \
-  --data_context '{"batch_size":100,"should_store_responses":false}' \
+  --data_context '{"batch_size":100,"should_store_responses":true,"responses_storage_path":"./responses"}' \
   --load_balancer '{"strategy":"ROUND_ROBIN","urls":["https://api.example.com","https://api-backup.example.com"]}' \
   --parser_context '{"file_path":"./data.csv","strategy":"CSV"}' \
   --transformation_context '{"strategy":"JSONATA","method_expression":"\"POST\"","endpoint_expression":"\"/api/v1/\" & resource","headers_expression":"{ \"Content-Type\": \"application/json\", \"X-Request-ID\": request_id }","body_expression":"{ \"id\": $number(id), \"timestamp\": $millis() }"}'
