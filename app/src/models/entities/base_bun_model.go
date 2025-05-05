@@ -1,4 +1,4 @@
-package models_entities
+package modelsEntities
 
 import (
 	"context"
