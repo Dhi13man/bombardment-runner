@@ -1,6 +1,8 @@
 package controllers
 
 import (
+ 	"os"
+
 	"github.com/gin-gonic/gin"
 	dto "github.dhi13man.com/bombardment-runner/src/models/dto"
 	serviceDriver "github.dhi13man.com/bombardment-runner/src/services/driver"
@@ -47,6 +49,15 @@ func (bc *bombardmentControllerImpl) Bombard(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Create data directory if it doesn't exist and if we have a file upload
+	if req.Parser.FileContentB64 != "" {
+		if err := os.MkdirAll("./data", 0755); err != nil {
+			c.JSON(500, gin.H{"error": "Failed to create data directory: " + err.Error()})
+			return
+		}
+	}
+
 	if err := bc.driver.CreateBombardment(req); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return

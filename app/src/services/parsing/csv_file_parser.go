@@ -19,10 +19,18 @@ type csvParser[T any] struct {
 }
 
 func NewCsvParser[T any](parserContext models_dto_parsing.ParserContext) CsvFileParser[T] {
-	file, err := os.Open(parserContext.FilePath)
+	file, filePath, err := OpenFileFromPathOrContent(parserContext.FilePath, parserContext.FileContentB64)
 	if err != nil {
 		zap.L().Fatal("Error opening file", zap.Error(err))
 	}
+
+	// Log successful file opening
+	if parserContext.FileContentB64 != "" {
+		zap.L().Info("Opened file from uploaded content", zap.String("path", filePath))
+	} else {
+		zap.L().Info("Opened file from path", zap.String("path", filePath))
+	}
+
 	return &csvParser[T]{
 		file: file,
 	}

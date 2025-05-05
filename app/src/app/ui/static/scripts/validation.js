@@ -92,6 +92,15 @@ function validateUrl(url) {
 // Validate file path
 function validateFilePath(path) {
   if (!path || path.length === 0) return false;
+  
+  // Check if we're using the file picker (file has been selected)
+  const fileInput = document.getElementById('file-input');
+  if (fileInput && fileInput.files && fileInput.files.length > 0) {
+    // A file has been selected via the file picker
+    return true;
+  }
+  
+  // Fall back to path validation for compatibility with manual entry
   return VALIDATION.FILE_PATH_REGEX.test(path);
 }
 
@@ -224,11 +233,47 @@ function updateNextButtonState(step) {
 // Validate Step 1 - Source Configuration
 function validateStep1(showErrors = false) {
   const filePathInput = document.getElementById('file-path');
-  const filePathValid = validateTextField(
-    filePathInput, 
-    validateFilePath,
-    'Please enter a valid file path (e.g., ./data.csv)'
-  );
+  const fileInput = document.getElementById('file-input');
+  const filePathDisplay = document.getElementById('file-path-display');
+  let filePathValid = false;
+  
+  // Check if file was selected via file picker
+  if (fileInput && fileInput.files && fileInput.files.length > 0) {
+    // A file was selected, clear any error messages
+    const fileContainer = filePathInput.closest('div');
+    if (fileContainer) {
+      const existingError = fileContainer.querySelector('.validation-error');
+      if (existingError) {
+        existingError.remove();
+      }
+    }
+    
+    // Add success styles to the file path display
+    filePathDisplay.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+    filePathDisplay.classList.add('border-green-500', 'focus:border-green-500', 'focus:ring-green-500');
+    
+    filePathValid = true;
+  } else if (filePathDisplay.value.trim() !== '') {
+    // If the display field shows a file but no file is selected,
+    // something went wrong, reset the display
+    filePathDisplay.value = '';
+    filePathInput.value = './data.csv';
+    document.getElementById('file-content-b64').value = '';
+    
+    // No file selected with picker, validate the manual input
+    filePathValid = validateTextField(
+      filePathInput, 
+      validateFilePath,
+      'Please select a file or enter a valid file path (e.g., ./data.csv)'
+    );
+  } else {
+    // No file selected with picker, validate the manual input
+    filePathValid = validateTextField(
+      filePathInput, 
+      validateFilePath,
+      'Please select a file or enter a valid file path (e.g., ./data.csv)'
+    );
+  }
   
   // Add additional source validations here if needed
   

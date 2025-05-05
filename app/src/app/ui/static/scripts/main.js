@@ -25,7 +25,15 @@ const SELECTORS = {
   respEl: '#response-message',
   fadeIn: '.fade-in',
   transStrategy: '#trans-strategy',
-  transformInfo: '#transform-info-text'
+  transformInfo: '#transform-info-text',
+  fileInput: '#file-input',
+  filePathDisplay: '#file-path-display',
+  filePathHidden: '#file-path',
+  fileDetails: '#file-details',
+  fileSize: '#file-size',
+  fileModified: '#file-modified',
+  filePathNote: '#file-path-note',
+  fileContentB64: '#file-content-b64'
 };
 
 const TRANSFORM_INFO = {
@@ -111,6 +119,8 @@ function init() {
   initTransformInfoListener();
   initValidation();
   initConfigurationIssues();
+  initFileInput();
+  initParserStrategyListeners();
 }
 
 // --- Fade‑in ------------------------------------------------------------
@@ -294,7 +304,8 @@ function initForm() {
       },
       parser_context: {
         strategy: checkedVal('parser_strategy'),
-        file_path: getVal('#file-path')
+        file_path: getVal('#file-path'),
+        file_content_b64: getVal('#file-content-b64')
       },
       load_balancer_context: {
         strategy: checkedVal('lb_strategy'),
@@ -331,7 +342,15 @@ function initForm() {
 function populateReview() {
   const summary = $('#review-summary');
   const parser = checkedVal('parser_strategy');
-  const file   = getVal('#file-path');
+  
+  // Get file info - either from file picker or text input
+  let file = getVal('#file-path');
+  const fileInput = document.getElementById('file-input');
+  if (fileInput && fileInput.files && fileInput.files.length > 0) {
+    // Use the actual filename if a file was selected
+    file = fileInput.files[0].name;
+  }
+  
   const trans  = getVal('#trans-strategy');
   const method = getVal('#method-expr');
   const endpoint = getVal('#endpoint-expr');
@@ -829,4 +848,123 @@ function showResponse(type, message, container = $(SELECTORS.respEl), resetStep 
     const prev = $(SELECTORS.prevBtn);
     prev?.dispatchEvent(new MouseEvent('click'));
   }
+}
+
+// --- File Picker Functionality ------------------------------------------
+function initFileInput() {
+  const fileInput = $(SELECTORS.fileInput);
+  const filePathDisplay = $(SELECTORS.filePathDisplay);
+  const filePathHidden = $(SELECTORS.filePathHidden);
+  const fileDetails = $(SELECTORS.fileDetails);
+  const fileSizeEl = $(SELECTORS.fileSize);
+  const fileModifiedEl = $(SELECTORS.fileModified);
+  const filePathNote = $(SELECTORS.filePathNote);
+  const fileContentB64 = $(SELECTORS.fileContentB64);
+  
+  if (!fileInput) return;
+  
+  // Handle clicking on the file path display to trigger file input
+  filePathDisplay.addEventListener('click', () => {
+    fileInput.click();
+  });
+  
+  // Handle keyboard interactions for accessibility
+  filePathDisplay.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fileInput.click();
+    }
+  });
+  
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    
+    if (file) {
+      // Display file name
+      filePathDisplay.value = file.name;
+      
+      // Store the file path in a hidden field
+      const filePath = `./data/${file.name}`;
+      filePathHidden.value = filePath;
+      
+      // Show file details
+      const fileSizeFormatted = formatFileSize(file.size);
+      const fileModified = new Date(file.lastModified).toLocaleDateString();
+      
+      fileSizeEl.textContent = fileSizeFormatted;
+      fileModifiedEl.textContent = `Modified: ${fileModified}`;
+      filePathNote.textContent = `File will be uploaded as: ${filePath}`;
+      fileDetails.classList.remove('hidden');
+      
+      // Read file content as base64 to send with the request
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64Content = e.target.result.split(',')[1]; // Remove the data:*/* prefix
+        fileContentB64.value = base64Content;
+        console.log("File content encoded as base64", { size: base64Content.length });
+      };
+      reader.readAsDataURL(file);
+      
+      // Trigger validation
+      validateStep1();
+    } else {
+      // Clear the display if no file selected
+      filePathDisplay.value = '';
+      filePathHidden.value = './data.csv';
+      fileContentB64.value = '';
+      fileDetails.classList.add('hidden');
+    }
+  });
+}
+
+// Update file picker accept attribute based on parser strategy
+function updateFileAccept() {
+  const fileInput = $(SELECTORS.fileInput);
+  const parserStrategy = checkedVal('parser_strategy');
+  
+  if (!fileInput) return;
+  
+  // Set accepted file types based on parser strategy
+  switch (parserStrategy) {
+    case 'CSV':
+      fileInput.setAttribute('accept', '.csv');
+      break;
+    case 'JSON':
+      fileInput.setAttribute('accept', '.json');
+      break;
+    case 'XML':
+      fileInput.setAttribute('accept', '.xml');
+      break;
+    case 'YAML':
+      fileInput.setAttribute('accept', '.yaml,.yml');
+      break;
+    default:
+      fileInput.setAttribute('accept', '.csv,.json,.xml,.yaml,.yml');
+  }
+}
+
+// Helper function to format file size
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Initialize parser strategy change listeners for file picker
+function initParserStrategyListeners() {
+  const parserRadios = document.querySelectorAll('input[name="parser_strategy"]');
+  if (!parserRadios.length) return;
+  
+  parserRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      updateFileAccept();
+    });
+  });
+  
+  // Set initial file accept attribute
+  updateFileAccept();
 }

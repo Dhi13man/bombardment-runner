@@ -98,3 +98,17 @@ button[disabled].bg-gradient-primary:hover::after {
   white-space: nowrap;
   z-index: 100;
 }
+
+/* File path note styles */
+#file-path-note {
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+#file-path-note::before {
+  content: '\f05a'; /* Font awesome info icon */
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  margin-right: 0.375rem;
+}
