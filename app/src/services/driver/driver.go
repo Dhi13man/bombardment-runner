@@ -3,6 +3,7 @@ package driver
 import (
 	"encoding/csv"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -39,12 +40,7 @@ func (b *bombardmentDriver) CreateBombardment(
 	if err != nil {
 		return err
 	}
-	defer func(parser parsing.BaseFileParser[map[string]string]) {
-		err := parser.Close()
-		if err != nil {
-			zap.L().Error("Failed to close parser", zap.Error(err))
-		}
-	}(parser)
+	defer closeAndLog(parser, "parser")
 
 	client, err := clients.CreateChannelClient(bombardmentRequest.Client)
 	if err != nil {
@@ -96,13 +92,7 @@ func (b *bombardmentDriver) CreateBombardment(
 			zap.L().Error("Failed to create responses file", zap.Error(err))
 			return err
 		}
-		defer func(responseFile *os.File) {
-			err := responseFile.Close()
-			if err != nil {
-				zap.L().Error("Failed to close responses file", zap.Error(err))
-				return
-			}
-		}(responseFile)
+		defer closeAndLog(responseFile, "response file")
 
 		// Create CSV writer
 		responseWriter = csv.NewWriter(responseFile)
@@ -200,4 +190,11 @@ func makeRequest(
 
 	restChannelResponse := channelResponse.(*modelsDtoResponses.RestChannelResponse)
 	return &restChannelResponse.Status, nil
+}
+
+// closeAndLog closes the given resource and logs an error if it occurs.
+func closeAndLog(c io.Closer, resource string) {
+	if err := c.Close(); err != nil {
+		zap.L().Error("Failed to close "+resource, zap.Error(err))
+	}
 }

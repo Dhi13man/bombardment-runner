@@ -3,7 +3,6 @@ package appCli
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
@@ -12,6 +11,7 @@ import (
 	"github.dhi13man.com/bombardment-runner/src/models/dto/load_balancing"
 	"github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
 	"github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
+	"go.uber.org/zap"
 )
 
 const (
@@ -182,7 +182,7 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 			var clientContext modelsDtoClients.ClientContext
 			err := json.Unmarshal([]byte(clientContextCommand.Value.String()), &clientContext)
 			if err != nil {
-				log.Default().Fatalf("error parsing client context: %v", err)
+				zap.L().Error("error parsing client context", zap.Error(err))
 				return
 			}
 
@@ -190,7 +190,7 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 			var driverContext modelsDtoDriver.DriverContext
 			err = json.Unmarshal([]byte(driverContextCommand.Value.String()), &driverContext)
 			if err != nil {
-				log.Default().Fatalf("error parsing driver context: %v", err)
+				zap.L().Error("error parsing driver context", zap.Error(err))
 				return
 			}
 
@@ -198,7 +198,7 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 			var loadBalancerContext modelsDtoLoadBalancing.LoadBalancerContext
 			err = json.Unmarshal([]byte(loadBalancerContextCommand.Value.String()), &loadBalancerContext)
 			if err != nil {
-				log.Default().Fatalf("error parsing load balancer context: %v", err)
+				zap.L().Error("error parsing load balancer context", zap.Error(err))
 				return
 			}
 
@@ -206,7 +206,7 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 			var parserContext modelsDtoParsing.ParserContext
 			err = json.Unmarshal([]byte(parserContextCommand.Value.String()), &parserContext)
 			if err != nil {
-				log.Default().Fatalf("error parsing parser context: %v", err)
+				zap.L().Error("error parsing parser context", zap.Error(err))
 				return
 			}
 
@@ -214,7 +214,7 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 			var transformerContext modelsDtoTransforming.TransformerContext
 			err = json.Unmarshal([]byte(transformerContextCommand.Value.String()), &transformerContext)
 			if err != nil {
-				log.Default().Fatalf("error parsing transformer context: %v", err)
+				zap.L().Error("error parsing transformer context", zap.Error(err))
 				return
 			}
 
@@ -227,7 +227,7 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 				transformerContext,
 			)
 			if err != nil {
-				log.Default().Fatalf("error running cli bombardment: %v", err)
+				zap.L().Error("error running cli bombardment", zap.Error(err))
 				return
 			}
 		},

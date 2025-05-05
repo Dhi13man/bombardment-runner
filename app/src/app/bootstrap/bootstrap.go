@@ -1,7 +1,6 @@
 package appBootstrap
 
 import (
-	"log"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +15,7 @@ import (
 	"github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
 	"github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
 	"github.dhi13man.com/bombardment-runner/src/services/driver"
+	"go.uber.org/zap"
 )
 
 type Bootstrap interface {
@@ -84,6 +84,8 @@ func (s *bootstrapImpl) RunServer(bindAddr string, port int) {
 	// Start the server
 	portStr := strconv.Itoa(port)
 	if err := r.Run(bindAddr + ":" + portStr); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+		panic("Failed to start server: " + err.Error())
+	} else {
+		zap.L().Info("Server started", zap.String("address", bindAddr), zap.Int("port", port))
 	}
 }
