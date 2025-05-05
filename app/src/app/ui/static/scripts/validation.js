@@ -257,7 +257,7 @@ function validateStep1(showErrors = false) {
     // If the display field shows a file but no file is selected,
     // something went wrong, reset the display
     filePathDisplay.value = '';
-    filePathInput.value = './data.csv';
+    filePathInput.value = '';
     document.getElementById('file-content-b64').value = '';
     
     // No file selected with picker, validate the manual input

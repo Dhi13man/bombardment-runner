@@ -553,47 +553,6 @@ function populateReview() {
         ` : ''}
       </div>
     </div>
-    
-    <!-- Driver Configuration Card -->
-    <div class="config-card">
-      <div class="config-card-header">
-        <div class="icon-container driver-icon-bg">
-          <i class="fas fa-cog"></i>
-        </div>
-        <h5>Driver Configuration</h5>
-      </div>
-      <div class="config-card-body">
-        <div class="config-item">
-          <div class="config-item-label">
-            <i class="fas fa-layer-group"></i>
-            Batch Size
-          </div>
-          <div class="config-item-value">
-            ${batchSize}
-          </div>
-        </div>
-        <div class="config-item">
-          <div class="config-item-label">
-            <i class="fas fa-save"></i>
-            Store Responses
-          </div>
-          <div class="config-item-value">
-            ${storeResponses ? '<span class="tag tag-green">Enabled</span>' : '<span class="tag tag-red">Disabled</span>'}
-          </div>
-        </div>
-        ${storeResponses ? `
-        <div class="config-item">
-          <div class="config-item-label">
-            <i class="fas fa-folder"></i>
-            Storage Path
-          </div>
-          <div class="config-item-value">
-            ${getVal('#responses-path')}
-          </div>
-        </div>
-        ` : ''}
-      </div>
-    </div>
   `;
 }
 
@@ -955,7 +914,7 @@ function initFileInput() {
     } else {
       // Clear the display if no file selected
       filePathDisplay.value = '';
-      filePathHidden.value = './data.csv';
+      filePathHidden.value = '';
       fileContentB64.value = '';
       fileDetails.classList.add('hidden');
     }
