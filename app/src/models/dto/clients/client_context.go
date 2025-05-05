@@ -1,13 +1,13 @@
-package models_dto_clients
+package modelsDtoClients
 
 import (
 	"time"
 
-	models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
+	"github.dhi13man.com/bombardment-runner/src/models/enums"
 )
 
 type ClientContext struct {
-	Channel models_enums.ClientChannel `json:"channel"`
+	Channel modelsEnums.ClientChannel `json:"channel"`
 	// Maximum time a dial will wait for a connect to complete.
 	DialTimeout time.Duration `json:"dial_timeout,omitempty"`
 	// Maximum time a connection will be kept alive.

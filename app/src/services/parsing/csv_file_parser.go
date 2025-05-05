@@ -46,6 +46,8 @@ func (c *csvParser[T]) CreateRawDataStream() (rawChannel chan map[string]string,
 
 	rawChannel = make(chan map[string]string)
 	go func() {
+		// Close the channel when done reading
+		defer close(rawChannel)
 		for {
 			rec, err := r.Read()
 			if err != nil {
@@ -76,7 +78,7 @@ func (c *csvParser[T]) CreateParsedDataStream(
 
 	ch = make(chan T)
 	go func() {
-		defer close(rawChannel)
+		defer close(ch)
 		for data := range rawChannel {
 			ch <- mapper(data)
 		}

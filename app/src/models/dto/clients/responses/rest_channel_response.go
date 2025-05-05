@@ -1,14 +1,14 @@
-package models_dto_responses
+package modelsDtoResponses
 
-import models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
+import "github.dhi13man.com/bombardment-runner/src/models/enums"
 
 type RestChannelResponse struct {
 	Status int `json:"status"`
 	Body   any `json:"body"`
 }
 
-func (res *RestChannelResponse) GetChannel() models_enums.ClientChannel {
-	return models_enums.REST
+func (res *RestChannelResponse) GetChannel() modelsEnums.ClientChannel {
+	return modelsEnums.REST
 }
 
 func NewRestChannelResponse(

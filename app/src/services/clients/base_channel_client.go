@@ -13,7 +13,7 @@ import (
 type BaseChannelClient interface {
 	services.BaseStrategy[models_enums.ClientChannel]
 
-	// Executes the request and returns the response.
+	// Execute executes the request and returns the response.
 	Execute(
 		request models_dto_requests.BaseChannelRequest,
 		baseUrl string,

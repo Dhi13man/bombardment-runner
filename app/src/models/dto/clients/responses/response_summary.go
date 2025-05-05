@@ -1,4 +1,4 @@
-package models_dto_responses
+package modelsDtoResponses
 
 import (
 	"time"

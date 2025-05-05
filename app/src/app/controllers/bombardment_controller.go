@@ -1,18 +1,18 @@
 package controllers
 
 import (
- 	"os"
+	"os"
 
 	"github.com/gin-gonic/gin"
-	dto "github.dhi13man.com/bombardment-runner/src/models/dto"
+	"github.dhi13man.com/bombardment-runner/src/models/dto"
 	serviceDriver "github.dhi13man.com/bombardment-runner/src/services/driver"
 )
 
-// Handles Bombardment as an API endpoints
+// BombardmentController Handles Bombardment as an API endpoints
 type BombardmentController interface {
 	BaseController
 
-	// Trigger bombardment process
+	// Bombard Trigger bombardment process
 	Bombard(c *gin.Context)
 }
 
@@ -31,7 +31,7 @@ func (bc *bombardmentControllerImpl) RegisterRoutes(r *gin.Engine) {
 	r.POST("/v1/bombardment", bc.Bombard)
 }
 
-// Trigger bombardment process
+// Bombard triggers bombardment process
 //
 //	@Summary		Trigger bombardment process
 //	@Description	Accept contexts payload and trigger processing

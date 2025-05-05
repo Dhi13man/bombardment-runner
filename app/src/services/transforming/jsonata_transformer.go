@@ -3,10 +3,10 @@ package transforming
 import (
 	"errors"
 
-	jsonata "github.com/blues/jsonata-go"
-	models_dto_requests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
-	models_dto_transforming "github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
-	models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
+	"github.com/blues/jsonata-go"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
+	"github.dhi13man.com/bombardment-runner/src/models/enums"
 	"go.uber.org/zap"
 )
 
@@ -15,20 +15,20 @@ type JsonataTransformer interface {
 }
 
 type jsonataTransformer struct {
-	clientChannel      models_enums.ClientChannel
+	clientChannel      modelsEnums.ClientChannel
 	bodyExpression     *jsonata.Expr
 	endpointExpression *jsonata.Expr
 	headersExpression  *jsonata.Expr
 	methodExpression   *jsonata.Expr
 }
 
-func (jt *jsonataTransformer) GetStrategy() models_enums.TransformerStrategy {
-	return models_enums.JSONATA
+func (jt *jsonataTransformer) GetStrategy() modelsEnums.TransformerStrategy {
+	return modelsEnums.JSONATA
 }
 
 func NewJsonataTransformer(
-	clientChannel models_enums.ClientChannel,
-	transformerContext models_dto_transforming.TransformerContext,
+	clientChannel modelsEnums.ClientChannel,
+	transformerContext modelsDtoTransforming.TransformerContext,
 ) JsonataTransformer {
 	transformer := jsonataTransformer{clientChannel: clientChannel}
 	if compiled := compileGracefully(transformerContext.BodyExpression); compiled != nil {
@@ -48,7 +48,7 @@ func NewJsonataTransformer(
 }
 
 func (jt *jsonataTransformer) TransformRequest(data map[string]string) (
-	models_dto_requests.BaseChannelRequest,
+	modelsDtoRequests.BaseChannelRequest,
 	error,
 ) {
 	var body interface{}
@@ -85,15 +85,15 @@ func (jt *jsonataTransformer) TransformRequest(data map[string]string) (
 }
 
 func (jt *jsonataTransformer) createChannelRequest(
-	clientChannel models_enums.ClientChannel,
+	clientChannel modelsEnums.ClientChannel,
 	endpoint string,
 	body interface{},
 	headers map[string]string,
 	method string,
-) (models_dto_requests.BaseChannelRequest, error) {
+) (modelsDtoRequests.BaseChannelRequest, error) {
 	switch clientChannel {
-	case models_enums.REST:
-		return models_dto_requests.NewRestChannelRequest(body, endpoint, headers, method), nil
+	case modelsEnums.REST:
+		return modelsDtoRequests.NewRestChannelRequest(body, endpoint, headers, method), nil
 	default:
 		return nil, errors.New("invalid client channel")
 	}

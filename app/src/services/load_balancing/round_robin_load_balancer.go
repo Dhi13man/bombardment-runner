@@ -3,10 +3,10 @@ package load_balancing
 import (
 	"sync"
 
-	models_dto_requests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
-	models_dto_responses "github.dhi13man.com/bombardment-runner/src/models/dto/clients/responses"
-	models_dto_load_balancing "github.dhi13man.com/bombardment-runner/src/models/dto/load_balancing"
-	models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/clients/responses"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/load_balancing"
+	"github.dhi13man.com/bombardment-runner/src/models/enums"
 	"github.dhi13man.com/bombardment-runner/src/services/clients"
 )
 
@@ -21,12 +21,12 @@ type roundRobinLoadBalancer struct {
 	lbMutexLock sync.Mutex
 }
 
-func (lb *roundRobinLoadBalancer) GetStrategy() models_enums.LoadBalancerStrategy {
-	return models_enums.ROUND_ROBIN
+func (lb *roundRobinLoadBalancer) GetStrategy() modelsEnums.LoadBalancerStrategy {
+	return modelsEnums.ROUND_ROBIN
 }
 
 func NewRoundRobinLoadBalancer(
-	lbContext models_dto_load_balancing.LoadBalancerContext,
+	lbContext modelsDtoLoadBalancing.LoadBalancerContext,
 	client clients.BaseChannelClient,
 ) RoundRobinLoadBalancer {
 	return &roundRobinLoadBalancer{
@@ -38,8 +38,8 @@ func NewRoundRobinLoadBalancer(
 }
 
 func (lb *roundRobinLoadBalancer) Execute(
-	request models_dto_requests.BaseChannelRequest,
-) (models_dto_responses.BaseChannelResponse, error) {
+	request modelsDtoRequests.BaseChannelRequest,
+) (modelsDtoResponses.BaseChannelResponse, error) {
 	url := lb.getNextUrl()
 	return lb.client.Execute(request, url)
 }

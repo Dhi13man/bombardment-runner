@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.dhi13man.com/bombardment-runner/src/models/dto"
-	models_dto_requests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
-	models_dto_responses "github.dhi13man.com/bombardment-runner/src/models/dto/clients/responses"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/clients/responses"
 	"github.dhi13man.com/bombardment-runner/src/services/batching"
 	"github.dhi13man.com/bombardment-runner/src/services/clients"
 	"github.dhi13man.com/bombardment-runner/src/services/load_balancing"
@@ -20,7 +20,7 @@ import (
 )
 
 type BombardmentDriver interface {
-	// Create a Bombardment
+	// CreateBombardment creates a Bombardment
 	CreateBombardment(bombardmentRequest dto.BombardmentRequest) error
 }
 
@@ -39,7 +39,12 @@ func (b *bombardmentDriver) CreateBombardment(
 	if err != nil {
 		return err
 	}
-	defer parser.Close()
+	defer func(parser parsing.BaseFileParser[map[string]string]) {
+		err := parser.Close()
+		if err != nil {
+			zap.L().Error("Failed to close parser", zap.Error(err))
+		}
+	}(parser)
 
 	client, err := clients.CreateChannelClient(bombardmentRequest.Client)
 	if err != nil {
@@ -91,7 +96,13 @@ func (b *bombardmentDriver) CreateBombardment(
 			zap.L().Error("Failed to create responses file", zap.Error(err))
 			return err
 		}
-		defer responseFile.Close()
+		defer func(responseFile *os.File) {
+			err := responseFile.Close()
+			if err != nil {
+				zap.L().Error("Failed to close responses file", zap.Error(err))
+				return
+			}
+		}(responseFile)
 
 		// Create CSV writer
 		responseWriter = csv.NewWriter(responseFile)
@@ -107,9 +118,9 @@ func (b *bombardmentDriver) CreateBombardment(
 		zap.L().Info("Storing responses at", zap.String("path", responseFilePath))
 	}
 
-	var batchProcessor batching.BatchProcessor[map[string]string, *models_dto_responses.ResponseSummary] = batching.NewBatchProcessor(
+	var batchProcessor = batching.NewBatchProcessor(
 		bombardmentRequest.Driver.BatchSize,
-		func(rawData map[string]string) *models_dto_responses.ResponseSummary {
+		func(rawData map[string]string) *modelsDtoResponses.ResponseSummary {
 			startTime := time.Now()
 			transformed, err := transformer.TransformRequest(rawData)
 			if err != nil {
@@ -127,7 +138,7 @@ func (b *bombardmentDriver) CreateBombardment(
 				requestID = fmt.Sprintf("req_%d", time.Now().UnixNano()) // Generate one if not found
 			}
 
-			summary := &models_dto_responses.ResponseSummary{
+			summary := &modelsDtoResponses.ResponseSummary{
 				Status:       status,
 				RequestID:    requestID,
 				ResponseTime: elapsedMs,
@@ -137,12 +148,16 @@ func (b *bombardmentDriver) CreateBombardment(
 			// Store response if enabled
 			if bombardmentRequest.Driver.ShouldStoreResponses && responseWriter != nil {
 				responseMutex.Lock()
-				responseWriter.Write([]string{
+				err := responseWriter.Write([]string{
 					requestID,
 					fmt.Sprintf("%d", *status),
 					summary.Timestamp.Format(time.RFC3339),
 					fmt.Sprintf("%d", summary.ResponseTime),
 				})
+				if err != nil {
+					zap.L().Error("Failed to write response to CSV", zap.Error(err))
+					return nil
+				}
 				responseWriter.Flush()
 				responseMutex.Unlock()
 			}
@@ -156,11 +171,9 @@ func (b *bombardmentDriver) CreateBombardment(
 	if err != nil {
 		zap.L().Error("failed to read CSV file: ", zap.Error(err))
 	}
-	defer close(insight_channel)
 
 	// Process the InsightData in batches
 	responseChannel := batchProcessor.CreateProcessedBatchChannel(insight_channel)
-	defer close(responseChannel)
 
 	// Process the responses
 	for response := range responseChannel {
@@ -176,7 +189,7 @@ func (b *bombardmentDriver) CreateBombardment(
 }
 
 func makeRequest(
-	data models_dto_requests.BaseChannelRequest,
+	data modelsDtoRequests.BaseChannelRequest,
 	loadBalancer load_balancing.BaseLoadBalancer,
 ) (*int, error) {
 	channelResponse, err := loadBalancer.Execute(data)
@@ -185,6 +198,6 @@ func makeRequest(
 		return nil, err
 	}
 
-	restChannelResponse := channelResponse.(*models_dto_responses.RestChannelResponse)
+	restChannelResponse := channelResponse.(*modelsDtoResponses.RestChannelResponse)
 	return &restChannelResponse.Status, nil
 }

@@ -15,9 +15,9 @@ import (
 // and return the file handle and the path to the temporary file.
 // If fileContentB64 is empty, it will try to open the file at filePath.
 func OpenFileFromPathOrContent(filePath, fileContentB64 string) (*os.File, string, error) {
-	// If base64 content is provided, decode and save to temp file
+	// If base64 content is provided, decode and save to a temp file
 	if fileContentB64 != "" {
-		// Create uploads directory if it doesn't exist
+		// Create an uploads directory if it doesn't exist
 		uploadsDir := "./data"
 		if err := os.MkdirAll(uploadsDir, 0755); err != nil {
 			zap.L().Error("Failed to create data directory", zap.Error(err))
@@ -47,16 +47,24 @@ func OpenFileFromPathOrContent(filePath, fileContentB64 string) (*os.File, strin
 			return nil, "", err
 		}
 
-		// Write decoded content to file
+		// Write decoded content to a file
 		if _, err := tempFile.Write(data); err != nil {
-			tempFile.Close()
+			err := tempFile.Close()
+			if err != nil {
+				zap.L().Error("Failed to close temporary file", zap.Error(err))
+				return nil, "", err
+			}
 			zap.L().Error("Failed to write content to file", zap.Error(err))
 			return nil, "", err
 		}
 
-		// Reset file pointer to beginning
+		// Reset a file pointer to the beginning
 		if _, err := tempFile.Seek(0, io.SeekStart); err != nil {
-			tempFile.Close()
+			err := tempFile.Close()
+			if err != nil {
+				zap.L().Error("Failed to close temporary file", zap.Error(err))
+				return nil, "", err
+			}
 			zap.L().Error("Failed to reset file pointer", zap.Error(err))
 			return nil, "", err
 		}
@@ -64,7 +72,7 @@ func OpenFileFromPathOrContent(filePath, fileContentB64 string) (*os.File, strin
 		return tempFile, tempFilePath, nil
 	}
 
-	// If no content provided, just open the file at path
+	// If no content provided, just open the file at a path
 	file, err := os.Open(filePath)
 	if err != nil {
 		zap.L().Error("Error opening file", zap.Error(err))

@@ -5,7 +5,7 @@ import (
 )
 
 type BatchProcessor[T any, R any] interface {
-	// Processes the batch of requests and returns the responses.
+	// CreateProcessedBatchChannel processes the batch of requests and returns the responses.
 	CreateProcessedBatchChannel(requests chan T) chan R
 }
 
@@ -14,7 +14,7 @@ type batchProcessor[T any, R any] struct {
 	performer func(T) R
 }
 
-// Creates a new batch processor.
+// NewBatchProcessor creates a new batch processor.
 func NewBatchProcessor[T any, R any](
 	batchSize int,
 	performer func(T) R,
@@ -31,6 +31,8 @@ func (bp *batchProcessor[T, R]) CreateProcessedBatchChannel(requests chan T) cha
 
 	// Create batches of requests and process them concurrently.
 	go func() {
+		// Close the response channel when all batches are processed
+		defer close(responseChannel)
 		for {
 			var batch []T
 			for i := 0; i < bp.batchSize; i++ {

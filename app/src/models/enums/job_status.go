@@ -1,4 +1,4 @@
-package models_enums
+package modelsEnums
 
 type JobStatus string
 

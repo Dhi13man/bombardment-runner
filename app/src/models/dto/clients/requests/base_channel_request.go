@@ -1,9 +1,9 @@
-package models_dto_requests
+package modelsDtoRequests
 
-import models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
+import "github.dhi13man.com/bombardment-runner/src/models/enums"
 
 type BaseChannelRequest interface {
 
-	// Returns the channel of the request.
-	GetChannel() models_enums.ClientChannel
+	// GetChannel returns the channel of the request.
+	GetChannel() modelsEnums.ClientChannel
 }

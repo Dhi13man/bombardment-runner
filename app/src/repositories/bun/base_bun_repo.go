@@ -12,20 +12,20 @@ import (
 	"go.uber.org/zap"
 )
 
-// Interface for the base bun repository
+// BaseBunRepo Interface for the base bun repository
 type BaseBunRepo interface {
 	repositories.BaseRepo
 
-	// Returns a new bun.InsertQuery for the table of the given repository
+	// GetTableInsert returns a new bun.InsertQuery for the table of the given repository
 	GetTableInsert() *bun.InsertQuery
 
-	// Returns a new bun.SelectQuery for the table of the given repository
+	// GetTableSelect returns a new bun.SelectQuery for the table of the given repository
 	GetTableSelect() *bun.SelectQuery
 
-	// Returns a new bun.UpdateQuery for the table of the given repository
+	// GetTableUpdate returns a new bun.UpdateQuery for the table of the given repository
 	GetTableUpdate() *bun.UpdateQuery
 
-	// Returns a new bun.DeleteQuery for the table of the given repository
+	// GetTableDelete returns a new bun.DeleteQuery for the table of the given repository
 	GetTableDelete() *bun.DeleteQuery
 }
 
@@ -34,7 +34,7 @@ type baseBunRepoImpl struct {
 	db *bun.DB
 }
 
-// Creates a new PostgreSql BaseBunRepo implementation
+// NewBaseBunPostgreSqlRepoImpl creates a new PostgreSql BaseBunRepo implementation
 func NewBaseBunPostgreSqlRepoImpl(dsn *string) BaseBunRepo {
 	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(*dsn)))
 	bunDb := bun.NewDB(sqldb, pgdialect.New())

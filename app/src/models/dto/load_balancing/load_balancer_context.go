@@ -1,4 +1,4 @@
-package models_dto_load_balancing
+package modelsDtoLoadBalancing
 
 import models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
 

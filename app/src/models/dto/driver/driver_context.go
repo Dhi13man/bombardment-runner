@@ -1,4 +1,4 @@
-package models_dto_driver
+package modelsDtoDriver
 
 type DriverContext struct {
 	BatchSize            int    `json:"batch_size"`

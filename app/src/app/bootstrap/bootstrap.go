@@ -1,4 +1,4 @@
-package core_bootstrap
+package appBootstrap
 
 import (
 	"log"
@@ -8,47 +8,47 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	_ "github.dhi13man.com/bombardment-runner/docs"
-	controllers "github.dhi13man.com/bombardment-runner/src/app/controllers"
+	"github.dhi13man.com/bombardment-runner/src/app/controllers"
 	"github.dhi13man.com/bombardment-runner/src/models/dto"
-	models_dto_clients "github.dhi13man.com/bombardment-runner/src/models/dto/clients"
-	models_dto_driver "github.dhi13man.com/bombardment-runner/src/models/dto/driver"
-	models_dto_load_balancing "github.dhi13man.com/bombardment-runner/src/models/dto/load_balancing"
-	models_dto_parsing "github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
-	models_dto_transforming "github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
-	serviceDriver "github.dhi13man.com/bombardment-runner/src/services/driver"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/clients"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/driver"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/load_balancing"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
+	"github.dhi13man.com/bombardment-runner/src/services/driver"
 )
 
 type Bootstrap interface {
-	// Bootstrap the application in CLI mode
+	// RunCli Bootstrap the application in CLI mode
 	RunCli(
-		clientContext models_dto_clients.ClientContext,
-		driverContext models_dto_driver.DriverContext,
-		loadBalancerContext models_dto_load_balancing.LoadBalancerContext,
-		parserContext models_dto_parsing.ParserContext,
-		transformerContext models_dto_transforming.TransformerContext,
+		clientContext modelsDtoClients.ClientContext,
+		driverContext modelsDtoDriver.DriverContext,
+		loadBalancerContext modelsDtoLoadBalancing.LoadBalancerContext,
+		parserContext modelsDtoParsing.ParserContext,
+		transformerContext modelsDtoTransforming.TransformerContext,
 	) error
 
-	// Bootstrap the application in server mode
+	// RunServer Bootstrap the application in server mode
 	RunServer(bindAddr string, port int)
 }
 
 // Implements Bootstrap with Gin server and Swagger docs
 type bootstrapImpl struct {
-	driver serviceDriver.BombardmentDriver
+	driver driver.BombardmentDriver
 }
 
-// Creates a new server bootstrap instance with provided driver
-func NewBootstrap(d serviceDriver.BombardmentDriver) Bootstrap {
+// NewBootstrap Creates a new server bootstrap instance with the provided driver
+func NewBootstrap(d driver.BombardmentDriver) Bootstrap {
 	return &bootstrapImpl{driver: d}
 }
 
-// Starts the CLI mode of the application
+// RunCli Starts the CLI mode of the application
 func (s *bootstrapImpl) RunCli(
-	clientContext models_dto_clients.ClientContext,
-	driverContext models_dto_driver.DriverContext,
-	loadBalancerContext models_dto_load_balancing.LoadBalancerContext,
-	parserContext models_dto_parsing.ParserContext,
-	transformerContext models_dto_transforming.TransformerContext,
+	clientContext modelsDtoClients.ClientContext,
+	driverContext modelsDtoDriver.DriverContext,
+	loadBalancerContext modelsDtoLoadBalancing.LoadBalancerContext,
+	parserContext modelsDtoParsing.ParserContext,
+	transformerContext modelsDtoTransforming.TransformerContext,
 ) error {
 	return s.driver.CreateBombardment(
 		dto.BombardmentRequest{
@@ -61,7 +61,7 @@ func (s *bootstrapImpl) RunCli(
 	)
 }
 
-// Starts the Gin HTTP server with Swagger documentation and API endpoints
+// RunServer Starts the Gin HTTP server with Swagger documentation and API endpoints
 func (s *bootstrapImpl) RunServer(bindAddr string, port int) {
 	r := gin.Default()
 

@@ -3,29 +3,29 @@ package parsing
 import (
 	"errors"
 
-	models_dto_parsing "github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
-	models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
+	"github.dhi13man.com/bombardment-runner/src/models/enums"
 	"github.dhi13man.com/bombardment-runner/src/services"
 )
 
 type BaseFileParser[T any] interface {
-	services.BaseStrategy[models_enums.ParserStrategy]
+	services.BaseStrategy[modelsEnums.ParserStrategy]
 
-	// Reads a file and initialises a channel of raw records.
+	// CreateRawDataStream reads a file and initialises a channel of raw records.
 	CreateRawDataStream() (chan map[string]string, error)
 
-	// Gets a channel of parsed records.
+	// CreateParsedDataStream gets a channel of parsed records.
 	CreateParsedDataStream(mapper func(map[string]string) T) (chan T, error)
 
-	// Closes the file.
+	// Close closes the file.
 	Close() error
 }
 
 func CreateFileParser[T any](
-	context models_dto_parsing.ParserContext,
+	context modelsDtoParsing.ParserContext,
 ) (BaseFileParser[T], error) {
 	switch context.Strategy {
-	case models_enums.CSV:
+	case modelsEnums.CSV:
 		return NewCsvParser[T](context), nil
 	default:
 		return nil, errors.New("invalid strategy")

@@ -7,10 +7,10 @@ import (
 	"net"
 	"net/http"
 
-	models_dto_clients "github.dhi13man.com/bombardment-runner/src/models/dto/clients"
-	models_dto_requests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
-	models_dto_responses "github.dhi13man.com/bombardment-runner/src/models/dto/clients/responses"
-	models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/clients"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/clients/responses"
+	"github.dhi13man.com/bombardment-runner/src/models/enums"
 	"go.uber.org/zap"
 )
 
@@ -22,16 +22,16 @@ type restChannelClient struct {
 	httpClient *http.Client
 }
 
-// Creates a new REST client with the given timeouts.
+// NewRestClient Creates a new REST client with the given timeouts.
 //
 // The returned HTTP client is safe for concurrent use by multiple goroutines.
-func NewRestClient(context models_dto_clients.ClientContext) RestChannelClient {
+func NewRestClient(context modelsDtoClients.ClientContext) RestChannelClient {
 	dialer := &net.Dialer{
 		Timeout:   context.DialTimeout,
 		KeepAlive: context.DialKeepAlive,
 	}
 	transport := &http.Transport{
-		Dial:                  dialer.Dial,
+		DialContext:           dialer.DialContext,
 		TLSHandshakeTimeout:   context.TlsHandshakeTimeout,
 		ResponseHeaderTimeout: context.ResponseHeaderTimeout,
 		ExpectContinueTimeout: context.ExpectContinueTimeout,
@@ -44,27 +44,32 @@ func NewRestClient(context models_dto_clients.ClientContext) RestChannelClient {
 	}
 }
 
-func (c *restChannelClient) GetStrategy() models_enums.ClientChannel {
-	return models_enums.REST
+func (c *restChannelClient) GetStrategy() modelsEnums.ClientChannel {
+	return modelsEnums.REST
 }
 
 func (c *restChannelClient) Execute(
-	request models_dto_requests.BaseChannelRequest,
+	request modelsDtoRequests.BaseChannelRequest,
 	baseUrl string,
-) (models_dto_responses.BaseChannelResponse, error) {
-	restRequest := request.(*models_dto_requests.RestChannelRequest)
+) (modelsDtoResponses.BaseChannelResponse, error) {
+	restRequest := request.(*modelsDtoRequests.RestChannelRequest)
 	req, err := c.generateHttpRequest(restRequest, baseUrl)
 	if err != nil {
 		return nil, err
 	}
-	zap.S().Debugf("Request created: %s", req)
+	zap.S().Debugf("Request created: %v", req)
 
 	response, err := c.httpClient.Do(req)
 	if err != nil {
 		zap.L().Error("Request failed: ", zap.Error(err))
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			zap.L().Error("Response body closing failed: ", zap.Error(err))
+		}
+	}(response.Body)
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
@@ -72,7 +77,7 @@ func (c *restChannelClient) Execute(
 		return nil, err
 	}
 
-	restChannelResponse := models_dto_responses.NewRestChannelResponse(
+	restChannelResponse := modelsDtoResponses.NewRestChannelResponse(
 		response.StatusCode,
 		body,
 	)
@@ -80,7 +85,7 @@ func (c *restChannelClient) Execute(
 }
 
 func (*restChannelClient) generateHttpRequest(
-	restRequest *models_dto_requests.RestChannelRequest,
+	restRequest *modelsDtoRequests.RestChannelRequest,
 	baseUrl string,
 ) (*http.Request, error) {
 	// Marshal the payload.

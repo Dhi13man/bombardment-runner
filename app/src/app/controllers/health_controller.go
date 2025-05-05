@@ -15,25 +15,25 @@ type HealthController interface {
 // Implements BaseController interface
 type healthControllerImpl struct{}
 
-// Creates a new HealthController
+// NewHealthController Creates a new HealthController
 func NewHealthController() HealthController {
 	return &healthControllerImpl{}
 }
 
-// Registers health-related routes
+// RegisterRoutes Registers health-related routes
 func (hc *healthControllerImpl) RegisterRoutes(r *gin.Engine) {
 	r.GET("/v1/ping", hc.Ping)
 }
 
 // Ping the health check endpoint
 //
-//	@Summary		Health check
+//	@Summary	Health check
 //	@Description	Returns pong
-//	@Tags			health
-//	@Produce		json
-//	@Success		200	{object}	map[string]string
-//	@Failure		500	{object}	map[string]string
-//	@Router			/v1/ping [get]
+//	@Tags	health
+//	@Produce	JSON
+//	@Success	200	{object}	map[string]string
+//	@Failure	500	{object}	map[string]string
+//	@Router	/v1/ping [get]
 func (hc *healthControllerImpl) Ping(c *gin.Context) {
 	c.JSON(200, gin.H{"message": "pong"})
 }

@@ -1,7 +1,7 @@
-package models_dto_requests
+package modelsDtoRequests
 
 import (
-	models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
+	"github.dhi13man.com/bombardment-runner/src/models/enums"
 )
 
 type RestChannelRequest struct {
@@ -11,8 +11,8 @@ type RestChannelRequest struct {
 	Method   string            `json:"method"`
 }
 
-func (req *RestChannelRequest) GetChannel() models_enums.ClientChannel {
-	return models_enums.REST
+func (req *RestChannelRequest) GetChannel() modelsEnums.ClientChannel {
+	return modelsEnums.REST
 }
 
 func NewRestChannelRequest(

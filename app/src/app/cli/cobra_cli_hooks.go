@@ -1,35 +1,36 @@
-package core_cli
+package appCli
 
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/MakeNowJust/heredoc/v2"
 	"github.com/spf13/cobra"
-	models_dto_clients "github.dhi13man.com/bombardment-runner/src/models/dto/clients"
-	models_dto_driver "github.dhi13man.com/bombardment-runner/src/models/dto/driver"
-	models_dto_load_balancing "github.dhi13man.com/bombardment-runner/src/models/dto/load_balancing"
-	models_dto_parsing "github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
-	models_dto_transforming "github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/clients"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/driver"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/load_balancing"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
 )
 
 const (
-	RUN_MODE_GROUP_ID string = "run-mode"
+	RunModeGroupId string = "run-mode"
 
-	BIND_ADDR_LONG_KEY              string = "bind-addr"
-	BIND_ADDR_SHORT_KEY             string = "b"
-	CLIENT_CONTEXT_LONG_KEY         string = "client-context"
-	CLIENT_CONTEXT_SHORT_KEY        string = "C"
-	DRIVER_CONTEXT_LONG_KEY         string = "driver-context"
-	DRIVER_CONTEXT_SHORT_KEY        string = "D"
-	LOAD_BALANCER_CONTEXT_LONG_KEY  string = "load-balancer-context"
-	LOAD_BALANCER_CONTEXT_SHORT_KEY string = "L"
-	PARSER_CONTEXT_LONG_KEY         string = "parser-context"
-	PARSER_CONTEXT_SHORT_KEY        string = "P"
-	PORT_LONG_KEY                   string = "port"
-	PORT_SHORT_KEY                  string = "p"
-	TRANSFORMER_CONTEXT_LONG_KEY    string = "transformer-context"
-	TRANSFORMER_CONTEXT_SHORT_KEY   string = "T"
+	BindAddrLongKey             string = "bind-addr"
+	BindAddrShortKey            string = "b"
+	ClientContextLongKey        string = "client-context"
+	ClientContextShortKey       string = "C"
+	DriverContextLongKey        string = "driver-context"
+	DriverContextShortKey       string = "D"
+	LoadBalancerContextLongKey  string = "load-balancer-context"
+	LoadBalancerContextShortKey string = "L"
+	ParserContextLongKey        string = "parser-context"
+	ParserContextShortKey       string = "P"
+	PortLongKey                 string = "port"
+	PortShortKey                string = "p"
+	TransformerContextLongKey   string = "transformer-context"
+	TransformerContextShortKey  string = "T"
 
 	ClientContextExampleJSON       string = `'{"channel":"REST","dial_keep_alive":10000000000,"dial_timeout":5000000000}'`
 	DriverContextExampleJSON       string = `'{"batch_size":100,"should_store_responses":false,"responses_storage_path":"./responses"}'`
@@ -37,8 +38,8 @@ const (
 	ParserContextExampleJSON       string = `'{"file_path":"./private/file_path.csv","strategy":"CSV"}'`
 	TransformerContextExampleJSON  string = `'{"strategy":"JSONATA","method_expression":"\"POST\"","endpoint_expression":"\"/api/v1/\" & resource","headers_expression":"{ \"Content-Type\": \"application/json\", \"X-Request-ID\": request_id }","body_expression":"{ \"id\": $number(id), \"timestamp\": $millis() }"}'`
 
-	DEFAULT_SERVER_BIND_ADDR string = "127.0.0.1"
-	DEFAULT_SERVER_PORT      int    = 8080
+	DefaultServerBindAddr string = "127.0.0.1"
+	DefaultServerPort     int    = 8080
 )
 
 type cobraCliHooks struct {
@@ -68,23 +69,23 @@ func NewCobraCliHooks() CliHook {
 		),
 		Version: "v0.0.1",
 	}
-	rootCmd.AddGroup(&cobra.Group{ID: RUN_MODE_GROUP_ID, Title: "Run Mode"})
+	rootCmd.AddGroup(&cobra.Group{ID: RunModeGroupId, Title: "Run Mode"})
 	return &cobraCliHooks{rootCmd: rootCmd}
 }
 
 func (c *cobraCliHooks) AttachCliRunCommand(
 	runCliCallback func(
-		clientContext models_dto_clients.ClientContext,
-		driverContext models_dto_driver.DriverContext,
-		loadBalancerContext models_dto_load_balancing.LoadBalancerContext,
-		parserContext models_dto_parsing.ParserContext,
-		transformerContext models_dto_transforming.TransformerContext,
+		clientContext modelsDtoClients.ClientContext,
+		driverContext modelsDtoDriver.DriverContext,
+		loadBalancerContext modelsDtoLoadBalancing.LoadBalancerContext,
+		parserContext modelsDtoParsing.ParserContext,
+		transformerContext modelsDtoTransforming.TransformerContext,
 	) error,
 ) CliHook {
 	var cliCommand = cobra.Command{
-		Use:     fmt.Sprintf("cli {-C|--%s} {-D|--%s} {-L|--%s} {-P|--%s} {-T|--%s}", CLIENT_CONTEXT_LONG_KEY, DRIVER_CONTEXT_LONG_KEY, LOAD_BALANCER_CONTEXT_LONG_KEY, PARSER_CONTEXT_LONG_KEY, TRANSFORMER_CONTEXT_LONG_KEY),
+		Use:     fmt.Sprintf("cli {-C|--%s} {-D|--%s} {-L|--%s} {-P|--%s} {-T|--%s}", ClientContextLongKey, DriverContextLongKey, LoadBalancerContextLongKey, ParserContextLongKey, TransformerContextLongKey),
 		Short:   "Run Bombardment in CLI mode",
-		GroupID: RUN_MODE_GROUP_ID,
+		GroupID: RunModeGroupId,
 		Long:    "Run Bombardment in CLI mode. This mode requires the user to provide the context for the Client, Driver, Load Balancer, Parser, and Transformer as JSON string flags.",
 		Example: heredoc.Docf(
 			`# Run Bombardment in CLI mode for a REST API, with a ROUND_ROBIN load balancer, CSV parser, and JSONATA transformer
@@ -101,41 +102,41 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 				-%s %s \
 				-%s %s \
 				-%s %s`,
-			CLIENT_CONTEXT_LONG_KEY,
+			ClientContextLongKey,
 			ClientContextExampleJSON,
-			DRIVER_CONTEXT_LONG_KEY,
+			DriverContextLongKey,
 			DriverContextExampleJSON,
-			LOAD_BALANCER_CONTEXT_LONG_KEY,
+			LoadBalancerContextLongKey,
 			LoadBalancerContextExampleJSON,
-			PARSER_CONTEXT_LONG_KEY,
+			ParserContextLongKey,
 			ParserContextExampleJSON,
-			TRANSFORMER_CONTEXT_LONG_KEY,
+			TransformerContextLongKey,
 			TransformerContextExampleJSON,
-			CLIENT_CONTEXT_SHORT_KEY,
+			ClientContextShortKey,
 			ClientContextExampleJSON,
-			DRIVER_CONTEXT_SHORT_KEY,
+			DriverContextShortKey,
 			DriverContextExampleJSON,
-			LOAD_BALANCER_CONTEXT_SHORT_KEY,
+			LoadBalancerContextShortKey,
 			LoadBalancerContextExampleJSON,
-			PARSER_CONTEXT_SHORT_KEY,
+			ParserContextShortKey,
 			ParserContextExampleJSON,
-			TRANSFORMER_CONTEXT_SHORT_KEY,
+			TransformerContextShortKey,
 			TransformerContextExampleJSON,
 		),
 		Args: func(cmd *cobra.Command, args []string) error {
 			// Get the Flags
-			clientContextCommand := cmd.Flag(CLIENT_CONTEXT_LONG_KEY)
-			driverContextCommand := cmd.Flag(DRIVER_CONTEXT_LONG_KEY)
-			loadBalancerContextCommand := cmd.Flag(LOAD_BALANCER_CONTEXT_LONG_KEY)
-			parserContextCommand := cmd.Flag(PARSER_CONTEXT_LONG_KEY)
-			transformerContextCommand := cmd.Flag(TRANSFORMER_CONTEXT_LONG_KEY)
+			clientContextCommand := cmd.Flag(ClientContextLongKey)
+			driverContextCommand := cmd.Flag(DriverContextLongKey)
+			loadBalancerContextCommand := cmd.Flag(LoadBalancerContextLongKey)
+			parserContextCommand := cmd.Flag(ParserContextLongKey)
+			transformerContextCommand := cmd.Flag(TransformerContextLongKey)
 
 			// Check if the Flags are set properly
-			var clientContext models_dto_clients.ClientContext
-			var driverContext models_dto_driver.DriverContext
-			var loadBalancerContext models_dto_load_balancing.LoadBalancerContext
-			var parserContext models_dto_parsing.ParserContext
-			var transformerContext models_dto_transforming.TransformerContext
+			var clientContext modelsDtoClients.ClientContext
+			var driverContext modelsDtoDriver.DriverContext
+			var loadBalancerContext modelsDtoLoadBalancing.LoadBalancerContext
+			var parserContext modelsDtoParsing.ParserContext
+			var transformerContext modelsDtoTransforming.TransformerContext
 
 			// Try Parsing the Client Context
 			err := json.Unmarshal([]byte(clientContextCommand.Value.String()), &clientContext)
@@ -171,45 +172,69 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 		Version: "v0.0.1",
 		Run: func(cmd *cobra.Command, args []string) {
 			// Get the Flags
-			clientContextCommand := cmd.Flag(CLIENT_CONTEXT_LONG_KEY)
-			driverContextCommand := cmd.Flag(DRIVER_CONTEXT_LONG_KEY)
-			loadBalancerContextCommand := cmd.Flag(LOAD_BALANCER_CONTEXT_LONG_KEY)
-			parserContextCommand := cmd.Flag(PARSER_CONTEXT_LONG_KEY)
-			transformerContextCommand := cmd.Flag(TRANSFORMER_CONTEXT_LONG_KEY)
+			clientContextCommand := cmd.Flag(ClientContextLongKey)
+			driverContextCommand := cmd.Flag(DriverContextLongKey)
+			loadBalancerContextCommand := cmd.Flag(LoadBalancerContextLongKey)
+			parserContextCommand := cmd.Flag(ParserContextLongKey)
+			transformerContextCommand := cmd.Flag(TransformerContextLongKey)
 
 			// Parse the Client Context
-			var clientContext models_dto_clients.ClientContext
-			json.Unmarshal([]byte(clientContextCommand.Value.String()), &clientContext)
+			var clientContext modelsDtoClients.ClientContext
+			err := json.Unmarshal([]byte(clientContextCommand.Value.String()), &clientContext)
+			if err != nil {
+				log.Default().Fatalf("error parsing client context: %v", err)
+				return
+			}
 
 			// Parse the Driver Context
-			var driverContext models_dto_driver.DriverContext
-			json.Unmarshal([]byte(driverContextCommand.Value.String()), &driverContext)
+			var driverContext modelsDtoDriver.DriverContext
+			err = json.Unmarshal([]byte(driverContextCommand.Value.String()), &driverContext)
+			if err != nil {
+				log.Default().Fatalf("error parsing driver context: %v", err)
+				return
+			}
 
 			// Parse the Load Balancer Context
-			var loadBalancerContext models_dto_load_balancing.LoadBalancerContext
-			json.Unmarshal([]byte(loadBalancerContextCommand.Value.String()), &loadBalancerContext)
+			var loadBalancerContext modelsDtoLoadBalancing.LoadBalancerContext
+			err = json.Unmarshal([]byte(loadBalancerContextCommand.Value.String()), &loadBalancerContext)
+			if err != nil {
+				log.Default().Fatalf("error parsing load balancer context: %v", err)
+				return
+			}
 
 			// Parse the Parser Context
-			var parserContext models_dto_parsing.ParserContext
-			json.Unmarshal([]byte(parserContextCommand.Value.String()), &parserContext)
+			var parserContext modelsDtoParsing.ParserContext
+			err = json.Unmarshal([]byte(parserContextCommand.Value.String()), &parserContext)
+			if err != nil {
+				log.Default().Fatalf("error parsing parser context: %v", err)
+				return
+			}
 
 			// Parse the Transformer Context
-			var transformerContext models_dto_transforming.TransformerContext
-			json.Unmarshal([]byte(transformerContextCommand.Value.String()), &transformerContext)
+			var transformerContext modelsDtoTransforming.TransformerContext
+			err = json.Unmarshal([]byte(transformerContextCommand.Value.String()), &transformerContext)
+			if err != nil {
+				log.Default().Fatalf("error parsing transformer context: %v", err)
+				return
+			}
 
 			// Run the Bombardment
-			runCliCallback(
+			err = runCliCallback(
 				clientContext,
 				driverContext,
 				loadBalancerContext,
 				parserContext,
 				transformerContext,
 			)
+			if err != nil {
+				log.Default().Fatalf("error running cli bombardment: %v", err)
+				return
+			}
 		},
 	}
 	cliCommand.Flags().StringP(
-		CLIENT_CONTEXT_LONG_KEY,
-		CLIENT_CONTEXT_SHORT_KEY,
+		ClientContextLongKey,
+		ClientContextShortKey,
 		"",
 		heredoc.Docf(
 			`The Context to use for the Client that will make the calls.
@@ -225,8 +250,8 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 		),
 	)
 	cliCommand.Flags().StringP(
-		DRIVER_CONTEXT_LONG_KEY,
-		DRIVER_CONTEXT_SHORT_KEY,
+		DriverContextLongKey,
+		DriverContextShortKey,
 		"",
 		heredoc.Docf(
 			`The Context to use for the Driver that will orchestrate the Bombardment.
@@ -239,8 +264,8 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 		),
 	)
 	cliCommand.Flags().StringP(
-		LOAD_BALANCER_CONTEXT_LONG_KEY,
-		LOAD_BALANCER_CONTEXT_SHORT_KEY,
+		LoadBalancerContextLongKey,
+		LoadBalancerContextShortKey,
 		"",
 		heredoc.Docf(
 			`The Context to use for Load Balancing requests across servers. All servers must support the same API contract. Eg. Different pods of the same service.
@@ -252,8 +277,8 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 		),
 	)
 	cliCommand.Flags().StringP(
-		PARSER_CONTEXT_LONG_KEY,
-		PARSER_CONTEXT_SHORT_KEY,
+		ParserContextLongKey,
+		ParserContextShortKey,
 		"",
 		heredoc.Docf(
 			`The Context to use for Parsing the input data.
@@ -265,8 +290,8 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 		),
 	)
 	cliCommand.Flags().StringP(
-		TRANSFORMER_CONTEXT_LONG_KEY,
-		TRANSFORMER_CONTEXT_SHORT_KEY,
+		TransformerContextLongKey,
+		TransformerContextShortKey,
 		"",
 		heredoc.Docf(
 			`The Context to use for Transforming the parsed data.
@@ -290,7 +315,7 @@ func (c *cobraCliHooks) AttachServerRunCommand(
 	var serverCommand = cobra.Command{
 		Use:     "server",
 		Short:   "Run Bombardment in Server mode",
-		GroupID: RUN_MODE_GROUP_ID,
+		GroupID: RunModeGroupId,
 		Long:    heredoc.Doc(`Run Bombardment in Server mode. This mode starts an HTTP server that listens on the specified address and port for incoming data and processes it in batches.`),
 		Example: heredoc.Docf(
 			`# Run server on default %s:%d
@@ -302,19 +327,19 @@ func (c *cobraCliHooks) AttachServerRunCommand(
 				--%s %d
 			# or
 			bombardment server -%s %s -%s %d`,
-			DEFAULT_SERVER_BIND_ADDR,
-			DEFAULT_SERVER_PORT,
-			BIND_ADDR_LONG_KEY,
-			DEFAULT_SERVER_BIND_ADDR,
-			PORT_LONG_KEY,
-			DEFAULT_SERVER_PORT,
-			BIND_ADDR_SHORT_KEY,
-			DEFAULT_SERVER_BIND_ADDR,
-			PORT_SHORT_KEY,
-			DEFAULT_SERVER_PORT,
+			DefaultServerBindAddr,
+			DefaultServerPort,
+			BindAddrLongKey,
+			DefaultServerBindAddr,
+			PortLongKey,
+			DefaultServerPort,
+			BindAddrShortKey,
+			DefaultServerBindAddr,
+			PortShortKey,
+			DefaultServerPort,
 		),
 		Args: func(cmd *cobra.Command, args []string) error {
-			port, err := cmd.Flags().GetInt(PORT_LONG_KEY)
+			port, err := cmd.Flags().GetInt(PortLongKey)
 			if err != nil {
 				return err
 			}
@@ -324,8 +349,8 @@ func (c *cobraCliHooks) AttachServerRunCommand(
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			bindAddr, _ := cmd.Flags().GetString(BIND_ADDR_LONG_KEY)
-			port, _ := cmd.Flags().GetInt(PORT_LONG_KEY)
+			bindAddr, _ := cmd.Flags().GetString(BindAddrLongKey)
+			port, _ := cmd.Flags().GetInt(PortLongKey)
 
 			runServerCallback(bindAddr, port)
 		},
@@ -333,21 +358,25 @@ func (c *cobraCliHooks) AttachServerRunCommand(
 	}
 	// Define flags for server command
 	serverCommand.Flags().StringP(
-		BIND_ADDR_LONG_KEY,
+		BindAddrLongKey,
 		"b",
-		DEFAULT_SERVER_BIND_ADDR,
-		heredoc.Docf("Bind address for the server (default %s)", DEFAULT_SERVER_BIND_ADDR),
+		DefaultServerBindAddr,
+		heredoc.Docf("Bind address for the server (default %s)", DefaultServerBindAddr),
 	)
 	serverCommand.Flags().IntP(
-		PORT_LONG_KEY,
+		PortLongKey,
 		"p",
-		DEFAULT_SERVER_PORT,
-		heredoc.Docf("Port for the server (default %d)", DEFAULT_SERVER_PORT),
+		DefaultServerPort,
+		heredoc.Docf("Port for the server (default %d)", DefaultServerPort),
 	)
 	c.rootCmd.AddCommand(&serverCommand)
 	return c
 }
 
-func (c *cobraCliHooks) Execute() {
-	c.rootCmd.Execute()
+func (c *cobraCliHooks) Execute() error {
+	err := c.rootCmd.Execute()
+	if err != nil {
+		return err
+	}
+	return nil
 }

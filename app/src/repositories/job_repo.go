@@ -1,11 +1,11 @@
 package repositories
 
-import models_entities "github.dhi13man.com/bombardment-runner/src/models/entities"
+import "github.dhi13man.com/bombardment-runner/src/models/entities"
 
-// Interface that all Data repositories should implement
+// JobRepo Interface that all Data repositories should implement
 type JobRepo interface {
 	BaseRepo
 
-	// Create a new job
-	CreateJob(job *models_entities.JobEntity) error
+	// CreateJob Create a new job
+	CreateJob(job *modelsEntities.JobEntity) error
 }
