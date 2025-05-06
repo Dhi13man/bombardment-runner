@@ -7,12 +7,12 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// Interface for the base Bun data model
+// BaseBunModelInterface for the base Bun data model
 type BaseBunModelInterface interface {
 	bun.BeforeAppendModelHook
 }
 
-// Base model for all Bun data models
+// BaseBunModel for all Bun data models
 type BaseBunModel struct {
 	CreatedAt time.Time `bun:"created_at,default:current_timestamp" json:"created_at,omitempty"`
 	UpdatedAt time.Time `bun:"updated_at,default:current_timestamp" json:"updated_at,omitempty"`

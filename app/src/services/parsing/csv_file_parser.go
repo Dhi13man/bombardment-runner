@@ -5,8 +5,8 @@ import (
 	"io"
 	"os"
 
-	models_dto_parsing "github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
-	models_enums "github.dhi13man.com/bombardment-runner/src/models/enums"
+	"github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
+	"github.dhi13man.com/bombardment-runner/src/models/enums"
 	"go.uber.org/zap"
 )
 
@@ -18,13 +18,13 @@ type csvParser[T any] struct {
 	file *os.File
 }
 
-func NewCsvParser[T any](parserContext models_dto_parsing.ParserContext) CsvFileParser[T] {
+func NewCsvParser[T any](parserContext modelsDtoParsing.ParserContext) CsvFileParser[T] {
 	file, filePath, err := OpenFileFromPathOrContent(parserContext.FilePath, parserContext.FileContentB64)
 	if err != nil {
 		zap.L().Fatal("Error opening file", zap.Error(err))
 	}
 
-	// Log successful file opening
+	// Log a successful file opening
 	if parserContext.FileContentB64 != "" {
 		zap.L().Info("Opened file from uploaded content", zap.String("path", filePath))
 	} else {
@@ -90,6 +90,6 @@ func (c *csvParser[T]) Close() error {
 	return c.file.Close()
 }
 
-func (c *csvParser[T]) GetStrategy() models_enums.ParserStrategy {
-	return models_enums.CSV
+func (c *csvParser[T]) GetStrategy() modelsEnums.ParserStrategy {
+	return modelsEnums.CSV
 }

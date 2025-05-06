@@ -62,18 +62,18 @@ func (b *bombardmentDriver) CreateBombardment(
 		return err
 	}
 
-	// Prepare file for response storage if enabled
+	// Prepare a file for response storage if enabled
 	var responseFile *os.File
 	var responseWriter *csv.Writer
 
 	if bombardmentRequest.Driver.ShouldStoreResponses {
-		// Use default path if not provided
+		// Use the default path if not provided
 		storagePath := bombardmentRequest.Driver.ResponsesStoragePath
 		if storagePath == "" {
 			storagePath = "./responses"
 		}
 
-		// Create directory if it doesn't exist
+		// Create a directory if it doesn't exist
 		err = os.MkdirAll(storagePath, 0755)
 		if err != nil {
 			zap.L().Error("Failed to create responses directory", zap.Error(err))
@@ -92,7 +92,7 @@ func (b *bombardmentDriver) CreateBombardment(
 		}
 		defer closeAndLog(responseFile, "response file")
 
-		// Create CSV writer
+		// Create a CSV writer
 		responseWriter = csv.NewWriter(responseFile)
 
 		// Write header
@@ -139,14 +139,14 @@ func (b *bombardmentDriver) CreateBombardment(
 	)
 
 	// Read CSV file and get headers and data channel
-	insight_channel, err := parser.CreateRawDataStream()
+	insightChannel, err := parser.CreateRawDataStream()
 	if err != nil {
 		zap.L().Error("failed to read CSV file", zap.Error(err))
 		return err
 	}
 
 	// Process the InsightData in batches
-	responseChannel := batchProcessor.CreateProcessedBatchChannel(insight_channel)
+	responseChannel := batchProcessor.CreateProcessedBatchChannel(insightChannel)
 
 	// Process the responses
 	for response := range responseChannel {

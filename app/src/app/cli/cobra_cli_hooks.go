@@ -32,7 +32,7 @@ const (
 	TransformerContextLongKey   string = "transformer-context"
 	TransformerContextShortKey  string = "T"
 
-	ClientContextExampleJSON       string = `'{"channel":"REST","dial_keep_alive":10000000000,"dial_timeout":5000000000}'`
+	ClientContextExampleJSON       string = `'{"channel":"REST","dial_keep_alive":10000000000,"dial_timeout":5000000000,"tls_handshake_timeout":5000000000,"response_header_timeout":5000000000,"expect_continue_timeout":500000,"request_timeout":30000000000,"insecure_skip_verify":false}'`
 	DriverContextExampleJSON       string = `'{"batch_size":100,"should_store_responses":false,"responses_storage_path":"./responses"}'`
 	LoadBalancerContextExampleJSON string = `'{"strategy":"ROUND_ROBIN","urls":["https://api.example.com","https://api-backup.example.com"]}'`
 	ParserContextExampleJSON       string = `'{"file_path":"./private/file_path.csv","strategy":"CSV"}'`
@@ -242,9 +242,11 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 				- channel: The channel to use for the client. Possible values are {REST, GRPC}
 				- dial_keep_alive: The number of nanoseconds for which to keep connections alive. Eg. 10000000000 (10 seconds)
 				- dial_timeout: The number of nanoseconds for which to wait for a connection to complete. Eg. 5000000000 (5 seconds)
-				- expect_continue_timeout: The duration for which to wait for a server's FIRST response headers after fully writing the request headers. Post the timeout, the request will be sent without the Expect: 100-continue header. Eg. 500000 (500 milliseconds)
+				- tls_handshake_timeout: The duration for which to wait for the TLS handshake to complete. Post the timeout, the connection will be closed. Eg. 5000000000 (5 seconds)
 				- response_header_timeout: The duration for which to wait for the response headers. Eg. 5000000000 (5 seconds)
-				- tls_handshake_timeout: The duration for the TLS handshake to complete. Post the timeout, the connection will be closed. Eg. 5000000000 (5 seconds)
+				- expect_continue_timeout: The duration for which to wait for a server's FIRST response headers after fully writing the request headers. Post the timeout, the request will be sent without the Expect: 100-continue header. Eg. 500000 (500 milliseconds)
+				- request_timeout: Overall timeout for the entire request, from dial to response reading. Eg. 30000000000 (30 seconds)
+				- insecure_skip_verify: Whether to skip TLS certificate verification. Eg. false
 			Eg. %s`,
 			ClientContextExampleJSON,
 		),

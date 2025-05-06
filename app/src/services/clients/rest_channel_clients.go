@@ -20,7 +20,6 @@ import (
 
 // HTTP header constants
 const (
-	// Header keys
 	HeaderKeyConnection     = "Connection"
 	HeaderKeyContentType    = "Content-Type"
 	HeaderKeyAccept         = "Accept"
@@ -28,7 +27,6 @@ const (
 	HeaderKeyCacheControl   = "Cache-Control"
 	HeaderKeyAcceptEncoding = "Accept-Encoding"
 
-	// Header values
 	HeaderValueKeepAlive       = "keep-alive"
 	HeaderValueApplicationJSON = "application/json"
 	HeaderValueBombardmentUA   = "bombardment-load-tester"
@@ -46,14 +44,13 @@ type restChannelClient struct {
 
 // NewRestClient Creates a new REST client with optimized connection pooling and timeouts.
 //
-// The returned HTTP client is optimized for high performance load testing with
+// The returned HTTP client is optimized for high-performance load testing with
 // efficient connection reuse and is safe for concurrent use by multiple goroutines.
 func NewRestClient(context modelsDtoClients.ClientContext) RestChannelClient {
 	// Optimize dialer with configurable keepalive
 	dialer := &net.Dialer{
 		Timeout:   context.DialTimeout,
 		KeepAlive: context.DialKeepAlive,
-		DualStack: true, // Enable IPv4/IPv6 fast fallback
 	}
 
 	// Optimize transport for connection pooling and reuse
@@ -65,7 +62,7 @@ func NewRestClient(context modelsDtoClients.ClientContext) RestChannelClient {
 
 		// Connection pooling optimizations
 		MaxIdleConns:        100,              // Increase pool size for connection reuse
-		MaxIdleConnsPerHost: 100,              // Match MaxIdleConns for maximum connection reuse
+		MaxIdleConnsPerHost: 100,              // Match MaxIdleConnections for maximum connection reuse
 		MaxConnsPerHost:     0,                // No limit on max connections per host
 		IdleConnTimeout:     90 * time.Second, // Keep idle connections alive but not forever
 
@@ -75,13 +72,13 @@ func NewRestClient(context modelsDtoClients.ClientContext) RestChannelClient {
 		TLSClientConfig:    &tls.Config{InsecureSkipVerify: context.InsecureSkipVerify}, // Optional security setting
 
 		// DNS caching
-		DisableKeepAlives: false, // Enable keep-alives
+		DisableKeepAlives: false, // Enable keep-alive
 	}
 
 	// Set default request timeout if not specified
 	requestTimeout := context.RequestTimeout
 	if requestTimeout == 0 {
-		requestTimeout = 30 * time.Second // Default to 30s if not specified
+		requestTimeout = 30 * time.Second // Default to 30 seconds if not specified
 	}
 
 	// Configure HTTP client with the optimized transport and timeout

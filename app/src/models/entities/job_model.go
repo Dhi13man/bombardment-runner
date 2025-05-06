@@ -5,8 +5,10 @@ import (
 	"github.dhi13man.com/bombardment-runner/src/models/enums"
 )
 
+// JobStatus represents the status of a job.
 type JobStatus string
 
+// JobEntity represents a job entity in the database.
 type JobEntity struct {
 	BaseBunModel
 	bun.BaseModel  `bun:"table:customers,alias:c"`
