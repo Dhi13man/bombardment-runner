@@ -240,9 +240,7 @@
               <h4 class="text-md font-medium text-gray-800 mb-4 flex items-center">
                 <i class="fas fa-plug mr-2 text-orange-500"></i>
                 Client Settings
-              </h4>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+              </h4>              <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Channel</label>
                   <div class="flex flex-wrap gap-3">
                     <label class="cursor-pointer inline-flex items-center p-3 border rounded-lg border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-all">
@@ -258,7 +256,9 @@
                       <span class="ml-2 font-medium">GraphQL</span>
                     </label>
                   </div>
-                </div>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                 <div>
                   <label for="dial-timeout" class="block text-sm font-medium text-gray-700 mb-1">Dial Timeout (ms)</label>
                   <div class="flex">
@@ -268,15 +268,68 @@
                     <input id="dial-timeout" type="number" placeholder="5000" title="Dial timeout in ms" value="5000" class="w-full border border-gray-300 rounded-r-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500">
                   </div>
                 </div>
-              </div>
-              <div class="mt-4">
-                <label for="keepalive-timeout" class="block text-sm font-medium text-gray-700 mb-1">Keep Alive Timeout (ms)</label>
-                <div class="flex w-1/2">
-                  <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
-                    <i class="fas fa-heartbeat"></i>
-                  </span>
-                  <input id="keepalive-timeout" type="number" placeholder="10000" title="Keep alive timeout in ms" value="10000" class="w-full border border-gray-300 rounded-r-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500">
+                <div>
+                  <label for="keepalive-timeout" class="block text-sm font-medium text-gray-700 mb-1">Keep Alive Timeout (ms)</label>
+                  <div class="flex">
+                    <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
+                      <i class="fas fa-heartbeat"></i>
+                    </span>
+                    <input id="keepalive-timeout" type="number" placeholder="10000" title="Keep alive timeout in ms" value="10000" class="w-full border border-gray-300 rounded-r-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500">
+                  </div>
                 </div>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div>
+                  <label for="tls-handshake-timeout" class="block text-sm font-medium text-gray-700 mb-1">TLS Handshake Timeout (ms)</label>
+                  <div class="flex">
+                    <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
+                      <i class="fas fa-shield-alt"></i>
+                    </span>
+                    <input id="tls-handshake-timeout" type="number" placeholder="5000" title="TLS handshake timeout in ms" value="5000" class="w-full border border-gray-300 rounded-r-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500">
+                  </div>
+                </div>
+                <div>
+                  <label for="response-header-timeout" class="block text-sm font-medium text-gray-700 mb-1">Response Header Timeout (ms)</label>
+                  <div class="flex">
+                    <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
+                      <i class="fas fa-file-code"></i>
+                    </span>
+                    <input id="response-header-timeout" type="number" placeholder="5000" title="Response header timeout in ms" value="5000" class="w-full border border-gray-300 rounded-r-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500">
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div>
+                  <label for="expect-continue-timeout" class="block text-sm font-medium text-gray-700 mb-1">Expect-Continue Timeout (ms)</label>
+                  <div class="flex">
+                    <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
+                      <i class="fas fa-hourglass-half"></i>
+                    </span>
+                    <input id="expect-continue-timeout" type="number" placeholder="500" title="Expect-continue timeout in ms" value="500" class="w-full border border-gray-300 rounded-r-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500">
+                  </div>
+                </div>
+                <div>
+                  <label for="request-timeout" class="block text-sm font-medium text-gray-700 mb-1">Request Timeout (ms)</label>
+                  <div class="flex">
+                    <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
+                      <i class="fas fa-stopwatch"></i>
+                    </span>
+                    <input id="request-timeout" type="number" placeholder="30000" title="Overall request timeout in ms" value="30000" class="w-full border border-gray-300 rounded-r-md py-2 px-3 focus:ring-orange-500 focus:border-orange-500">
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <div class="flex items-center">
+                  <input id="insecure-skip-verify" type="checkbox" class="h-4 w-4 text-orange-500 focus:ring-orange-400 border-gray-300 rounded">
+                  <label for="insecure-skip-verify" class="ml-2 block text-sm font-medium text-gray-700">
+                    Skip TLS Certificate Verification (insecure)
+                  </label>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">
+                  Warning: Only enable this in development or testing environments.
+                </p>
               </div>
             </div>
             

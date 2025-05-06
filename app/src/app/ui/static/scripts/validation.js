@@ -338,6 +338,10 @@ function validateStep3(showErrors = false) {
   // Validate timeouts
   const dialTimeoutInput = document.getElementById('dial-timeout');
   const keepaliveTimeoutInput = document.getElementById('keepalive-timeout');
+  const tlsHandshakeTimeoutInput = document.getElementById('tls-handshake-timeout');
+  const responseHeaderTimeoutInput = document.getElementById('response-header-timeout');
+  const expectContinueTimeoutInput = document.getElementById('expect-continue-timeout');
+  const requestTimeoutInput = document.getElementById('request-timeout');
   
   const dialTimeoutValid = validateTextField(
     dialTimeoutInput,
@@ -349,6 +353,30 @@ function validateStep3(showErrors = false) {
     keepaliveTimeoutInput,
     val => validateNumberRange(val, VALIDATION.MIN_TIMEOUT, VALIDATION.MAX_TIMEOUT),
     `Keep alive timeout must be between ${VALIDATION.MIN_TIMEOUT} and ${VALIDATION.MAX_TIMEOUT} ms`
+  );
+  
+  const tlsHandshakeTimeoutValid = validateTextField(
+    tlsHandshakeTimeoutInput,
+    val => validateNumberRange(val, VALIDATION.MIN_TIMEOUT, VALIDATION.MAX_TIMEOUT),
+    `TLS handshake timeout must be between ${VALIDATION.MIN_TIMEOUT} and ${VALIDATION.MAX_TIMEOUT} ms`
+  );
+  
+  const responseHeaderTimeoutValid = validateTextField(
+    responseHeaderTimeoutInput,
+    val => validateNumberRange(val, VALIDATION.MIN_TIMEOUT, VALIDATION.MAX_TIMEOUT),
+    `Response header timeout must be between ${VALIDATION.MIN_TIMEOUT} and ${VALIDATION.MAX_TIMEOUT} ms`
+  );
+  
+  const expectContinueTimeoutValid = validateTextField(
+    expectContinueTimeoutInput,
+    val => validateNumberRange(val, VALIDATION.MIN_TIMEOUT, VALIDATION.MAX_TIMEOUT),
+    `Expect-Continue timeout must be between ${VALIDATION.MIN_TIMEOUT} and ${VALIDATION.MAX_TIMEOUT} ms`
+  );
+  
+  const requestTimeoutValid = validateTextField(
+    requestTimeoutInput,
+    val => validateNumberRange(val, VALIDATION.MIN_TIMEOUT, VALIDATION.MAX_TIMEOUT),
+    `Request timeout must be between ${VALIDATION.MIN_TIMEOUT} and ${VALIDATION.MAX_TIMEOUT} ms`
   );
   
   // Show global URL list validation message if necessary
@@ -368,7 +396,13 @@ function validateStep3(showErrors = false) {
     }
   }
   
-  validationState.step3 = urlsValid && hasValidUrl && dialTimeoutValid && keepaliveTimeoutValid;
+  validationState.step3 = urlsValid && hasValidUrl && 
+                  dialTimeoutValid && 
+                  keepaliveTimeoutValid && 
+                  tlsHandshakeTimeoutValid && 
+                  responseHeaderTimeoutValid && 
+                  expectContinueTimeoutValid && 
+                  requestTimeoutValid;
   updateNextButtonState(3);
   return validationState.step3;
 }
@@ -458,6 +492,22 @@ function initValidation() {
   }, TIME.VALIDATION_DEBOUNCE));
   
   document.getElementById('keepalive-timeout')?.addEventListener('input', debounce(() => {
+    validateStep3();
+  }, TIME.VALIDATION_DEBOUNCE));
+  
+  document.getElementById('tls-handshake-timeout')?.addEventListener('input', debounce(() => {
+    validateStep3();
+  }, TIME.VALIDATION_DEBOUNCE));
+  
+  document.getElementById('response-header-timeout')?.addEventListener('input', debounce(() => {
+    validateStep3();
+  }, TIME.VALIDATION_DEBOUNCE));
+  
+  document.getElementById('expect-continue-timeout')?.addEventListener('input', debounce(() => {
+    validateStep3();
+  }, TIME.VALIDATION_DEBOUNCE));
+  
+  document.getElementById('request-timeout')?.addEventListener('input', debounce(() => {
     validateStep3();
   }, TIME.VALIDATION_DEBOUNCE));
   

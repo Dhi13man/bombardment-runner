@@ -298,8 +298,13 @@ function initForm() {
     const payload = {
       client_context: {
         channel: checkedVal('client_channel'),
-        dial_timeout: 1e9 * Number(getVal('#dial-timeout')),
-        keep_alive_timeout: 1e9 * Number(getVal('#keepalive-timeout'))
+        dial_timeout: 1e6 * Number(getVal('#dial-timeout')),
+        dial_keep_alive: 1e6 * Number(getVal('#keepalive-timeout')),
+        tls_handshake_timeout: 1e6 * Number(getVal('#tls-handshake-timeout')),
+        response_header_timeout: 1e6 * Number(getVal('#response-header-timeout')),
+        expect_continue_timeout: 1e6 * Number(getVal('#expect-continue-timeout')),
+        request_timeout: 1e6 * Number(getVal('#request-timeout')),
+        insecure_skip_verify: $('#insecure-skip-verify').checked
       },
       driver_context: {
         batch_size: Number(getVal('#batch-size')),
