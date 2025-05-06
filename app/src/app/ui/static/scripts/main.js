@@ -368,6 +368,11 @@ function populateReview() {
   const clientChannel = checkedVal('client_channel');
   const dial = getVal('#dial-timeout');
   const keep = getVal('#keepalive-timeout');
+  const tlsHandshake = getVal('#tls-handshake-timeout');
+  const responseHeader = getVal('#response-header-timeout');
+  const expectContinue = getVal('#expect-continue-timeout');
+  const requestTimeout = getVal('#request-timeout');
+  const insecureSkipVerify = $('#insecure-skip-verify').checked;
   const lbStrat = checkedVal('lb_strategy');
   const urlsArray = $$('.lb-url input').map(i => i.value.trim()).filter(Boolean);
   const batchSize = getVal('#batch-size');
@@ -510,20 +515,64 @@ function populateReview() {
         </div>
         <div class="config-item">
           <div class="config-item-label">
-            <i class="fas fa-clock"></i>
-            Dial Timeout
+            <i class="fas fa-cogs"></i>
+            Client
           </div>
           <div class="config-item-value">
-            ${dial} ms
+            <button type="button" class="view-client-btn text-sm text-blue-600 hover:text-blue-800" 
+              onclick="toggleClientDetails()">View Details</button>
           </div>
         </div>
-        <div class="config-item">
-          <div class="config-item-label">
-            <i class="fas fa-heartbeat"></i>
-            Keep Alive
+        
+        <div id="timeout-details" class="config-item-details" style="display: none;">
+          <div class="config-detail-item">
+            <div class="detail-label">
+              <i class="fas fa-clock"></i>
+              Dial Timeout
+            </div>
+            <div class="detail-value">${dial} ms</div>
           </div>
-          <div class="config-item-value">
-            ${keep} ms
+          <div class="config-detail-item">
+            <div class="detail-label">
+              <i class="fas fa-heartbeat"></i>
+              Keep Alive
+            </div>
+            <div class="detail-value">${keep} ms</div>
+          </div>
+          <div class="config-detail-item">
+            <div class="detail-label">
+              <i class="fas fa-shield-alt"></i>
+              TLS Handshake
+            </div>
+            <div class="detail-value">${tlsHandshake} ms</div>
+          </div>
+          <div class="config-detail-item">
+            <div class="detail-label">
+              <i class="fas fa-file-code"></i>
+              Response Header
+            </div>
+            <div class="detail-value">${responseHeader} ms</div>
+          </div>
+          <div class="config-detail-item">
+            <div class="detail-label">
+              <i class="fas fa-hourglass-half"></i>
+              Expect-Continue
+            </div>
+            <div class="detail-value">${expectContinue} ms</div>
+          </div>
+          <div class="config-detail-item">
+            <div class="detail-label">
+              <i class="fas fa-stopwatch"></i>
+              Request Timeout
+            </div>
+            <div class="detail-value">${requestTimeout} ms</div>
+          </div>
+          <div class="config-detail-item">
+            <div class="detail-label">
+              <i class="fas fa-lock${insecureSkipVerify ? '-open' : ''}"></i>
+              TLS Verification
+            </div>
+            <div class="detail-value">${insecureSkipVerify ? 'Disabled' : 'Enabled'}</div>
           </div>
         </div>
         <div class="config-item">
@@ -572,6 +621,22 @@ function initTransformInfoListener() {
   const sel = $(SELECTORS.transStrategy);
   const info = $(SELECTORS.transformInfo);
   sel?.addEventListener('change', () => updateTransformInfo(sel.value, info));
+}
+
+// --- Timeout Details Toggle ---------------------------------------------
+function toggleClientDetails() {
+  const timeoutDetails = document.getElementById('timeout-details');
+  if (timeoutDetails) {
+    const isCurrentlyHidden = timeoutDetails.style.display === 'none';
+    timeoutDetails.style.display = isCurrentlyHidden ? 'block' : 'none';
+    
+    // Update button text and ARIA attribute
+    const btn = document.querySelector('.view-client-btn');
+    if (btn) {
+      btn.textContent = isCurrentlyHidden ? 'Hide Details' : 'View Details';
+      btn.setAttribute('aria-expanded', isCurrentlyHidden ? 'true' : 'false');
+    }
+  }
 }
 
 // --- Configuration Issues -----------------------------------------------
