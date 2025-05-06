@@ -332,7 +332,7 @@ function initForm() {
       });
       const data = await res.json();
       if (res.ok) {
-        showResponse('success', 'Bombardment started successfully!', resp);
+        showResponse('success', 'Bombarded successfully!', resp);
       } else {
         showResponse('error', data.error || 'Error starting bombardment', resp);
       }

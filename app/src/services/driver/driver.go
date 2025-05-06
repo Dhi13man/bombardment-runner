@@ -6,12 +6,11 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"github.dhi13man.com/bombardment-runner/src/models/dto"
-	"github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
-	"github.dhi13man.com/bombardment-runner/src/models/dto/clients/responses"
+	modelsDtoRequests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
+	modelsDtoResponses "github.dhi13man.com/bombardment-runner/src/models/dto/clients/responses"
 	"github.dhi13man.com/bombardment-runner/src/services/batching"
 	"github.dhi13man.com/bombardment-runner/src/services/clients"
 	"github.dhi13man.com/bombardment-runner/src/services/load_balancing"
@@ -66,7 +65,6 @@ func (b *bombardmentDriver) CreateBombardment(
 	// Prepare file for response storage if enabled
 	var responseFile *os.File
 	var responseWriter *csv.Writer
-	var responseMutex sync.Mutex
 
 	if bombardmentRequest.Driver.ShouldStoreResponses {
 		// Use default path if not provided
@@ -123,43 +121,25 @@ func (b *bombardmentDriver) CreateBombardment(
 			}
 
 			elapsedMs := time.Since(startTime).Milliseconds()
-			requestID := rawData["request_id"] // Try to get request ID from raw data
+			requestID := rawData["request_id"]
 			if requestID == "" {
-				requestID = fmt.Sprintf("req_%d", time.Now().UnixNano()) // Generate one if not found
+				requestID = fmt.Sprintf("req_%d", time.Now().UnixNano())
 			}
 
-			summary := &modelsDtoResponses.ResponseSummary{
+			return &modelsDtoResponses.ResponseSummary{
 				Status:       status,
 				RequestID:    requestID,
 				ResponseTime: elapsedMs,
 				Timestamp:    time.Now(),
 			}
-
-			// Store response if enabled
-			if bombardmentRequest.Driver.ShouldStoreResponses && responseWriter != nil {
-				responseMutex.Lock()
-				err := responseWriter.Write([]string{
-					requestID,
-					fmt.Sprintf("%d", *status),
-					summary.Timestamp.Format(time.RFC3339),
-					fmt.Sprintf("%d", summary.ResponseTime),
-				})
-				if err != nil {
-					zap.L().Error("Failed to write response to CSV", zap.Error(err))
-					return nil
-				}
-				responseWriter.Flush()
-				responseMutex.Unlock()
-			}
-
-			return summary
 		},
 	)
 
 	// Read CSV file and get headers and data channel
 	insight_channel, err := parser.CreateRawDataStream()
 	if err != nil {
-		zap.L().Error("failed to read CSV file: ", zap.Error(err))
+		zap.L().Error("failed to read CSV file", zap.Error(err))
+		return err
 	}
 
 	// Process the InsightData in batches
@@ -167,8 +147,22 @@ func (b *bombardmentDriver) CreateBombardment(
 
 	// Process the responses
 	for response := range responseChannel {
-		zap.S().Debugf("Response Code: %v, Request ID: %s, Time: %dms",
-			response.Status, response.RequestID, response.ResponseTime)
+		if response == nil {
+			continue
+		}
+		
+		if bombardmentRequest.Driver.ShouldStoreResponses && responseWriter != nil {
+			err := responseWriter.Write([]string{
+				response.RequestID,
+				fmt.Sprintf("%d", *response.Status),
+				response.Timestamp.Format(time.RFC3339),
+				fmt.Sprintf("%d", response.ResponseTime),
+			})
+			if err != nil {
+				zap.L().Error("Failed to write response to CSV", zap.Error(err))
+			}
+			responseWriter.Flush()
+		}
 	}
 
 	if responseWriter != nil {
