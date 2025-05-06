@@ -110,24 +110,25 @@ func (b *bombardmentDriver) CreateBombardment(
 		bombardmentRequest.Driver.BatchSize,
 		func(rawData map[string]string) *modelsDtoResponses.ResponseSummary {
 			startTime := time.Now()
-			transformed, err := transformer.TransformRequest(rawData)
-			if err != nil {
-				return nil
-			}
-
-			status, err := makeRequest(transformed, loadBalancer)
-			if err != nil {
-				return nil
-			}
-
+			transformed, txErr := transformer.TransformRequest(rawData)
 			elapsedMs := time.Since(startTime).Milliseconds()
 			requestID := rawData["request_id"]
 			if requestID == "" {
 				requestID = fmt.Sprintf("req_%d", time.Now().UnixNano())
 			}
-
+			var statusPtr *int
+			if txErr != nil {
+				zap.L().Error("Transform request failed", zap.Error(txErr))
+			} else {
+				stat, reqErr := makeRequest(transformed, loadBalancer)
+				if reqErr != nil {
+					zap.L().Error("Request execution failed", zap.Error(reqErr))
+				} else {
+					statusPtr = stat
+				}
+			}
 			return &modelsDtoResponses.ResponseSummary{
-				Status:       status,
+				Status:       statusPtr,
 				RequestID:    requestID,
 				ResponseTime: elapsedMs,
 				Timestamp:    time.Now(),
@@ -150,11 +151,15 @@ func (b *bombardmentDriver) CreateBombardment(
 		if response == nil {
 			continue
 		}
-		
+
 		if bombardmentRequest.Driver.ShouldStoreResponses && responseWriter != nil {
+			statusStr := "ERROR"
+			if response.Status != nil {
+				statusStr = fmt.Sprintf("%d", *response.Status)
+			}
 			err := responseWriter.Write([]string{
 				response.RequestID,
-				fmt.Sprintf("%d", *response.Status),
+				statusStr,
 				response.Timestamp.Format(time.RFC3339),
 				fmt.Sprintf("%d", response.ResponseTime),
 			})
