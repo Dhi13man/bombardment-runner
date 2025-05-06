@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="/static/styles/global.css">
   <link rel="stylesheet" href="/static/styles/validation.css">
   <link rel="stylesheet" href="/static/styles/config-summary.css">
+  <link rel="stylesheet" href="/static/styles/step-indicator.css">
 </head>
 
 <body class="h-full text-base-content">
@@ -64,46 +65,45 @@
 
       <!-- Step Progress Indicator -->
       <div class="mb-8 animate__animated animate__fadeIn animate__delay-1s">
-        <ul id="step-indicator" class="flex items-center justify-between">
-          <li class="flex-1 relative text-center step-active">
-            <div class="relative flex flex-col items-center bg-white px-2">
-              <div class="w-12 h-12 flex items-center justify-center rounded-full bg-orange-500 text-white step-circle shadow-md">
-                <i class="fas fa-file-import text-lg"></i>
+        <ul id="step-indicator" class="step-indicator">
+          <li class="step-item step-active">
+            <div class="step-arrow">
+              <div class="step-content">
+                <span class="step-icon">
+                  <i class="fas fa-file-import"></i>
+                </span>
+                <span class="step-label">Source</span>
               </div>
-              <span class="mt-2 text-sm font-medium text-gray-700 step-label">Source</span>
             </div>
           </li>
-          <li class="flex-1 relative">
-            <div class="absolute inset-0 flex items-center justify-center">
-              <div class="w-full h-1 bg-gray-300"></div>
-            </div>
-            <div class="relative flex flex-col items-center bg-white px-2">
-              <div class="w-12 h-12 flex items-center justify-center rounded-full bg-gray-300 text-white step-circle">
-                <i class="fas fa-sliders-h text-lg"></i>
+          <li class="step-item">
+            <div class="step-arrow">
+              <div class="step-content">
+                <span class="step-icon">
+                  <i class="fas fa-sliders-h"></i>
+                </span>
+                <span class="step-label">Transform</span>
               </div>
-              <span class="mt-2 text-sm font-medium text-gray-500 step-label">Transform</span>
             </div>
           </li>
-          <li class="flex-1 relative">
-            <div class="absolute inset-0 flex items-center justify-center">
-              <div class="w-full h-1 bg-gray-300"></div>
-            </div>
-            <div class="relative flex flex-col items-center bg-white px-2">
-              <div class="w-12 h-12 flex items-center justify-center rounded-full bg-gray-300 text-white step-circle">
-                <i class="fas fa-bullseye text-lg"></i>
+          <li class="step-item">
+            <div class="step-arrow">
+              <div class="step-content">
+                <span class="step-icon">
+                  <i class="fas fa-bullseye"></i>
+                </span>
+                <span class="step-label">Target</span>
               </div>
-              <span class="mt-2 text-sm font-medium text-gray-500 step-label">Target</span>
             </div>
           </li>
-          <li class="flex-1 relative">
-            <div class="absolute inset-0 flex items-center justify-center">
-              <div class="w-full h-1 bg-gray-300"></div>
-            </div>
-            <div class="relative flex flex-col items-center bg-white px-2">
-              <div class="w-12 h-12 flex items-center justify-center rounded-full bg-gray-300 text-white step-circle">
-                <i class="fas fa-check-circle text-lg"></i>
+          <li class="step-item">
+            <div class="step-arrow">
+              <div class="step-content">
+                <span class="step-icon">
+                  <i class="fas fa-check-circle"></i>
+                </span>
+                <span class="step-label">Review</span>
               </div>
-              <span class="mt-2 text-sm font-medium text-gray-500 step-label">Review</span>
             </div>
           </li>
         </ul>

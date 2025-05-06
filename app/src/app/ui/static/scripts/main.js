@@ -16,8 +16,8 @@ const SELECTORS = {
   prevBtn: '#prev-btn',
   nextBtn: '#next-btn',
   submitBtn: '#submit-btn',
-  stepItems: '#step-indicator li',
-  stepCircles: '#step-indicator .step-circle',
+  stepItems: '#step-indicator .step-item',
+  stepArrows: '#step-indicator .step-arrow',
   stepLabels: '#step-indicator .step-label',
   urlsContainer: '#urls-container',
   addUrlBtn: '#add-url',
@@ -146,7 +146,7 @@ function initWizard() {
 
   const indicators = {
     items: $$(SELECTORS.stepItems),
-    circles: $$(SELECTORS.stepCircles),
+    arrows: $$(SELECTORS.stepArrows),
     labels: $$(SELECTORS.stepLabels)
   };
 
@@ -183,14 +183,14 @@ function initWizard() {
       }
     }
 
-    indicators.items.forEach((it, i) => it.classList.toggle('step-active', i < step));
-    indicators.circles.forEach((c, i) => {
-      c.classList.toggle('bg-orange-500', i < step);
-      c.classList.toggle('bg-gray-300', i >= step);
-    });
-    indicators.labels.forEach((l, i) => {
-      l.classList.toggle('text-gray-700', i < step);
-      l.classList.toggle('text-gray-500', i >= step);
+    // Update the step indicators to show active and completed states
+    indicators.items.forEach((item, i) => {
+      // Completed steps (steps before current)
+      item.classList.toggle('step-completed', i < step - 1);
+      // Current active step
+      item.classList.toggle('step-active', i === step - 1);
+      // Inactive steps (steps after current)
+      item.classList.toggle('step-inactive', i > step - 1);
     });
 
     // Run validation for the current step
