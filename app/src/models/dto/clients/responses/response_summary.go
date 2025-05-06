@@ -10,4 +10,5 @@ type ResponseSummary struct {
 	RequestID    string
 	ResponseTime int64
 	Timestamp    time.Time
+	ErrorMessage string
 }

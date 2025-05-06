@@ -96,7 +96,7 @@ func (b *bombardmentDriver) CreateBombardment(
 		responseWriter = csv.NewWriter(responseFile)
 
 		// Write header
-		err = responseWriter.Write([]string{"Request ID", "Status Code", "Timestamp", "Response Time (ms)"})
+		err = responseWriter.Write([]string{"Request ID", "Status Code", "Timestamp", "Response Time (ms)", "Error Message"})
 		if err != nil {
 			zap.L().Error("Failed to write CSV header", zap.Error(err))
 			return err
@@ -117,12 +117,13 @@ func (b *bombardmentDriver) CreateBombardment(
 				requestID = fmt.Sprintf("req_%d", time.Now().UnixNano())
 			}
 			var statusPtr *int
+			var errMsg string
 			if txErr != nil {
-				zap.L().Error("Transform request failed", zap.Error(txErr))
+				errMsg = txErr.Error()
 			} else {
 				stat, reqErr := makeRequest(transformed, loadBalancer)
 				if reqErr != nil {
-					zap.L().Error("Request execution failed", zap.Error(reqErr))
+					errMsg = reqErr.Error()
 				} else {
 					statusPtr = stat
 				}
@@ -132,6 +133,7 @@ func (b *bombardmentDriver) CreateBombardment(
 				RequestID:    requestID,
 				ResponseTime: elapsedMs,
 				Timestamp:    time.Now(),
+				ErrorMessage: errMsg,
 			}
 		},
 	)
@@ -162,6 +164,7 @@ func (b *bombardmentDriver) CreateBombardment(
 				statusStr,
 				response.Timestamp.Format(time.RFC3339),
 				fmt.Sprintf("%d", response.ResponseTime),
+				fmt.Sprintf("%q", response.ErrorMessage),
 			})
 			if err != nil {
 				zap.L().Error("Failed to write response to CSV", zap.Error(err))
