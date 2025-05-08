@@ -47,7 +47,7 @@ const TRANSFORM_INFO = {
 
 const VALIDATION = {
   FILE_PATH_REGEX: /^(\.[\/\\])?([a-zA-Z0-9_\-\/\\]+)\.([a-zA-Z0-9]+)$/,
-  URL_REGEX: /^(https?:\/\/)?([a-zA-Z0-9][-a-zA-Z0-9]*(\.[a-zA-Z0-9][-a-zA-Z0-9]*)+|localhost)(:[0-9]{1,5})?(\/[-a-zA-Z0-9()@:%_\+.~#?&//=]*)?$/,
+  URL_REGEX: /^https?:\/\/([a-zA-Z0-9][-a-zA-Z0-9]*(\.[a-zA-Z0-9][-a-zA-Z0-9]*)+|localhost)(:[0-9]{1,5})?(\/[-a-zA-Z0-9()@:%_\+.~#?&//=]*)?$/,
   MIN_BATCH_SIZE: 1,
   MAX_BATCH_SIZE: 10000,
   MIN_TIMEOUT: 100,
