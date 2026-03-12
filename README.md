@@ -1,22 +1,43 @@
 # Bombardment
 
+[![License](https://img.shields.io/github/license/dhi13man/bombardment-runner)](https://github.com/Dhi13man/bombardment-runner/blob/main/LICENSE)
+[![Go Version](https://img.shields.io/badge/Go-1.23+-00ADD8?style=flat&logo=go)](https://go.dev)
+[![CI](https://github.com/Dhi13man/bombardment-runner/actions/workflows/ci.yml/badge.svg)](https://github.com/Dhi13man/bombardment-runner/actions/workflows/ci.yml)
+[![Contributors](https://img.shields.io/github/contributors-anon/dhi13man/bombardment-runner?style=flat)](https://github.com/Dhi13man/bombardment-runner/graphs/contributors)
+[![Last Commit](https://img.shields.io/github/last-commit/dhi13man/bombardment-runner)](https://github.com/Dhi13man/bombardment-runner/commits/main)
+[![GitHub forks](https://img.shields.io/github/forks/dhi13man/bombardment-runner?style=social)](https://github.com/Dhi13man/bombardment-runner/network/members)
+[![GitHub Repo stars](https://img.shields.io/github/stars/dhi13man/bombardment-runner?style=social)](https://github.com/Dhi13man/bombardment-runner/stargazers)
+
+[!["Buy Me A Coffee"](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20an%20Ego%20boost&emoji=%F0%9F%98%B3&slug=dhi13man&button_colour=FF5F5F&font_colour=ffffff&font_family=Lato&outline_colour=000000&coffee_colour=FFDD00)](https://www.buymeacoffee.com/dhi13man)
+
 > A lightweight, extensible tool for bulk API testing and data migration with streaming processing, JSONata transformations, and real-time progress tracking.
 
-[![CI](https://github.com/Dhi13man/bombardment-runner/actions/workflows/ci.yml/badge.svg)](https://github.com/Dhi13man/bombardment-runner/actions/workflows/ci.yml)
-[![Go Version](https://img.shields.io/badge/Go-1.23+-00ADD8?style=flat&logo=go)](https://go.dev)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+## Contents
+
+- [Bombardment](#bombardment)
+  - [Contents](#contents)
+  - [Features](#features)
+  - [Architecture](#architecture)
+  - [Quick Start](#quick-start)
+  - [API Reference](#api-reference)
+  - [Configuration](#configuration)
+  - [Development](#development)
+  - [Extending Bombardment](#extending-bombardment)
+  - [Contributing](#contributing)
+  - [Changelog](#changelog)
+  - [License](#license)
 
 ## Features
 
-- **Streaming file parsing** — CSV and JSON files processed via Go channels, not loaded into memory
-- **JSONata transformations** — Shape each record into an HTTP request using [JSONata](https://jsonata.org) expressions
-- **Concurrent batch processing** — Configurable batch sizes with goroutine-per-request parallelism
-- **Load balancing** — Round-robin and random strategies across multiple target URLs
-- **Real-time progress** — REST API for job status with processed/failed/total counters
-- **Web UI** — Guided wizard for configuring and monitoring bombardment jobs
-- **CLI mode** — Full feature access from the command line for scripting and CI/CD
-- **Response capture** — Optional CSV export of all API responses
-- **Extensible architecture** — Strategy pattern makes it trivial to add new parsers, transformers, clients, and load balancers
+- **Streaming file parsing** - CSV and JSON files processed via Go channels, not loaded entirely into memory
+- **JSONata transformations** - Shape each record into an HTTP request using [JSONata](https://jsonata.org) expressions
+- **Concurrent batch processing** - Configurable batch sizes with goroutine-per-request parallelism
+- **Load balancing** - Round-robin and random strategies across multiple target URLs
+- **Real-time progress** - REST API for job status with processed/failed/total counters
+- **Web UI** - Guided wizard for configuring and monitoring bombardment jobs
+- **CLI mode** - Full feature access from the command line for scripting and CI/CD
+- **Response capture** - Optional CSV export of all API responses with status codes, timestamps, and latencies
+- **Extensible architecture** - Strategy pattern makes it trivial to add new parsers, transformers, clients, and load balancers
 
 ## Architecture
 
@@ -82,7 +103,7 @@ go run main.go server --bind-addr 0.0.0.0
 ```bash
 cd bombardment-runner/app
 go run main.go cli \
-  --client-context '{"channel":"REST","dial_timeout":5000000000,"request_timeout":30000000000}' \
+  --client-context '{"channel":"REST","request_timeout":30000000000}' \
   --driver-context '{"batch_size":100}' \
   --parser-context '{"strategy":"CSV","file_path":"./data.csv"}' \
   --load-balancer-context '{"strategy":"ROUND_ROBIN","urls":["https://api.example.com"]}' \
@@ -92,7 +113,7 @@ go run main.go cli \
 ## API Reference
 
 | Endpoint | Method | Description |
-| -------- | ------ | ----------- |
+| --- | --- | --- |
 | `/v1/bombardment` | `POST` | Start a new bombardment job |
 | `/v1/bombardment` | `GET` | List all jobs with status |
 | `/v1/bombardment/{id}` | `GET` | Get job status and progress |
@@ -107,12 +128,12 @@ For detailed schema documentation, start the server and visit `/swagger/index.ht
 The `POST /v1/bombardment` payload accepts these configuration sections:
 
 | Section | Key Fields | Description |
-| ------- | ---------- | ----------- |
-| `parser_context` | `strategy`, `file_path`, `file_content_b64` | Source data format (`CSV`, `JSON`) and location (file path or base64-encoded content) |
-| `transformer_context` | `strategy`, `method_expression`, `endpoint_expression`, `headers_expression`, `body_expression` | How to transform each record into an HTTP request using JSONata expressions |
-| `client_context` | `channel`, `dial_timeout`, `request_timeout`, `insecure_skip_verify` | HTTP client channel and timeout settings (values in nanoseconds) |
-| `load_balancer_context` | `strategy`, `urls` | Load balancing strategy (`ROUND_ROBIN`, `RANDOM`) and target endpoint URLs |
-| `driver_context` | `batch_size`, `should_store_responses`, `responses_storage_path` | Batch processing size and optional response storage configuration |
+| --- | --- | --- |
+| `parser_context` | `strategy`, `file_path`, `file_content_b64` | Source data format (`CSV`, `JSON`) and location |
+| `transformer_context` | `strategy`, `body_expression`, `method_expression`, `endpoint_expression`, `headers_expression` | JSONata expressions to shape each record into an HTTP request |
+| `client_context` | `channel`, `request_timeout`, `insecure_skip_verify` | HTTP client channel and timeout settings (nanoseconds) |
+| `load_balancer_context` | `strategy`, `urls` | Load balancing strategy (`ROUND_ROBIN`, `RANDOM`) and target URLs |
+| `driver_context` | `batch_size`, `should_store_responses`, `responses_storage_path` | Batch size and optional response CSV storage |
 
 ### Example Request Body
 
@@ -120,9 +141,7 @@ The `POST /v1/bombardment` payload accepts these configuration sections:
 {
   "client_context": {
     "channel": "REST",
-    "dial_timeout": 5000000000,
-    "request_timeout": 30000000000,
-    "insecure_skip_verify": false
+    "request_timeout": 30000000000
   },
   "driver_context": {
     "batch_size": 100,
@@ -166,10 +185,10 @@ make clean         # Remove build artifacts
 
 Bombardment uses the strategy pattern throughout. To add support for a new protocol, format, or algorithm:
 
-1. **New file parser** — Implement `BaseFileParser[T]`, add an enum value to `ParserStrategy`, and register it in `CreateFileParser()`
-2. **New transformer** — Implement `BaseTransformer`, add an enum value to `TransformerStrategy`, and register it in `CreateTransformer()`
-3. **New load balancer** — Implement `BaseLoadBalancer`, add an enum value to `LoadBalancerStrategy`, and register it in `CreateLoadBalancer()`
-4. **New client channel** — Implement `BaseChannelClient`, add an enum value to `ClientChannel`, and register it in `CreateChannelClient()`
+1. **New file parser** - Implement `BaseFileParser[T]`, add an enum value to `ParserStrategy`, and register it in `CreateFileParser()`
+2. **New transformer** - Implement `BaseTransformer`, add an enum value to `TransformerStrategy`, and register it in `CreateTransformer()`
+3. **New load balancer** - Implement `BaseLoadBalancer`, add an enum value to `LoadBalancerStrategy`, and register it in `CreateLoadBalancer()`
+4. **New client channel** - Implement `BaseChannelClient`, add an enum value to `ClientChannel`, and register it in `CreateChannelClient()`
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full extension guide.
 
@@ -240,6 +259,19 @@ app/
 └── docs/                            # Generated Swagger documentation
 ```
 
+## Contributing
+
+Contributions are welcome! Check the [in-depth Contributing Guide](CONTRIBUTING.md) for exact steps on how to contribute.
+
+- File any [issues or feature requests here](https://github.com/Dhi13man/bombardment-runner/issues), or help resolve existing ones.
+- This project follows the [Contributor Covenant v2.1](CODE_OF_CONDUCT.md). Be respectful and constructive in all interactions.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history.
+
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+MIT - see [LICENSE](LICENSE) for details.
+
+Reach out to me directly @dhi13man on [GitHub](https://github.com/Dhi13man) if you have any general questions or suggestions.
