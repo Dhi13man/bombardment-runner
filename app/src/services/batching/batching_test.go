@@ -155,6 +155,58 @@ func TestCreateProcessedBatchChannel_WhenBatchSizeOne_ThenProcessesAllItems(t *t
 	}
 }
 
+func TestNewBatchProcessor_WhenZeroBatchSize_ThenClampsToOne(t *testing.T) {
+	t.Parallel()
+
+	// Arrange - batchSize 0 should be clamped to 1 to prevent infinite loop
+	bp := NewBatchProcessor(0, func(n int) int { return n + 1 })
+
+	requests := make(chan int, 3)
+	requests <- 10
+	requests <- 20
+	requests <- 30
+	close(requests)
+
+	// Act
+	responses := bp.CreateProcessedBatchChannel(requests)
+
+	var results []int
+	for r := range responses {
+		results = append(results, r)
+	}
+
+	// Assert - all items should be processed despite invalid batch size
+	sort.Ints(results)
+	if len(results) != 3 {
+		t.Fatalf("expected 3 results, got %d", len(results))
+	}
+}
+
+func TestNewBatchProcessor_WhenNegativeBatchSize_ThenClampsToOne(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	bp := NewBatchProcessor(-5, func(n int) int { return n })
+
+	requests := make(chan int, 2)
+	requests <- 1
+	requests <- 2
+	close(requests)
+
+	// Act
+	responses := bp.CreateProcessedBatchChannel(requests)
+
+	var results []int
+	for r := range responses {
+		results = append(results, r)
+	}
+
+	// Assert
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+}
+
 func TestCreateProcessedBatchChannel_PreservesAllResults(t *testing.T) {
 	t.Parallel()
 

@@ -15,10 +15,14 @@ type batchProcessor[T any, R any] struct {
 }
 
 // NewBatchProcessor creates a new batch processor.
+// batchSize must be >= 1; values <= 0 are clamped to 1 to prevent infinite loops.
 func NewBatchProcessor[T any, R any](
 	batchSize int,
 	performer func(T) R,
 ) BatchProcessor[T, R] {
+	if batchSize <= 0 {
+		batchSize = 1
+	}
 	return &batchProcessor[T, R]{
 		batchSize: batchSize,
 		performer: performer,

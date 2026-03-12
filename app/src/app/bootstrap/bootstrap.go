@@ -75,12 +75,13 @@ func (s *bootstrapImpl) RunCli(
 func (s *bootstrapImpl) RunServer(bindAddr string, port int) {
 	r := gin.Default()
 
-	// Error recovery middleware with structured JSON responses
+	// Error recovery middleware — log details internally, return generic message to clients
 	r.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
-		if err, ok := recovered.(string); ok {
-			c.AbortWithStatusJSON(500, gin.H{"error": err, "type": "internal_server_error"})
-			return
-		}
+		zap.L().Error("Panic recovered in HTTP handler",
+			zap.Any("panic", recovered),
+			zap.String("path", c.Request.URL.Path),
+			zap.String("method", c.Request.Method),
+		)
 		c.AbortWithStatusJSON(500, gin.H{
 			"error": "Internal Server Error",
 			"type":  "internal_server_error",
