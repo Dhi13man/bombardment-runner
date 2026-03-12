@@ -4,14 +4,20 @@
 *.dll
 *.so
 *.dylib
+bombardment
+app/bombardment
+
+# Debug binaries
+__debug_bin*
 
 # Test binary, built with `go test -c`
 *.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+coverage.html
 
-# Dependency directories (remove the comment below to include it)
+# Dependency directories
 # vendor/
 
 # IDE/Editor folders
@@ -33,4 +39,14 @@
 ehthumbs.db
 Thumbs.db
 
+# Application data directories
 private/
+data/
+responses/
+
+# Temporary files
+*.tmp
+*.bak
+
+# Implementation specs (development only)
+IMPLEMENTATION_SPECS.md
