@@ -190,3 +190,119 @@ func TestJob_ProgressPercent(t *testing.T) {
 		t.Fatalf("expected ProgressPercent ~%.1f, got %.4f", expected, snap.ProgressPercent)
 	}
 }
+
+func TestJob_IncrementFailed(t *testing.T) {
+	store := NewJobStore()
+	job := store.Create()
+	job.SetRunning()
+	job.SetTotal(10)
+
+	for i := 0; i < 3; i++ {
+		job.IncrementFailed()
+	}
+
+	snap := job.Snapshot()
+	if snap.FailedRows != 3 {
+		t.Fatalf("expected 3 failed rows, got %d", snap.FailedRows)
+	}
+}
+
+func TestJob_ProgressPercent_IncludesFailedRows(t *testing.T) {
+	store := NewJobStore()
+	job := store.Create()
+	job.SetRunning()
+	job.SetTotal(100)
+
+	// 30 processed + 20 failed = 50 out of 100 = 50%
+	for i := 0; i < 30; i++ {
+		job.IncrementProcessed()
+	}
+	for i := 0; i < 20; i++ {
+		job.IncrementFailed()
+	}
+
+	snap := job.Snapshot()
+	const expected = 50.0
+	const epsilon = 0.001
+	if snap.ProgressPercent < expected-epsilon || snap.ProgressPercent > expected+epsilon {
+		t.Fatalf("expected ProgressPercent ~%.1f (processed+failed), got %.4f", expected, snap.ProgressPercent)
+	}
+	if snap.ProcessedRows != 30 {
+		t.Fatalf("expected 30 processed rows, got %d", snap.ProcessedRows)
+	}
+	if snap.FailedRows != 20 {
+		t.Fatalf("expected 20 failed rows, got %d", snap.FailedRows)
+	}
+}
+
+func TestJob_ProgressPercent_ZeroTotal(t *testing.T) {
+	store := NewJobStore()
+	job := store.Create()
+	job.SetRunning()
+	// total stays at 0
+
+	snap := job.Snapshot()
+	if snap.ProgressPercent != 0 {
+		t.Fatalf("expected ProgressPercent 0 when total is 0, got %.4f", snap.ProgressPercent)
+	}
+}
+
+func TestJob_ConcurrentMixedUpdates(t *testing.T) {
+	store := NewJobStore()
+	job := store.Create()
+	job.SetRunning()
+	job.SetTotal(200)
+
+	var wg sync.WaitGroup
+	wg.Add(200)
+	for i := 0; i < 100; i++ {
+		go func() {
+			defer wg.Done()
+			job.IncrementProcessed()
+		}()
+		go func() {
+			defer wg.Done()
+			job.IncrementFailed()
+		}()
+	}
+	wg.Wait()
+
+	snap := job.Snapshot()
+	if snap.ProcessedRows != 100 {
+		t.Fatalf("expected 100 processed rows, got %d", snap.ProcessedRows)
+	}
+	if snap.FailedRows != 100 {
+		t.Fatalf("expected 100 failed rows, got %d", snap.FailedRows)
+	}
+
+	const expectedProgress = 100.0
+	const epsilon = 0.001
+	if snap.ProgressPercent < expectedProgress-epsilon || snap.ProgressPercent > expectedProgress+epsilon {
+		t.Fatalf("expected ProgressPercent ~%.1f, got %.4f", expectedProgress, snap.ProgressPercent)
+	}
+}
+
+func TestJobStore_List_SortedNewestFirst(t *testing.T) {
+	store := NewJobStore()
+
+	job1 := store.Create()
+	time.Sleep(2 * time.Millisecond) // ensure distinct timestamps
+	job2 := store.Create()
+	time.Sleep(2 * time.Millisecond)
+	job3 := store.Create()
+
+	jobs := store.List()
+	if len(jobs) != 3 {
+		t.Fatalf("expected 3 jobs, got %d", len(jobs))
+	}
+	// Newest first: job3, job2, job1
+	if jobs[0].ID != job3.ID {
+		t.Errorf("expected first job (newest) to be %q, got %q", job3.ID, jobs[0].ID)
+	}
+	if jobs[1].ID != job2.ID {
+		t.Errorf("expected second job to be %q, got %q", job2.ID, jobs[1].ID)
+	}
+	if jobs[2].ID != job1.ID {
+		t.Errorf("expected third job (oldest) to be %q, got %q", job1.ID, jobs[2].ID)
+	}
+}

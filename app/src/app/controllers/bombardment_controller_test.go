@@ -200,6 +200,89 @@ func TestBombardmentController_RegisterRoutes(t *testing.T) {
 	}
 }
 
+func TestBombardmentController_Bombard_WithFileContentB64(t *testing.T) {
+	t.Parallel()
+
+	driver := &mockDriver{}
+	store := services.NewJobStore()
+	router := setupRouterWithStore(driver, store)
+
+	reqBody := dto.BombardmentRequest{}
+	reqBody.Parser.FileContentB64 = "dGVzdA==" // base64("test")
+	body, _ := json.Marshal(reqBody)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/v1/bombardment", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Errorf("expected status 201, got %d; body: %s", w.Code, w.Body.String())
+	}
+
+	if !driver.asyncCalled {
+		t.Error("expected CreateBombardmentAsync to be called")
+	}
+
+	var resp services.JobSnapshot
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	if resp.ID == "" {
+		t.Error("expected non-empty job ID")
+	}
+}
+
+func TestBombardmentController_ListJobs_WithJobs(t *testing.T) {
+	t.Parallel()
+
+	driver := &mockDriver{}
+	store := services.NewJobStore()
+	store.Create()
+	store.Create()
+	router := setupRouterWithStore(driver, store)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/v1/bombardment", nil)
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	var resp map[string][]services.JobSnapshot
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	if len(resp["jobs"]) != 2 {
+		t.Errorf("expected 2 jobs, got %d", len(resp["jobs"]))
+	}
+}
+
+func TestBombardmentController_GetJobStatus_NotFound_ErrorBody(t *testing.T) {
+	t.Parallel()
+
+	driver := &mockDriver{}
+	router := setupRouter(driver)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/v1/bombardment/does-not-exist", nil)
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected status 404, got %d", w.Code)
+	}
+
+	var resp map[string]string
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal 404 response: %v", err)
+	}
+	if resp["error"] != "job not found" {
+		t.Errorf("expected error message %q, got %q", "job not found", resp["error"])
+	}
+}
+
 func TestHealthController_Ping(t *testing.T) {
 	t.Parallel()
 
