@@ -121,6 +121,40 @@ func TestCreateProcessedBatchChannel_EmptyChannel(t *testing.T) {
 	}
 }
 
+func TestCreateProcessedBatchChannel_WhenBatchSizeOne_ThenProcessesAllItems(t *testing.T) {
+	t.Parallel()
+
+	// Arrange - batch size of 1 means each item is its own batch
+	bp := NewBatchProcessor(1, func(n int) int { return n * 10 })
+
+	requests := make(chan int, 4)
+	for i := 1; i <= 4; i++ {
+		requests <- i
+	}
+	close(requests)
+
+	// Act
+	responses := bp.CreateProcessedBatchChannel(requests)
+
+	var results []int
+	for r := range responses {
+		results = append(results, r)
+	}
+
+	// Assert
+	sort.Ints(results)
+	if len(results) != 4 {
+		t.Fatalf("expected 4 results, got %d", len(results))
+	}
+
+	expected := []int{10, 20, 30, 40}
+	for i, v := range results {
+		if v != expected[i] {
+			t.Errorf("result[%d] = %d, want %d", i, v, expected[i])
+		}
+	}
+}
+
 func TestCreateProcessedBatchChannel_PreservesAllResults(t *testing.T) {
 	t.Parallel()
 

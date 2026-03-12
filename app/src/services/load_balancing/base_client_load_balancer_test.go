@@ -55,6 +55,50 @@ func TestCreateLoadBalancer_InvalidStrategy(t *testing.T) {
 	}
 }
 
+func TestCreateLoadBalancer_WhenEmptyUrls_ThenReturnsError(t *testing.T) {
+	// Arrange
+	mock := &randomMockClient{}
+
+	// Act
+	lb, err := CreateLoadBalancer(
+		modelsDtoLoadBalancing.LoadBalancerContext{
+			Strategy: modelsEnums.ROUND_ROBIN,
+			Urls:     []string{},
+		},
+		mock,
+	)
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error for empty URLs, got nil")
+	}
+	if lb != nil {
+		t.Error("expected nil load balancer for empty URLs")
+	}
+}
+
+func TestCreateLoadBalancer_WhenNilUrls_ThenReturnsError(t *testing.T) {
+	// Arrange
+	mock := &randomMockClient{}
+
+	// Act
+	lb, err := CreateLoadBalancer(
+		modelsDtoLoadBalancing.LoadBalancerContext{
+			Strategy: modelsEnums.RANDOM,
+			Urls:     nil,
+		},
+		mock,
+	)
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error for nil URLs, got nil")
+	}
+	if lb != nil {
+		t.Error("expected nil load balancer for nil URLs")
+	}
+}
+
 func TestCreateLoadBalancer_WhenLeastConnection_ThenReturnsError(t *testing.T) {
 	// Arrange — LEAST_CONNECTION is a defined enum but has no implementation yet
 	mock := &randomMockClient{}
