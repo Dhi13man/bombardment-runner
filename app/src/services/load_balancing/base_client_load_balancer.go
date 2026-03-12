@@ -25,7 +25,9 @@ func CreateLoadBalancer(
 	switch context.Strategy {
 	case modelsEnums.ROUND_ROBIN:
 		return NewRoundRobinLoadBalancer(context, client), nil
+	case modelsEnums.RANDOM:
+		return NewRandomLoadBalancer(context, client), nil
 	default:
-		return nil, errors.New("invalid strategy")
+		return nil, errors.New("invalid load balancer strategy: " + string(context.Strategy))
 	}
 }
