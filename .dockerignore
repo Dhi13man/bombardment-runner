@@ -1,0 +1,10 @@
+.git
+.github
+bombardment_runner/
+landing-site/
+*.md
+!README.md
+LICENSE
+IMPLEMENTATION_SPECS.md
+__debug_bin*
+.claude/
