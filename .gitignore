@@ -44,6 +44,9 @@ private/
 data/
 responses/
 
+# Deprecated Buffalo framework directory
+bombardment_runner/
+
 # Temporary files
 *.tmp
 *.bak
