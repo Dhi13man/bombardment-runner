@@ -258,11 +258,14 @@ func makeRequest(
 ) (*int, error) {
 	channelResponse, err := loadBalancer.Execute(data)
 	if err != nil {
-		zap.L().Error("Request failed: ", zap.Error(err))
+		zap.L().Error("Request failed", zap.Error(err))
 		return nil, err
 	}
 
-	restChannelResponse := channelResponse.(*modelsDtoResponses.RestChannelResponse)
+	restChannelResponse, ok := channelResponse.(*modelsDtoResponses.RestChannelResponse)
+	if !ok {
+		return nil, fmt.Errorf("unexpected response type: %T", channelResponse)
+	}
 	return &restChannelResponse.Status, nil
 }
 
