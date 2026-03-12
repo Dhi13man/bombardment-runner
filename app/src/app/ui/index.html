@@ -42,8 +42,8 @@
               <i class="fa-solid fa-rocket mr-2"></i> Jobs
             </div>
             <ul class="space-y-1 pl-6">
-              <li><span class="block text-sm text-orange-500 font-medium py-1.5 cursor-pointer">Create Job</span></li>
-              <li><span class="block text-sm text-gray-700 py-1.5 hover:text-orange-500 cursor-pointer">Job History</span></li>
+              <li><span id="nav-create-job" class="block text-sm text-orange-500 font-medium py-1.5 cursor-pointer">Create Job</span></li>
+              <li><span id="nav-job-history" class="block text-sm text-gray-700 py-1.5 hover:text-orange-500 cursor-pointer">Job History</span></li>
             </ul>
           </div>
         </div>
@@ -131,13 +131,15 @@
                     <input type="radio" name="parser_strategy" value="JSON" class="form-radio text-orange-500">
                     <span class="ml-2 font-medium">JSON</span>
                   </label>
-                  <label class="cursor-pointer inline-flex items-center p-3 border rounded-lg border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-all">
-                    <input type="radio" name="parser_strategy" value="XML" class="form-radio text-orange-500">
-                    <span class="ml-2 font-medium">XML</span>
+                  <label class="cursor-not-allowed inline-flex items-center p-3 border rounded-lg border-gray-200 bg-gray-50 opacity-60 relative">
+                    <input type="radio" name="parser_strategy" value="XML" disabled class="form-radio text-gray-400">
+                    <span class="ml-2 font-medium text-gray-400">XML</span>
+                    <span class="coming-soon-badge">Soon</span>
                   </label>
-                  <label class="cursor-pointer inline-flex items-center p-3 border rounded-lg border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-all">
-                    <input type="radio" name="parser_strategy" value="YAML" class="form-radio text-orange-500">
-                    <span class="ml-2 font-medium">YAML</span>
+                  <label class="cursor-not-allowed inline-flex items-center p-3 border rounded-lg border-gray-200 bg-gray-50 opacity-60 relative">
+                    <input type="radio" name="parser_strategy" value="YAML" disabled class="form-radio text-gray-400">
+                    <span class="ml-2 font-medium text-gray-400">YAML</span>
+                    <span class="coming-soon-badge">Soon</span>
                   </label>
                 </div>
               </div>
@@ -247,13 +249,15 @@
                       <input type="radio" name="client_channel" value="REST" checked class="form-radio text-orange-500">
                       <span class="ml-2 font-medium">REST</span>
                     </label>
-                    <label class="cursor-pointer inline-flex items-center p-3 border rounded-lg border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-all">
-                      <input type="radio" name="client_channel" value="gRPC" class="form-radio text-orange-500">
-                      <span class="ml-2 font-medium">gRPC</span>
+                    <label class="cursor-not-allowed inline-flex items-center p-3 border rounded-lg border-gray-200 bg-gray-50 opacity-60 relative">
+                      <input type="radio" name="client_channel" value="gRPC" disabled class="form-radio text-gray-400">
+                      <span class="ml-2 font-medium text-gray-400">gRPC</span>
+                      <span class="coming-soon-badge">Soon</span>
                     </label>
-                    <label class="cursor-pointer inline-flex items-center p-3 border rounded-lg border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-all">
-                      <input type="radio" name="client_channel" value="GraphQL" class="form-radio text-orange-500">
-                      <span class="ml-2 font-medium">GraphQL</span>
+                    <label class="cursor-not-allowed inline-flex items-center p-3 border rounded-lg border-gray-200 bg-gray-50 opacity-60 relative">
+                      <input type="radio" name="client_channel" value="GraphQL" disabled class="form-radio text-gray-400">
+                      <span class="ml-2 font-medium text-gray-400">GraphQL</span>
+                      <span class="coming-soon-badge">Soon</span>
                     </label>
                   </div>
               </div>
@@ -460,6 +464,75 @@
         </div>
       </form>
       <div id="response-message" class="mt-4 text-center"></div>
+
+      <!-- Job Progress Tracking (shown after submission) -->
+      <div id="job-progress" class="hidden mt-6">
+        <div class="bg-white rounded-xl shadow-card border border-gray-200 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 flex items-center justify-center rounded-full bg-orange-100 text-orange-500">
+                <i class="fas fa-tasks"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold text-gray-800">Job Progress</h3>
+                <p id="job-progress-id" class="text-xs text-gray-500 font-mono"></p>
+              </div>
+            </div>
+            <span id="job-progress-status" class="tag tag-blue">PENDING</span>
+          </div>
+          <div class="mb-4">
+            <div class="flex justify-between text-sm text-gray-600 mb-1">
+              <span>Progress</span>
+              <span id="job-progress-percent">0%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div id="job-progress-bar" class="progress-bar-fill h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="grid grid-cols-3 gap-4 text-center">
+            <div class="bg-green-50 rounded-lg p-3">
+              <p class="text-2xl font-bold text-green-600" id="job-progress-processed">0</p>
+              <p class="text-xs text-gray-500">Processed</p>
+            </div>
+            <div class="bg-red-50 rounded-lg p-3">
+              <p class="text-2xl font-bold text-red-600" id="job-progress-failed">0</p>
+              <p class="text-xs text-gray-500">Failed</p>
+            </div>
+            <div class="bg-blue-50 rounded-lg p-3">
+              <p class="text-2xl font-bold text-blue-600" id="job-progress-total">0</p>
+              <p class="text-xs text-gray-500">Total</p>
+            </div>
+          </div>
+          <div id="job-progress-error" class="hidden mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"></div>
+          <div class="mt-4 flex justify-end">
+            <button id="job-new-btn" type="button" class="flex items-center bg-gradient-primary text-white font-medium py-2 px-4 rounded-lg shadow-sm hover:opacity-90 transition-all">
+              <i class="fas fa-plus mr-2"></i>New Job
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Job History View (shown when clicking Job History in sidebar) -->
+    <div id="job-history-view" class="ml-64 p-6 hidden">
+      <header class="bg-gradient-primary rounded-xl mb-8 py-6 px-8 shadow-md text-white animate__animated animate__fadeIn">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-clock-rotate-left text-2xl"></i>
+          <h1 class="text-2xl font-bold">Job History</h1>
+        </div>
+        <p class="mt-2 text-white text-opacity-90">View all bombardment jobs and their statuses</p>
+      </header>
+      <div class="flex justify-between items-center mb-4">
+        <button id="refresh-jobs-btn" type="button" class="flex items-center bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+          <i class="fas fa-sync-alt mr-2"></i>Refresh
+        </button>
+      </div>
+      <div id="job-history-list" class="space-y-3">
+        <div class="text-center text-gray-500 py-8">
+          <i class="fas fa-inbox text-4xl text-gray-300 mb-3"></i>
+          <p>No jobs yet. Create a bombardment job to get started.</p>
+        </div>
+      </div>
     </div>
 
     <!-- Footer -->
