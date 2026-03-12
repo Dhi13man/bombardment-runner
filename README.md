@@ -1,5 +1,7 @@
 # Bombardment
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Bombardment is a lightweight automation tool intended to pick up data, transform it using a set of rules and then send it to a target system. It is designed to perform small repetitive migrations of data from one system to another. It supports concurrent processing of data, client-side load balancing strategies, and is designed to be extensible and reusable.
 
 ## Why Bombardment?
@@ -20,7 +22,16 @@ Bombardment is a lightweight automation tool intended to pick up data, transform
 - **Concurrency**: Process data in batches concurrently for higher throughput
 - **Job Management**: Track and manage data migration jobs
 
-## Installation
+## Quick Start
+
+### Docker (recommended)
+
+```bash
+docker compose up --build
+# Visit http://localhost:8080
+```
+
+### From Source
 
 ```bash
 go get github.dhi13man.com/bombardment-runner
@@ -84,6 +95,14 @@ bombardment cli \
   --transformation_context '{"strategy":"JSONATA","method_expression":"\"POST\"","endpoint_expression":"\"/api/v1/\" & resource","headers_expression":"{ \"Content-Type\": \"application/json\", \"X-Request-ID\": request_id }","body_expression":"{ \"id\": $number(id), \"timestamp\": $millis() }"}'
 ```
 
+## API Reference
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/v1/bombardment` | `POST` | Start a new bombardment job |
+| `/v1/bombardment` | `GET` | List all jobs with status |
+| `/v1/bombardment/:id` | `GET` | Get detailed job status and progress |
+
 ## Project Structure
 
 The project follows a clean architecture with:
@@ -92,6 +111,22 @@ The project follows a clean architecture with:
 - **Domain**: Business logic, repositories, and services
 - **Models**: DTOs, entities, and enums
 - **App**: Application bootstrap and configuration
+
+## Development
+
+```bash
+make help          # Show all available targets
+make build         # Build the binary
+make test          # Run tests with race detector
+make lint          # Run golangci-lint
+make run           # Start the server
+make docker        # Build Docker image
+make swagger       # Regenerate Swagger docs
+```
+
+## Extending
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full extension guide.
 
 ## To Do
 
@@ -105,3 +140,7 @@ The project follows a clean architecture with:
 - [ ] Implement a state machine for Start, Pause, Resume, Stop
 - [ ] Implement advanced progress tracking
 - [ ] Basic UI for monitoring and control
+
+## License
+
+MIT — see [LICENSE](LICENSE)
