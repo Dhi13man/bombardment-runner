@@ -1,13 +1,11 @@
 package controllers
 
 import (
-	"os"
-	"strings"
-
 	"github.com/gin-gonic/gin"
 	"github.dhi13man.com/bombardment-runner/src/models/dto"
 	"github.dhi13man.com/bombardment-runner/src/services"
 	serviceDriver "github.dhi13man.com/bombardment-runner/src/services/driver"
+	"github.dhi13man.com/bombardment-runner/src/services/parsing"
 )
 
 // BombardmentController Handles Bombardment as an API endpoints
@@ -67,14 +65,6 @@ func (bc *bombardmentControllerImpl) Bombard(c *gin.Context) {
 		return
 	}
 
-	// Create data directory if it doesn't exist and if we have a file upload
-	if req.Parser.FileContentB64 != "" {
-		if err := os.MkdirAll("./data", 0755); err != nil {
-			c.JSON(500, gin.H{"error": "Failed to create data directory"})
-			return
-		}
-	}
-
 	// Create a job and run asynchronously
 	job := bc.jobStore.Create()
 	bc.driver.CreateBombardmentAsync(req, job)
@@ -99,7 +89,7 @@ func validateBombardmentRequest(req dto.BombardmentRequest) []string {
 	}
 
 	// Validate ResponsesStoragePath doesn't contain traversal sequences
-	if req.Driver.ResponsesStoragePath != "" && strings.Contains(req.Driver.ResponsesStoragePath, "..") {
+	if req.Driver.ResponsesStoragePath != "" && parsing.ContainsPathTraversal(req.Driver.ResponsesStoragePath) {
 		errs = append(errs, "responses_storage_path must not contain directory traversal sequences")
 	}
 

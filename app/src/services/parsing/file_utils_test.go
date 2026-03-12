@@ -6,13 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"go.uber.org/zap"
 )
-
-func init() {
-	zap.ReplaceGlobals(zap.NewNop())
-}
 
 // --- OpenFileFromPathOrContent ---
 

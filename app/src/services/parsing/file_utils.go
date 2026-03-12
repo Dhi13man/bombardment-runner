@@ -15,6 +15,11 @@ import (
 // allowedDataDir is the base directory for uploaded file storage.
 const allowedDataDir = "./data"
 
+// ContainsPathTraversal checks if the given path contains directory traversal sequences.
+func ContainsPathTraversal(path string) bool {
+	return strings.Contains(path, "..")
+}
+
 // OpenFileFromPathOrContent opens a file from either a file path or base64 encoded content.
 // If fileContentB64 is provided, it will decode it, save to a temporary file in the data directory,
 // and return the file handle and the path to the temporary file.
@@ -22,11 +27,21 @@ const allowedDataDir = "./data"
 func OpenFileFromPathOrContent(filePath, fileContentB64 string) (*os.File, string, error) {
 	// If base64 content is provided, decode and save to a temp file
 	if fileContentB64 != "" {
-		return openFromBase64Content(filePath, fileContentB64)
+		file, path, err := openFromBase64Content(filePath, fileContentB64)
+		if err != nil {
+			return nil, "", err
+		}
+		zap.L().Info("Opened file from uploaded content", zap.String("path", path))
+		return file, path, nil
 	}
 
 	// If no content provided, open the file at a validated path
-	return openFromPath(filePath)
+	file, path, err := openFromPath(filePath)
+	if err != nil {
+		return nil, "", err
+	}
+	zap.L().Info("Opened file from path", zap.String("path", path))
+	return file, path, nil
 }
 
 func openFromBase64Content(filePath, fileContentB64 string) (*os.File, string, error) {
@@ -89,7 +104,7 @@ func openFromPath(filePath string) (*os.File, string, error) {
 	}
 
 	// Ensure the path doesn't contain traversal sequences
-	if strings.Contains(filePath, "..") {
+	if ContainsPathTraversal(filePath) {
 		return nil, "", fmt.Errorf("file path must not contain directory traversal sequences")
 	}
 

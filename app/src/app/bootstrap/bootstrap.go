@@ -128,8 +128,7 @@ func (s *bootstrapImpl) RunServer(bindAddr string, port int) {
 	bc.RegisterRoutes(r)
 
 	// Graceful shutdown
-	portStr := strconv.Itoa(port)
-	addr := bindAddr + ":" + portStr
+	addr := bindAddr + ":" + strconv.Itoa(port)
 	srv := &http.Server{
 		Addr:              addr,
 		Handler:           r,

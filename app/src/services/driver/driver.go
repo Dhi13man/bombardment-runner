@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.dhi13man.com/bombardment-runner/src/models/dto"
@@ -139,7 +138,7 @@ func (b *bombardmentDriver) executeBombardment(
 		}
 
 		// Validate storage path to prevent directory traversal
-		if strings.Contains(storagePath, "..") {
+		if parsing.ContainsPathTraversal(storagePath) {
 			pathErr := fmt.Errorf("responses_storage_path must not contain directory traversal sequences")
 			failJob(pathErr)
 			return pathErr
@@ -222,17 +221,23 @@ func (b *bombardmentDriver) executeBombardment(
 		return err
 	}
 
-	// Wrap the data channel with a counter to track total rows for progress
-	countedChannel := make(chan map[string]string)
+	// Wrap the data channel with a counter to track total rows for progress.
+	// Buffered to allow parser read-ahead while batch processor is working.
+	countedChannel := make(chan map[string]string, bombardmentRequest.Driver.BatchSize)
 	go func() {
 		defer close(countedChannel)
 		var totalCount int64
 		for row := range insightChannel {
 			totalCount++
 			countedChannel <- row
-			if job != nil {
+			// Sample SetTotal updates to reduce atomic store overhead on the hot path
+			if job != nil && totalCount%100 == 0 {
 				job.SetTotal(totalCount)
 			}
+		}
+		// Final update to ensure accurate total
+		if job != nil {
+			job.SetTotal(totalCount)
 		}
 	}()
 

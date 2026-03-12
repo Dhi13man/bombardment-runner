@@ -21,6 +21,19 @@ type BaseFileParser[T any] interface {
 	Close() error
 }
 
+// mapRawStream transforms a raw data stream using the given mapper function.
+// Shared implementation for CreateParsedDataStream across parser types.
+func mapRawStream[T any](rawChannel chan map[string]string, mapper func(map[string]string) T) chan T {
+	ch := make(chan T)
+	go func() {
+		defer close(ch)
+		for data := range rawChannel {
+			ch <- mapper(data)
+		}
+	}()
+	return ch
+}
+
 func CreateFileParser[T any](
 	context modelsDtoParsing.ParserContext,
 ) (BaseFileParser[T], error) {

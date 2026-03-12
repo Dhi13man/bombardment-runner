@@ -80,25 +80,7 @@ const validationState = {
   step2: false,
   step3: false,
   step4: false,
-  
-  // Detailed validation states for review
-  source: {
-    valid: false,
-    errors: []
-  },
-  transform: {
-    valid: false,
-    errors: []
-  },
-  target: {
-    valid: false,
-    errors: []
-  },
-  driver: {
-    valid: false,
-    errors: []
-  },
-  
+
   // Helper to get overall status
   get isValid() {
     return this.step1 && this.step2 && this.step3 && this.step4;

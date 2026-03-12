@@ -7,13 +7,7 @@ import (
 
 	modelsDtoParsing "github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
 	"github.dhi13man.com/bombardment-runner/src/models/enums"
-	"go.uber.org/zap"
 )
-
-func init() {
-	// Replace global logger with a no-op to suppress log output during tests.
-	zap.ReplaceGlobals(zap.NewNop())
-}
 
 // writeTempJSON creates a temporary JSON file with the given content and returns
 // its path. The file is automatically removed when the test completes.
