@@ -202,8 +202,22 @@ func (b *bombardmentDriver) executeBombardment(
 		return err
 	}
 
+	// Wrap the data channel with a counter to track total rows for progress
+	countedChannel := make(chan map[string]string)
+	go func() {
+		defer close(countedChannel)
+		var totalCount int64
+		for row := range insightChannel {
+			totalCount++
+			countedChannel <- row
+			if job != nil {
+				job.SetTotal(totalCount)
+			}
+		}
+	}()
+
 	// Process the data in batches
-	responseChannel := batchProcessor.CreateProcessedBatchChannel(insightChannel)
+	responseChannel := batchProcessor.CreateProcessedBatchChannel(countedChannel)
 
 	// Process the responses
 	for response := range responseChannel {
