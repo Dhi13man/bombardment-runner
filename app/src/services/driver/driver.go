@@ -11,6 +11,7 @@ import (
 	"github.dhi13man.com/bombardment-runner/src/models/dto"
 	modelsDtoRequests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
 	modelsDtoResponses "github.dhi13man.com/bombardment-runner/src/models/dto/clients/responses"
+	"github.dhi13man.com/bombardment-runner/src/services"
 	"github.dhi13man.com/bombardment-runner/src/services/batching"
 	"github.dhi13man.com/bombardment-runner/src/services/clients"
 	"github.dhi13man.com/bombardment-runner/src/services/load_balancing"
@@ -20,29 +21,84 @@ import (
 )
 
 type BombardmentDriver interface {
-	// CreateBombardment creates a Bombardment
+	// CreateBombardment creates a Bombardment synchronously (for CLI mode)
 	CreateBombardment(bombardmentRequest dto.BombardmentRequest) error
+
+	// CreateBombardmentAsync creates a Bombardment asynchronously with job tracking (for server mode)
+	CreateBombardmentAsync(bombardmentRequest dto.BombardmentRequest, job *services.Job) string
 }
 
 type bombardmentDriver struct {
+	jobStore *services.JobStore
 }
 
-func NewBombardmentDriver() BombardmentDriver {
-	return &bombardmentDriver{}
+func NewBombardmentDriver(jobStore *services.JobStore) BombardmentDriver {
+	return &bombardmentDriver{jobStore: jobStore}
+}
+
+func (b *bombardmentDriver) CreateBombardmentAsync(
+	bombardmentRequest dto.BombardmentRequest,
+	job *services.Job,
+) string {
+	go func() {
+		err := b.executeBombardment(bombardmentRequest, job)
+		if err != nil {
+			zap.L().Error("Bombardment failed", zap.String("job_id", job.ID), zap.Error(err))
+		}
+	}()
+	return job.ID
 }
 
 func (b *bombardmentDriver) CreateBombardment(
 	bombardmentRequest dto.BombardmentRequest,
 ) error {
+	return b.executeBombardment(bombardmentRequest, nil)
+}
+
+func (b *bombardmentDriver) executeBombardment(
+	bombardmentRequest dto.BombardmentRequest,
+	job *services.Job,
+) error {
+	// Helper to update job status safely
+	setRunning := func() {
+		if job != nil {
+			job.SetRunning()
+		}
+	}
+	failJob := func(err error) {
+		if job != nil {
+			job.Fail(err.Error())
+		}
+	}
+	completeJob := func() {
+		if job != nil {
+			job.Complete()
+		}
+	}
+	incrementProcessed := func() {
+		if job != nil {
+			job.IncrementProcessed()
+		}
+	}
+	incrementFailed := func() {
+		if job != nil {
+			job.IncrementFailed()
+		}
+	}
+
+	setRunning()
+
 	// Initialise and inject dependencies
 	parser, err := parsing.CreateFileParser[map[string]string](bombardmentRequest.Parser)
 	if err != nil {
+		failJob(err)
 		return err
 	}
 	defer closeAndLog(parser, "parser")
 
 	client, err := clients.CreateChannelClient(bombardmentRequest.Client)
 	if err != nil {
+		failJob(err)
 		return err
 	}
 
@@ -51,6 +107,7 @@ func (b *bombardmentDriver) CreateBombardment(
 		bombardmentRequest.Transformer,
 	)
 	if err != nil {
+		failJob(err)
 		return err
 	}
 
@@ -59,6 +116,7 @@ func (b *bombardmentDriver) CreateBombardment(
 		client,
 	)
 	if err != nil {
+		failJob(err)
 		return err
 	}
 
@@ -67,42 +125,37 @@ func (b *bombardmentDriver) CreateBombardment(
 	var responseWriter *csv.Writer
 
 	if bombardmentRequest.Driver.ShouldStoreResponses {
-		// Use the default path if not provided
 		storagePath := bombardmentRequest.Driver.ResponsesStoragePath
 		if storagePath == "" {
 			storagePath = "./responses"
 		}
 
-		// Create a directory if it doesn't exist
 		err = os.MkdirAll(storagePath, 0755)
 		if err != nil {
 			zap.L().Error("Failed to create responses directory", zap.Error(err))
+			failJob(err)
 			return err
 		}
 
-		// Create a timestamp-based filename
 		timestamp := time.Now().Format("20060102_150405")
 		responseFilePath := filepath.Join(storagePath, fmt.Sprintf("responses_%s.csv", timestamp))
 
-		// Create and open the file
 		responseFile, err = os.Create(responseFilePath)
 		if err != nil {
 			zap.L().Error("Failed to create responses file", zap.Error(err))
+			failJob(err)
 			return err
 		}
 		defer closeAndLog(responseFile, "response file")
 
-		// Create a CSV writer
 		responseWriter = csv.NewWriter(responseFile)
-
-		// Write header
 		err = responseWriter.Write([]string{"Request ID", "Status Code", "Timestamp", "Response Time (ms)", "Error Message"})
 		if err != nil {
 			zap.L().Error("Failed to write CSV header", zap.Error(err))
+			failJob(err)
 			return err
 		}
 		responseWriter.Flush()
-
 		zap.L().Info("Storing responses at", zap.String("path", responseFilePath))
 	}
 
@@ -120,12 +173,15 @@ func (b *bombardmentDriver) CreateBombardment(
 			var errMsg string
 			if txErr != nil {
 				errMsg = txErr.Error()
+				incrementFailed()
 			} else {
 				stat, reqErr := makeRequest(transformed, loadBalancer)
 				if reqErr != nil {
 					errMsg = reqErr.Error()
+					incrementFailed()
 				} else {
 					statusPtr = stat
+					incrementProcessed()
 				}
 			}
 			return &modelsDtoResponses.ResponseSummary{
@@ -138,15 +194,30 @@ func (b *bombardmentDriver) CreateBombardment(
 		},
 	)
 
-	// Read CSV file and get headers and data channel
+	// Read file and get data channel
 	insightChannel, err := parser.CreateRawDataStream()
 	if err != nil {
-		zap.L().Error("failed to read CSV file", zap.Error(err))
+		zap.L().Error("Failed to read data file", zap.Error(err))
+		failJob(err)
 		return err
 	}
 
-	// Process the InsightData in batches
-	responseChannel := batchProcessor.CreateProcessedBatchChannel(insightChannel)
+	// Wrap the data channel with a counter to track total rows for progress
+	countedChannel := make(chan map[string]string)
+	go func() {
+		defer close(countedChannel)
+		var totalCount int64
+		for row := range insightChannel {
+			totalCount++
+			countedChannel <- row
+			if job != nil {
+				job.SetTotal(totalCount)
+			}
+		}
+	}()
+
+	// Process the data in batches
+	responseChannel := batchProcessor.CreateProcessedBatchChannel(countedChannel)
 
 	// Process the responses
 	for response := range responseChannel {
@@ -177,6 +248,7 @@ func (b *bombardmentDriver) CreateBombardment(
 		responseWriter.Flush()
 	}
 
+	completeJob()
 	return nil
 }
 
@@ -186,11 +258,14 @@ func makeRequest(
 ) (*int, error) {
 	channelResponse, err := loadBalancer.Execute(data)
 	if err != nil {
-		zap.L().Error("Request failed: ", zap.Error(err))
+		zap.L().Error("Request failed", zap.Error(err))
 		return nil, err
 	}
 
-	restChannelResponse := channelResponse.(*modelsDtoResponses.RestChannelResponse)
+	restChannelResponse, ok := channelResponse.(*modelsDtoResponses.RestChannelResponse)
+	if !ok {
+		return nil, fmt.Errorf("unexpected response type: %T", channelResponse)
+	}
 	return &restChannelResponse.Status, nil
 }
 

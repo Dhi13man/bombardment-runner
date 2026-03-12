@@ -2,6 +2,7 @@ package transforming
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/blues/jsonata-go"
 	"github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
@@ -53,26 +54,58 @@ func (jt *jsonataTransformer) TransformRequest(data map[string]string) (
 ) {
 	var body interface{}
 	if bodyExpression := jt.bodyExpression; bodyExpression != nil {
-		body = evalGracefully(bodyExpression, data)
+		result := evalGracefully(bodyExpression, data)
+		if result == nil {
+			return nil, fmt.Errorf("body expression evaluation failed for data: %v", data)
+		}
+		body = result
 	}
 
 	var endpoint string
 	if endpointExpression := jt.endpointExpression; endpointExpression != nil {
-		endpoint = evalGracefully(endpointExpression, data).(string)
+		result := evalGracefully(endpointExpression, data)
+		if result == nil {
+			return nil, fmt.Errorf("endpoint expression evaluation failed for data: %v", data)
+		}
+		endpointStr, ok := result.(string)
+		if !ok {
+			return nil, fmt.Errorf("endpoint expression must evaluate to string, got %T", result)
+		}
+		endpoint = endpointStr
 	}
 
 	var headers map[string]string
 	if headersExpression := jt.headersExpression; headersExpression != nil {
-		headersRaw := evalGracefully(headersExpression, data).(map[string]interface{})
+		result := evalGracefully(headersExpression, data)
+		if result == nil {
+			return nil, fmt.Errorf("headers expression evaluation failed for data: %v", data)
+		}
+		headersRaw, ok := result.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("headers expression must evaluate to map, got %T", result)
+		}
 		headers = make(map[string]string)
 		for key, value := range headersRaw {
-			headers[key] = value.(string)
+			strVal, ok := value.(string)
+			if !ok {
+				headers[key] = fmt.Sprintf("%v", value)
+			} else {
+				headers[key] = strVal
+			}
 		}
 	}
 
 	var method string
 	if methodExpression := jt.methodExpression; methodExpression != nil {
-		method = evalGracefully(methodExpression, data).(string)
+		result := evalGracefully(methodExpression, data)
+		if result == nil {
+			return nil, fmt.Errorf("method expression evaluation failed for data: %v", data)
+		}
+		methodStr, ok := result.(string)
+		if !ok {
+			return nil, fmt.Errorf("method expression must evaluate to string, got %T", result)
+		}
+		method = methodStr
 	}
 
 	return jt.createChannelRequest(

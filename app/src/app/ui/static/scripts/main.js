@@ -66,6 +66,14 @@ const $$ = s => Array.from(document.querySelectorAll(s));
 const getVal = (sel, parser = v => v) => parser($(sel)?.value?.trim() || '');
 const checkedVal = name => document.querySelector(`input[name="${name}"]:checked`)?.value;
 
+// Security: HTML escaping to prevent XSS
+function escapeHtml(str) {
+  if (str == null) return '';
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(String(str)));
+  return div.innerHTML;
+}
+
 // Validation state
 const validationState = {
   step1: false,
@@ -125,6 +133,7 @@ function init() {
   initParserStrategyListeners();
   initStoreResponsesListener();
   initNavigation();
+  initJobProgressActions();
 }
 
 // --- Fade‑in ------------------------------------------------------------
@@ -338,7 +347,8 @@ function initForm() {
       });
       const data = await res.json();
       if (res.ok) {
-        showResponse('success', 'Bombarded successfully!', resp);
+        showResponse('success', 'Job started! Tracking progress...', resp);
+        startJobPolling(data.id);
       } else {
         showResponse('error', data.error || 'Error starting bombardment', resp);
       }
@@ -424,7 +434,7 @@ function populateReview() {
             Format
           </div>
           <div class="config-item-value">
-            <span class="tag tag-blue">${parser}</span>
+            <span class="tag tag-blue">${escapeHtml(parser)}</span>
           </div>
         </div>
         <div class="config-item">
@@ -433,12 +443,12 @@ function populateReview() {
             File Path
           </div>
           <div class="config-item-value">
-            ${file}
+            ${escapeHtml(file)}
           </div>
         </div>
       </div>
     </div>
-    
+
     <!-- Transform Configuration Card -->
     <div class="config-card">
       <div class="config-card-header">
@@ -454,7 +464,7 @@ function populateReview() {
             Strategy
           </div>
           <div class="config-item-value">
-            <span class="tag tag-purple">${trans}</span>
+            <span class="tag tag-purple">${escapeHtml(trans)}</span>
           </div>
         </div>
         <div class="config-item">
@@ -463,7 +473,7 @@ function populateReview() {
             Method
           </div>
           <div class="config-item-value">
-            ${method}
+            ${escapeHtml(method)}
           </div>
         </div>
         <div class="config-item">
@@ -472,7 +482,7 @@ function populateReview() {
             Endpoint
           </div>
           <div class="config-item-value">
-            ${endpoint}
+            ${escapeHtml(endpoint)}
           </div>
         </div>
         <div class="config-item">
@@ -495,7 +505,7 @@ function populateReview() {
         </div>
       </div>
     </div>
-    
+
     <!-- Target Configuration Card -->
     <div class="config-card">
       <div class="config-card-header">
@@ -511,7 +521,7 @@ function populateReview() {
             Channel
           </div>
           <div class="config-item-value">
-            <span class="tag tag-orange">${clientChannel}</span>
+            <span class="tag tag-orange">${escapeHtml(clientChannel)}</span>
           </div>
         </div>
         <div class="config-item">
@@ -520,53 +530,53 @@ function populateReview() {
             Client
           </div>
           <div class="config-item-value">
-            <button type="button" class="view-client-btn text-sm text-blue-600 hover:text-blue-800" 
+            <button type="button" class="view-client-btn text-sm text-blue-600 hover:text-blue-800"
               onclick="toggleClientDetails()">View Details</button>
           </div>
         </div>
-        
+
         <div id="timeout-details" class="config-item-details" style="display: none;">
           <div class="config-detail-item">
             <div class="detail-label">
               <i class="fas fa-clock"></i>
               Dial Timeout
             </div>
-            <div class="detail-value">${dial} ms</div>
+            <div class="detail-value">${escapeHtml(dial)} ms</div>
           </div>
           <div class="config-detail-item">
             <div class="detail-label">
               <i class="fas fa-heartbeat"></i>
               Keep Alive
             </div>
-            <div class="detail-value">${keep} ms</div>
+            <div class="detail-value">${escapeHtml(keep)} ms</div>
           </div>
           <div class="config-detail-item">
             <div class="detail-label">
               <i class="fas fa-shield-alt"></i>
               TLS Handshake
             </div>
-            <div class="detail-value">${tlsHandshake} ms</div>
+            <div class="detail-value">${escapeHtml(tlsHandshake)} ms</div>
           </div>
           <div class="config-detail-item">
             <div class="detail-label">
               <i class="fas fa-file-code"></i>
               Response Header
             </div>
-            <div class="detail-value">${responseHeader} ms</div>
+            <div class="detail-value">${escapeHtml(responseHeader)} ms</div>
           </div>
           <div class="config-detail-item">
             <div class="detail-label">
               <i class="fas fa-hourglass-half"></i>
               Expect-Continue
             </div>
-            <div class="detail-value">${expectContinue} ms</div>
+            <div class="detail-value">${escapeHtml(expectContinue)} ms</div>
           </div>
           <div class="config-detail-item">
             <div class="detail-label">
               <i class="fas fa-stopwatch"></i>
               Request Timeout
             </div>
-            <div class="detail-value">${requestTimeout} ms</div>
+            <div class="detail-value">${escapeHtml(requestTimeout)} ms</div>
           </div>
           <div class="config-detail-item">
             <div class="detail-label">
@@ -582,7 +592,7 @@ function populateReview() {
             Load Balancer
           </div>
           <div class="config-item-value">
-            <span class="tag tag-green">${lbStrat}</span>
+            <span class="tag tag-green">${escapeHtml(lbStrat)}</span>
           </div>
         </div>
         <div class="config-item">
@@ -600,7 +610,7 @@ function populateReview() {
             ${urlsArray.map(url => `
               <div class="url-item">
                 <i class="fas fa-link"></i>
-                <span>${url}</span>
+                <span>${escapeHtml(url)}</span>
               </div>
             `).join('')}
           </div>
@@ -1163,5 +1173,114 @@ async function fetchJobHistory() {
       <div class="text-center py-8 text-red-500">
         <i class="fas fa-exclamation-circle mr-2"></i>${escapeHtml(err.message)}
       </div>`;
+  }
+}
+
+// --- Job Progress Polling ------------------------------------------------
+
+let activePollingInterval = null;
+
+function startJobPolling(jobId) {
+  const progressEl = $('#job-progress');
+  if (progressEl) progressEl.classList.remove('hidden');
+
+  updateProgressDisplay({
+    id: jobId,
+    status: 'PENDING',
+    progress_percent: 0,
+    processed_rows: 0,
+    failed_rows: 0,
+    total_rows: 0,
+    error_message: ''
+  });
+
+  if (activePollingInterval) clearInterval(activePollingInterval);
+
+  activePollingInterval = setInterval(async () => {
+    try {
+      const res = await fetch('/v1/bombardment/' + encodeURIComponent(jobId));
+      if (!res.ok) return;
+      const job = await res.json();
+      updateProgressDisplay(job);
+
+      if (job.status === 'COMPLETED' || job.status === 'FAILED') {
+        clearInterval(activePollingInterval);
+        activePollingInterval = null;
+      }
+    } catch (err) {
+      console.error('Polling error:', err);
+    }
+  }, 1500);
+}
+
+function updateProgressDisplay(job) {
+  const setTextSafe = (sel, text) => {
+    const el = $(sel);
+    if (el) el.textContent = String(text);
+  };
+
+  setTextSafe('#job-progress-id', 'Job: ' + (job.id || '').substring(0, 8) + '...');
+
+  const statusEl = $('#job-progress-status');
+  if (statusEl) {
+    statusEl.textContent = job.status;
+    statusEl.className = 'tag';
+    switch (job.status) {
+      case 'COMPLETED':
+        statusEl.classList.add('tag-green');
+        break;
+      case 'FAILED':
+        statusEl.classList.add('tag-red');
+        break;
+      case 'RUNNING':
+        statusEl.classList.add('tag-orange');
+        break;
+      default:
+        statusEl.classList.add('tag-blue');
+    }
+  }
+
+  const pct = Math.min(100, Math.max(0, job.progress_percent || 0));
+  setTextSafe('#job-progress-percent', pct.toFixed(1) + '%');
+  const bar = $('#job-progress-bar');
+  if (bar) {
+    bar.style.width = pct + '%';
+    bar.classList.remove('completed', 'failed');
+    if (job.status === 'COMPLETED') bar.classList.add('completed');
+    if (job.status === 'FAILED') bar.classList.add('failed');
+  }
+
+  setTextSafe('#job-progress-processed', job.processed_rows || 0);
+  setTextSafe('#job-progress-failed', job.failed_rows || 0);
+  setTextSafe('#job-progress-total', job.total_rows || 0);
+
+  const errEl = $('#job-progress-error');
+  if (errEl) {
+    if (job.error_message) {
+      errEl.textContent = job.error_message;
+      errEl.classList.remove('hidden');
+    } else {
+      errEl.classList.add('hidden');
+    }
+  }
+
+  const newBtn = $('#job-new-btn');
+  if (newBtn) {
+    if (job.status === 'COMPLETED' || job.status === 'FAILED') {
+      newBtn.classList.remove('hidden');
+    } else {
+      newBtn.classList.add('hidden');
+    }
+  }
+}
+
+function initJobProgressActions() {
+  const newBtn = $('#job-new-btn');
+  if (newBtn) {
+    newBtn.addEventListener('click', () => {
+      const progressEl = $('#job-progress');
+      if (progressEl) progressEl.classList.add('hidden');
+      $(SELECTORS.respEl).innerHTML = '';
+    });
   }
 }
