@@ -124,6 +124,7 @@ function init() {
   initFileInput();
   initParserStrategyListeners();
   initStoreResponsesListener();
+  initJobProgressActions();
 }
 
 // --- Fade‑in ------------------------------------------------------------
@@ -337,7 +338,8 @@ function initForm() {
       });
       const data = await res.json();
       if (res.ok) {
-        showResponse('success', 'Bombarded successfully!', resp);
+        showResponse('success', 'Job started! Tracking progress...', resp);
+        startJobPolling(data.id);
       } else {
         showResponse('error', data.error || 'Error starting bombardment', resp);
       }
@@ -1064,4 +1066,113 @@ function initStoreResponsesListener() {
       responsesPathContainer.classList.add('hidden');
     }
   });
+}
+
+// --- Job Progress Polling ------------------------------------------------
+
+let activePollingInterval = null;
+
+function startJobPolling(jobId) {
+  const progressEl = $('#job-progress');
+  if (progressEl) progressEl.classList.remove('hidden');
+
+  updateProgressDisplay({
+    id: jobId,
+    status: 'PENDING',
+    progress_percent: 0,
+    processed_rows: 0,
+    failed_rows: 0,
+    total_rows: 0,
+    error_message: ''
+  });
+
+  if (activePollingInterval) clearInterval(activePollingInterval);
+
+  activePollingInterval = setInterval(async () => {
+    try {
+      const res = await fetch('/v1/bombardment/' + encodeURIComponent(jobId));
+      if (!res.ok) return;
+      const job = await res.json();
+      updateProgressDisplay(job);
+
+      if (job.status === 'COMPLETED' || job.status === 'FAILED') {
+        clearInterval(activePollingInterval);
+        activePollingInterval = null;
+      }
+    } catch (err) {
+      console.error('Polling error:', err);
+    }
+  }, 1500);
+}
+
+function updateProgressDisplay(job) {
+  const setTextSafe = (sel, text) => {
+    const el = $(sel);
+    if (el) el.textContent = String(text);
+  };
+
+  setTextSafe('#job-progress-id', 'Job: ' + (job.id || '').substring(0, 8) + '...');
+
+  const statusEl = $('#job-progress-status');
+  if (statusEl) {
+    statusEl.textContent = job.status;
+    statusEl.className = 'tag';
+    switch (job.status) {
+      case 'COMPLETED':
+        statusEl.classList.add('tag-green');
+        break;
+      case 'FAILED':
+        statusEl.classList.add('tag-red');
+        break;
+      case 'RUNNING':
+        statusEl.classList.add('tag-orange');
+        break;
+      default:
+        statusEl.classList.add('tag-blue');
+    }
+  }
+
+  const pct = Math.min(100, Math.max(0, job.progress_percent || 0));
+  setTextSafe('#job-progress-percent', pct.toFixed(1) + '%');
+  const bar = $('#job-progress-bar');
+  if (bar) {
+    bar.style.width = pct + '%';
+    bar.classList.remove('completed', 'failed');
+    if (job.status === 'COMPLETED') bar.classList.add('completed');
+    if (job.status === 'FAILED') bar.classList.add('failed');
+  }
+
+  setTextSafe('#job-progress-processed', job.processed_rows || 0);
+  setTextSafe('#job-progress-failed', job.failed_rows || 0);
+  setTextSafe('#job-progress-total', job.total_rows || 0);
+
+  const errEl = $('#job-progress-error');
+  if (errEl) {
+    if (job.error_message) {
+      errEl.textContent = job.error_message;
+      errEl.classList.remove('hidden');
+    } else {
+      errEl.classList.add('hidden');
+    }
+  }
+
+  const newBtn = $('#job-new-btn');
+  if (newBtn) {
+    if (job.status === 'COMPLETED' || job.status === 'FAILED') {
+      newBtn.classList.remove('hidden');
+    } else {
+      newBtn.classList.add('hidden');
+    }
+  }
+}
+
+function initJobProgressActions() {
+  const newBtn = $('#job-new-btn');
+  if (newBtn) {
+    newBtn.addEventListener('click', () => {
+      const progressEl = $('#job-progress');
+      if (progressEl) progressEl.classList.add('hidden');
+      $(SELECTORS.respEl).innerHTML = '';
+    });
+  }
 }
