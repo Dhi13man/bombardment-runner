@@ -152,3 +152,74 @@ func TestJsonParser_GetStrategy(t *testing.T) {
 		t.Errorf("GetStrategy: got %q, want %q", got, modelsEnums.JSON)
 	}
 }
+
+func TestJsonParser_CreateParsedDataStream(t *testing.T) {
+	path := writeTempJSON(t, `[{"x":"1","y":"2"},{"x":"3","y":"4"}]`)
+	parser := NewJsonParser[string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.JSON,
+		FilePath: path,
+	})
+	defer func() { _ = parser.Close() }()
+
+	mapper := func(row map[string]string) string {
+		return row["x"] + ":" + row["y"]
+	}
+
+	ch, err := parser.CreateParsedDataStream(mapper)
+	if err != nil {
+		t.Fatalf("CreateParsedDataStream returned error: %v", err)
+	}
+
+	var results []string
+	for val := range ch {
+		results = append(results, val)
+	}
+
+	if len(results) != 2 {
+		t.Fatalf("expected 2 results, got %d", len(results))
+	}
+	if results[0] != "1:2" {
+		t.Errorf("result 0: got %q, want %q", results[0], "1:2")
+	}
+	if results[1] != "3:4" {
+		t.Errorf("result 1: got %q, want %q", results[1], "3:4")
+	}
+}
+
+func TestJsonParser_CreateParsedDataStream_InvalidJson(t *testing.T) {
+	path := writeTempJSON(t, `not valid json at all`)
+	parser := NewJsonParser[string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.JSON,
+		FilePath: path,
+	})
+	defer func() { _ = parser.Close() }()
+
+	mapper := func(row map[string]string) string { return "" }
+	_, err := parser.CreateParsedDataStream(mapper)
+	if err == nil {
+		t.Fatal("expected error for invalid JSON, got nil")
+	}
+}
+
+func TestJsonParser_CreateParsedDataStream_EmptyArray(t *testing.T) {
+	path := writeTempJSON(t, `[]`)
+	parser := NewJsonParser[string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.JSON,
+		FilePath: path,
+	})
+	defer func() { _ = parser.Close() }()
+
+	mapper := func(row map[string]string) string { return row["k"] }
+	ch, err := parser.CreateParsedDataStream(mapper)
+	if err != nil {
+		t.Fatalf("CreateParsedDataStream returned error: %v", err)
+	}
+
+	var results []string
+	for val := range ch {
+		results = append(results, val)
+	}
+	if len(results) != 0 {
+		t.Fatalf("expected 0 results, got %d", len(results))
+	}
+}
