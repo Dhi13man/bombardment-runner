@@ -124,6 +124,7 @@ function init() {
   initFileInput();
   initParserStrategyListeners();
   initStoreResponsesListener();
+  initNavigation();
 }
 
 // --- Fade‑in ------------------------------------------------------------
@@ -1064,4 +1065,103 @@ function initStoreResponsesListener() {
       responsesPathContainer.classList.add('hidden');
     }
   });
+}
+
+// --- Navigation: Sidebar view switching -----------------------------------
+
+function initNavigation() {
+  const navCreate = $('#nav-create-job');
+  const navHistory = $('#nav-job-history');
+
+  if (!navCreate || !navHistory) return;
+
+  navCreate.addEventListener('click', () => showView('create'));
+  navHistory.addEventListener('click', () => {
+    showView('history');
+    fetchJobHistory();
+  });
+
+  const refreshBtn = $('#refresh-jobs-btn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', fetchJobHistory);
+  }
+}
+
+function showView(view) {
+  const createView = $('#main-content');
+  const historyView = $('#job-history-view');
+  const navCreate = $('#nav-create-job');
+  const navHistory = $('#nav-job-history');
+
+  if (!createView || !historyView) return;
+
+  if (view === 'history') {
+    createView.classList.add('hidden');
+    historyView.classList.remove('hidden');
+    navCreate.classList.remove('text-orange-500', 'font-medium');
+    navCreate.classList.add('text-gray-700');
+    navHistory.classList.add('text-orange-500', 'font-medium');
+    navHistory.classList.remove('text-gray-700');
+  } else {
+    createView.classList.remove('hidden');
+    historyView.classList.add('hidden');
+    navCreate.classList.add('text-orange-500', 'font-medium');
+    navCreate.classList.remove('text-gray-700');
+    navHistory.classList.remove('text-orange-500', 'font-medium');
+    navHistory.classList.add('text-gray-700');
+  }
+}
+
+async function fetchJobHistory() {
+  const listEl = $('#job-history-list');
+  if (!listEl) return;
+
+  listEl.innerHTML = '<div class="text-center py-8 text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Loading jobs...</div>';
+
+  try {
+    const res = await fetch('/v1/bombardment');
+    if (!res.ok) throw new Error('Failed to fetch jobs');
+    const data = await res.json();
+    const jobs = data.jobs || [];
+
+    if (jobs.length === 0) {
+      listEl.innerHTML = `
+        <div class="text-center py-12 text-gray-400">
+          <i class="fas fa-inbox text-4xl mb-3"></i>
+          <p class="text-lg font-medium">No jobs yet</p>
+          <p class="text-sm">Create a bombardment job to see it here</p>
+        </div>`;
+      return;
+    }
+
+    listEl.innerHTML = jobs.map(job => {
+      const statusColor = {
+        COMPLETED: 'green', FAILED: 'red', RUNNING: 'orange', PENDING: 'blue'
+      }[job.status] || 'gray';
+
+      const created = new Date(job.created_at).toLocaleString();
+      const pct = (job.progress_percent || 0).toFixed(1);
+
+      return `
+        <div class="job-card">
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-mono text-sm text-gray-600">${escapeHtml(job.id.substring(0, 12))}...</span>
+            <span class="px-2 py-1 rounded-full text-xs font-semibold bg-${statusColor}-100 text-${statusColor}-800">${escapeHtml(job.status)}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+            <div class="progress-bar-fill h-2 rounded-full ${job.status === 'COMPLETED' ? 'completed' : job.status === 'FAILED' ? 'failed' : ''}" style="width: ${pct}%"></div>
+          </div>
+          <div class="flex justify-between text-xs text-gray-500">
+            <span>${escapeHtml(created)}</span>
+            <span>${job.processed_rows || 0}/${job.total_rows || 0} rows (${pct}%)</span>
+          </div>
+          ${job.error_message ? '<div class="mt-2 text-xs text-red-500">' + escapeHtml(job.error_message) + '</div>' : ''}
+        </div>`;
+    }).join('');
+  } catch (err) {
+    listEl.innerHTML = `
+      <div class="text-center py-8 text-red-500">
+        <i class="fas fa-exclamation-circle mr-2"></i>${escapeHtml(err.message)}
+      </div>`;
+  }
 }
