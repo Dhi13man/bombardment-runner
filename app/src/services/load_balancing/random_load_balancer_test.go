@@ -10,13 +10,13 @@ import (
 	"github.dhi13man.com/bombardment-runner/src/models/enums"
 )
 
-// mockClient records which URL was passed to each Execute call.
-type mockClient struct {
+// randomMockClient records which URL was passed to each Execute call.
+type randomMockClient struct {
 	mu   sync.Mutex
 	urls []string
 }
 
-func (m *mockClient) Execute(
+func (m *randomMockClient) Execute(
 	_ modelsDtoRequests.BaseChannelRequest,
 	baseUrl string,
 ) (modelsDtoResponses.BaseChannelResponse, error) {
@@ -26,12 +26,12 @@ func (m *mockClient) Execute(
 	return modelsDtoResponses.NewRestChannelResponse(200, nil), nil
 }
 
-func (m *mockClient) GetStrategy() modelsEnums.ClientChannel {
+func (m *randomMockClient) GetStrategy() modelsEnums.ClientChannel {
 	return modelsEnums.REST
 }
 
 // recordedURLs returns a copy of the captured URLs (safe for concurrent reads).
-func (m *mockClient) recordedURLs() []string {
+func (m *randomMockClient) recordedURLs() []string {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	out := make([]string, len(m.urls))
@@ -41,7 +41,7 @@ func (m *mockClient) recordedURLs() []string {
 
 func TestRandomLoadBalancer_UsesAllUrls(t *testing.T) {
 	urls := []string{"http://a", "http://b", "http://c"}
-	mock := &mockClient{}
+	mock := &randomMockClient{}
 	lb := NewRandomLoadBalancer(
 		modelsDtoLoadBalancing.LoadBalancerContext{
 			Strategy: modelsEnums.RANDOM,
@@ -71,7 +71,7 @@ func TestRandomLoadBalancer_UsesAllUrls(t *testing.T) {
 
 func TestRandomLoadBalancer_SingleUrl(t *testing.T) {
 	urls := []string{"http://only"}
-	mock := &mockClient{}
+	mock := &randomMockClient{}
 	lb := NewRandomLoadBalancer(
 		modelsDtoLoadBalancing.LoadBalancerContext{
 			Strategy: modelsEnums.RANDOM,
@@ -96,7 +96,7 @@ func TestRandomLoadBalancer_SingleUrl(t *testing.T) {
 
 func TestRandomLoadBalancer_Concurrent(t *testing.T) {
 	urls := []string{"http://x", "http://y", "http://z"}
-	mock := &mockClient{}
+	mock := &randomMockClient{}
 	lb := NewRandomLoadBalancer(
 		modelsDtoLoadBalancing.LoadBalancerContext{
 			Strategy: modelsEnums.RANDOM,
@@ -135,7 +135,7 @@ func TestRandomLoadBalancer_Concurrent(t *testing.T) {
 }
 
 func TestRandomLoadBalancer_GetStrategy(t *testing.T) {
-	mock := &mockClient{}
+	mock := &randomMockClient{}
 	lb := NewRandomLoadBalancer(
 		modelsDtoLoadBalancing.LoadBalancerContext{
 			Strategy: modelsEnums.RANDOM,
