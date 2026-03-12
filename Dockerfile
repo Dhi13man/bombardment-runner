@@ -17,4 +17,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=5s \
   CMD wget -qO- http://localhost:8080/v1/ping || exit 1
 ENTRYPOINT ["./bombardment"]
-CMD ["server"]
+CMD ["server", "--bind-addr", "0.0.0.0"]

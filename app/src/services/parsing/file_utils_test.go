@@ -60,7 +60,9 @@ func TestOpenFileFromPathOrContent_WhenValidFilePath_ThenOpensExistingFile(t *te
 		t.Fatalf("failed to create temp file: %v", err)
 	}
 	expected := "test data"
-	tmpFile.WriteString(expected)
+	if _, wErr := tmpFile.WriteString(expected); wErr != nil {
+		t.Fatalf("failed to write test data: %v", wErr)
+	}
 	tmpFile.Close()
 
 	// Act
