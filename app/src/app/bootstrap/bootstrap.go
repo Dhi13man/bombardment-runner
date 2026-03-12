@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -74,21 +75,35 @@ func (s *bootstrapImpl) RunCli(
 func (s *bootstrapImpl) RunServer(bindAddr string, port int) {
 	r := gin.Default()
 
-	// Error recovery middleware with structured JSON responses
+	// Error recovery middleware — log details internally, return generic message to clients
 	r.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
-		if err, ok := recovered.(string); ok {
-			c.AbortWithStatusJSON(500, gin.H{"error": err, "type": "internal_server_error"})
-			return
-		}
+		zap.L().Error("Panic recovered in HTTP handler",
+			zap.Any("panic", recovered),
+			zap.String("path", c.Request.URL.Path),
+			zap.String("method", c.Request.Method),
+		)
 		c.AbortWithStatusJSON(500, gin.H{
 			"error": "Internal Server Error",
 			"type":  "internal_server_error",
 		})
 	}))
 
-	// CORS middleware
+	// Security headers middleware
+	r.Use(func(c *gin.Context) {
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+		c.Header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+		c.Next()
+	})
+
+	// CORS middleware -- configurable via CORS_ORIGINS env var (comma-separated)
+	allowedOrigins := []string{"*"}
+	if envOrigins := os.Getenv("CORS_ORIGINS"); envOrigins != "" {
+		allowedOrigins = strings.Split(envOrigins, ",")
+	}
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
+		AllowOrigins:     allowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -113,11 +128,14 @@ func (s *bootstrapImpl) RunServer(bindAddr string, port int) {
 	bc.RegisterRoutes(r)
 
 	// Graceful shutdown
-	portStr := strconv.Itoa(port)
-	addr := bindAddr + ":" + portStr
+	addr := bindAddr + ":" + strconv.Itoa(port)
 	srv := &http.Server{
-		Addr:    addr,
-		Handler: r,
+		Addr:              addr,
+		Handler:           r,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      120 * time.Second, // Long timeout for bombardment jobs that return large responses
+		IdleTimeout:       120 * time.Second,
 	}
 
 	go func() {

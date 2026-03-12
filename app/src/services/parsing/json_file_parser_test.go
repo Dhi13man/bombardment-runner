@@ -7,13 +7,7 @@ import (
 
 	modelsDtoParsing "github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
 	"github.dhi13man.com/bombardment-runner/src/models/enums"
-	"go.uber.org/zap"
 )
-
-func init() {
-	// Replace global logger with a no-op to suppress log output during tests.
-	zap.ReplaceGlobals(zap.NewNop())
-}
 
 // writeTempJSON creates a temporary JSON file with the given content and returns
 // its path. The file is automatically removed when the test completes.
@@ -45,10 +39,13 @@ func drainChannel(t *testing.T, ch chan map[string]string) []map[string]string {
 
 func TestJsonParser_ValidArray(t *testing.T) {
 	path := writeTempJSON(t, `[{"name":"Alice","age":"30"},{"name":"Bob","age":"25"}]`)
-	parser := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
+	parser, pErr := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
 		FilePath: path,
 	})
+	if pErr != nil {
+		t.Fatalf("NewJsonParser() error: %v", pErr)
+	}
 	defer func() { _ = parser.Close() }()
 
 	ch, err := parser.CreateRawDataStream()
@@ -80,10 +77,13 @@ func TestJsonParser_ValidArray(t *testing.T) {
 
 func TestJsonParser_EmptyArray(t *testing.T) {
 	path := writeTempJSON(t, `[]`)
-	parser := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
+	parser, pErr := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
 		FilePath: path,
 	})
+	if pErr != nil {
+		t.Fatalf("NewJsonParser() error: %v", pErr)
+	}
 	defer func() { _ = parser.Close() }()
 
 	ch, err := parser.CreateRawDataStream()
@@ -99,10 +99,13 @@ func TestJsonParser_EmptyArray(t *testing.T) {
 
 func TestJsonParser_InvalidJson(t *testing.T) {
 	path := writeTempJSON(t, `"not json"`)
-	parser := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
+	parser, pErr := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
 		FilePath: path,
 	})
+	if pErr != nil {
+		t.Fatalf("NewJsonParser() error: %v", pErr)
+	}
 	defer func() { _ = parser.Close() }()
 
 	_, err := parser.CreateRawDataStream()
@@ -115,11 +118,14 @@ func TestJsonParser_Base64Content(t *testing.T) {
 	jsonContent := `[{"city":"Berlin","pop":"3700000"}]`
 	encoded := base64.StdEncoding.EncodeToString([]byte(jsonContent))
 
-	parser := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
+	parser, pErr := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
 		Strategy:       modelsEnums.JSON,
 		FilePath:       "upload.json",
 		FileContentB64: encoded,
 	})
+	if pErr != nil {
+		t.Fatalf("NewJsonParser() error: %v", pErr)
+	}
 	defer func() { _ = parser.Close() }()
 
 	ch, err := parser.CreateRawDataStream()
@@ -141,10 +147,13 @@ func TestJsonParser_Base64Content(t *testing.T) {
 
 func TestJsonParser_GetStrategy(t *testing.T) {
 	path := writeTempJSON(t, `[]`)
-	parser := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
+	parser, pErr := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
 		FilePath: path,
 	})
+	if pErr != nil {
+		t.Fatalf("NewJsonParser() error: %v", pErr)
+	}
 	defer func() { _ = parser.Close() }()
 
 	got := parser.GetStrategy()
@@ -155,10 +164,13 @@ func TestJsonParser_GetStrategy(t *testing.T) {
 
 func TestJsonParser_CreateParsedDataStream(t *testing.T) {
 	path := writeTempJSON(t, `[{"x":"1","y":"2"},{"x":"3","y":"4"}]`)
-	parser := NewJsonParser[string](modelsDtoParsing.ParserContext{
+	parser, pErr := NewJsonParser[string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
 		FilePath: path,
 	})
+	if pErr != nil {
+		t.Fatalf("NewJsonParser() error: %v", pErr)
+	}
 	defer func() { _ = parser.Close() }()
 
 	mapper := func(row map[string]string) string {
@@ -188,10 +200,13 @@ func TestJsonParser_CreateParsedDataStream(t *testing.T) {
 
 func TestJsonParser_CreateParsedDataStream_InvalidJson(t *testing.T) {
 	path := writeTempJSON(t, `not valid json at all`)
-	parser := NewJsonParser[string](modelsDtoParsing.ParserContext{
+	parser, pErr := NewJsonParser[string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
 		FilePath: path,
 	})
+	if pErr != nil {
+		t.Fatalf("NewJsonParser() error: %v", pErr)
+	}
 	defer func() { _ = parser.Close() }()
 
 	mapper := func(row map[string]string) string { return "" }
@@ -203,10 +218,13 @@ func TestJsonParser_CreateParsedDataStream_InvalidJson(t *testing.T) {
 
 func TestJsonParser_CreateParsedDataStream_EmptyArray(t *testing.T) {
 	path := writeTempJSON(t, `[]`)
-	parser := NewJsonParser[string](modelsDtoParsing.ParserContext{
+	parser, pErr := NewJsonParser[string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
 		FilePath: path,
 	})
+	if pErr != nil {
+		t.Fatalf("NewJsonParser() error: %v", pErr)
+	}
 	defer func() { _ = parser.Close() }()
 
 	mapper := func(row map[string]string) string { return row["k"] }
@@ -228,10 +246,13 @@ func TestJsonParser_WhenNonStringValues_ThenCoercesToString(t *testing.T) {
 	// Arrange — JSON with numeric, boolean, and nested object values
 	jsonContent := `[{"count":42,"active":true,"tags":["a","b"],"meta":{"k":"v"}}]`
 	path := writeTempJSON(t, jsonContent)
-	parser := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
+	parser, pErr := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
 		FilePath: path,
 	})
+	if pErr != nil {
+		t.Fatalf("NewJsonParser() error: %v", pErr)
+	}
 	defer func() { _ = parser.Close() }()
 
 	// Act
@@ -267,10 +288,13 @@ func TestJsonParser_WhenNonStringValues_ThenCoercesToString(t *testing.T) {
 func TestJsonParser_Close_WhenValidFile_ThenReturnsNil(t *testing.T) {
 	// Arrange
 	path := writeTempJSON(t, `[]`)
-	parser := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
+	parser, pErr := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
 		FilePath: path,
 	})
+	if pErr != nil {
+		t.Fatalf("NewJsonParser() error: %v", pErr)
+	}
 
 	// Act
 	err := parser.Close()

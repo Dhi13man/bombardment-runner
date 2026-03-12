@@ -62,6 +62,9 @@ func TestBombardmentController_Bombard_Success(t *testing.T) {
 	router := setupRouter(driver)
 
 	reqBody := dto.BombardmentRequest{}
+	reqBody.Driver.BatchSize = 10
+	reqBody.LoadBalancer.Urls = []string{"http://example.com"}
+	reqBody.Parser.FilePath = "/tmp/test.csv"
 	body, _ := json.Marshal(reqBody)
 
 	w := httptest.NewRecorder()
@@ -208,6 +211,8 @@ func TestBombardmentController_Bombard_WithFileContentB64(t *testing.T) {
 	router := setupRouterWithStore(driver, store)
 
 	reqBody := dto.BombardmentRequest{}
+	reqBody.Driver.BatchSize = 10
+	reqBody.LoadBalancer.Urls = []string{"http://example.com"}
 	reqBody.Parser.FileContentB64 = "dGVzdA==" // base64("test")
 	body, _ := json.Marshal(reqBody)
 
@@ -280,6 +285,157 @@ func TestBombardmentController_GetJobStatus_NotFound_ErrorBody(t *testing.T) {
 	}
 	if resp["error"] != "job not found" {
 		t.Errorf("expected error message %q, got %q", "job not found", resp["error"])
+	}
+}
+
+func TestValidateBombardmentRequest_TableDriven(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		req       dto.BombardmentRequest
+		wantCount int
+	}{
+		{
+			name: "valid request has no errors",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FilePath = "/tmp/test.csv"
+				return r
+			}(),
+			wantCount: 0,
+		},
+		{
+			name: "zero batch size",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 0
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FilePath = "/tmp/test.csv"
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "negative batch size",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = -5
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FilePath = "/tmp/test.csv"
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "empty URLs",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.Parser.FilePath = "/tmp/test.csv"
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "no file source",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "file_content_b64 satisfies file source",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				return r
+			}(),
+			wantCount: 0,
+		},
+		{
+			name: "traversal in responses_storage_path",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.Driver.ResponsesStoragePath = "../evil"
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FilePath = "/tmp/test.csv"
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "all validations fail simultaneously",
+			req:  dto.BombardmentRequest{},
+			// BatchSize=0, no URLs, no file source = 3 errors
+			wantCount: 3,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Act
+			errs := validateBombardmentRequest(tt.req)
+
+			// Assert
+			if len(errs) != tt.wantCount {
+				t.Errorf("expected %d validation errors, got %d: %v", tt.wantCount, len(errs), errs)
+			}
+		})
+	}
+}
+
+func TestBombardmentController_Bombard_ValidationFailure_Returns400WithDetails(t *testing.T) {
+	t.Parallel()
+
+	// Arrange - empty request fails all validations
+	driver := &mockDriver{}
+	router := setupRouter(driver)
+
+	reqBody := dto.BombardmentRequest{}
+	body, _ := json.Marshal(reqBody)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/v1/bombardment", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	// Act
+	router.ServeHTTP(w, req)
+
+	// Assert
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", w.Code)
+	}
+
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+
+	if resp["error"] != "Validation failed" {
+		t.Errorf("expected error 'Validation failed', got %q", resp["error"])
+	}
+
+	details, ok := resp["details"].([]interface{})
+	if !ok {
+		t.Fatal("expected 'details' to be an array")
+	}
+	if len(details) != 3 {
+		t.Errorf("expected 3 validation details, got %d", len(details))
+	}
+
+	if driver.asyncCalled {
+		t.Error("driver should not be called when validation fails")
 	}
 }
 

@@ -2,7 +2,6 @@ package clients
 
 import (
 	"bytes"
-	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -106,19 +105,11 @@ func (c *restChannelClient) Execute(
 		return nil, errors.New("invalid request type")
 	}
 
-	// Create a context with timeout for the entire request lifecycle
-	// This ensures that hanging requests don't block indefinitely
-	ctx, cancel := context.WithTimeout(context.Background(), c.httpClient.Timeout)
-	defer cancel()
-
 	// Generate request
 	req, err := c.generateHttpRequest(restRequest, baseUrl)
 	if err != nil {
 		return nil, err
 	}
-
-	// Add the request context
-	req = req.WithContext(ctx)
 
 	zap.S().Debugf("Request created: %v", req)
 	response, err := c.httpClient.Do(req)
@@ -188,8 +179,9 @@ func (*restChannelClient) generateHttpRequest(
 		req.Header.Set(key, value)
 	}
 
-	// Add compression support for responses
-	req.Header.Set(HeaderKeyAcceptEncoding, HeaderValueGzipDeflate)
+	// Note: Go's HTTP transport handles Accept-Encoding and decompression
+	// automatically when DisableCompression is false (our default). Explicitly
+	// setting Accept-Encoding would bypass automatic decompression.
 
 	return req, nil
 }

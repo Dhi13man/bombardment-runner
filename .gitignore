@@ -27,7 +27,8 @@ coverage.html
 *.swo
 
 # Environment variables
-# **/.env
+**/.env
+.env.*
 *.crt
 
 # OS generated files

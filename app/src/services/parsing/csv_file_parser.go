@@ -2,6 +2,7 @@ package parsing
 
 import (
 	"encoding/csv"
+	"fmt"
 	"io"
 	"os"
 
@@ -18,22 +19,15 @@ type csvParser[T any] struct {
 	file *os.File
 }
 
-func NewCsvParser[T any](parserContext modelsDtoParsing.ParserContext) CsvFileParser[T] {
-	file, filePath, err := OpenFileFromPathOrContent(parserContext.FilePath, parserContext.FileContentB64)
+func NewCsvParser[T any](parserContext modelsDtoParsing.ParserContext) (CsvFileParser[T], error) {
+	file, _, err := OpenFileFromPathOrContent(parserContext.FilePath, parserContext.FileContentB64)
 	if err != nil {
-		zap.L().Fatal("Error opening file", zap.Error(err))
-	}
-
-	// Log a successful file opening
-	if parserContext.FileContentB64 != "" {
-		zap.L().Info("Opened file from uploaded content", zap.String("path", filePath))
-	} else {
-		zap.L().Info("Opened file from path", zap.String("path", filePath))
+		return nil, fmt.Errorf("failed to open CSV file: %w", err)
 	}
 
 	return &csvParser[T]{
 		file: file,
-	}
+	}, nil
 }
 
 func (c *csvParser[T]) CreateRawDataStream() (rawChannel chan map[string]string, err error) {
@@ -70,20 +64,12 @@ func (c *csvParser[T]) CreateRawDataStream() (rawChannel chan map[string]string,
 
 func (c *csvParser[T]) CreateParsedDataStream(
 	mapper func(map[string]string) T,
-) (ch chan T, err error) {
+) (chan T, error) {
 	rawChannel, err := c.CreateRawDataStream()
 	if err != nil {
 		return nil, err
 	}
-
-	ch = make(chan T)
-	go func() {
-		defer close(ch)
-		for data := range rawChannel {
-			ch <- mapper(data)
-		}
-	}()
-	return ch, nil
+	return mapRawStream(rawChannel, mapper), nil
 }
 
 func (c *csvParser[T]) Close() error {

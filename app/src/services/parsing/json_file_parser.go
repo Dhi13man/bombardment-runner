@@ -18,19 +18,13 @@ type jsonParser[T any] struct {
 	file *os.File
 }
 
-func NewJsonParser[T any](parserContext modelsDtoParsing.ParserContext) JsonFileParser[T] {
-	file, filePath, err := OpenFileFromPathOrContent(parserContext.FilePath, parserContext.FileContentB64)
+func NewJsonParser[T any](parserContext modelsDtoParsing.ParserContext) (JsonFileParser[T], error) {
+	file, _, err := OpenFileFromPathOrContent(parserContext.FilePath, parserContext.FileContentB64)
 	if err != nil {
-		zap.L().Fatal("Error opening file", zap.Error(err))
+		return nil, fmt.Errorf("failed to open JSON file: %w", err)
 	}
 
-	if parserContext.FileContentB64 != "" {
-		zap.L().Info("Opened JSON file from uploaded content", zap.String("path", filePath))
-	} else {
-		zap.L().Info("Opened JSON file from path", zap.String("path", filePath))
-	}
-
-	return &jsonParser[T]{file: file}
+	return &jsonParser[T]{file: file}, nil
 }
 
 func (p *jsonParser[T]) CreateRawDataStream() (chan map[string]string, error) {
@@ -63,15 +57,7 @@ func (p *jsonParser[T]) CreateParsedDataStream(
 	if err != nil {
 		return nil, err
 	}
-
-	ch := make(chan T)
-	go func() {
-		defer close(ch)
-		for data := range rawChannel {
-			ch <- mapper(data)
-		}
-	}()
-	return ch, nil
+	return mapRawStream(rawChannel, mapper), nil
 }
 
 func (p *jsonParser[T]) Close() error {

@@ -80,25 +80,7 @@ const validationState = {
   step2: false,
   step3: false,
   step4: false,
-  
-  // Detailed validation states for review
-  source: {
-    valid: false,
-    errors: []
-  },
-  transform: {
-    valid: false,
-    errors: []
-  },
-  target: {
-    valid: false,
-    errors: []
-  },
-  driver: {
-    valid: false,
-    errors: []
-  },
-  
+
   // Helper to get overall status
   get isValid() {
     return this.step1 && this.step2 && this.step3 && this.step4;
@@ -408,7 +390,7 @@ function populateReview() {
       urlListHtml += `
         <div class="url-item">
           <i class="fas fa-link"></i>
-          <span>${url}</span>
+          <span>${escapeHtml(url)}</span>
           ${isValid 
             ? '<span class="validation-indicator validation-success"><i class="fas fa-check"></i></span>' 
             : '<span class="validation-indicator validation-error"><i class="fas fa-times"></i></span>'}
@@ -927,7 +909,7 @@ function showResponse(type, message, container = $(SELECTORS.respEl), resetStep 
     error:   '<i class="fas fa-exclamation-circle mr-2"></i>',
     loading: '<i class="fas fa-spinner fa-spin mr-2"></i>'
   };
-  container.innerHTML = `${icon[type] || ''}${message}`;
+  container.innerHTML = `${icon[type] || ''}${escapeHtml(message)}`;
   container.className = `mt-4 text-center ${classes[type] || ''}`;
   if (resetStep) {
     const prev = $(SELECTORS.prevBtn);
