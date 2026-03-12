@@ -319,6 +319,57 @@
   --color-error-content: #1f2937;
 }
 
+/* Coming Soon Badge */
+.coming-soon-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 99px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 3px rgba(99, 102, 241, 0.4);
+}
+
+/* Progress Bar */
+.progress-bar-fill {
+  background: linear-gradient(90deg, #f97316, #fb923c);
+  transition: width 0.5s ease;
+}
+
+.progress-bar-fill.completed {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.progress-bar-fill.failed {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+/* Job History Card */
+.job-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.job-card:hover {
+  border-color: #f97316;
+  box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.1);
+}
+
+/* Sidebar active state */
+.nav-active {
+  color: #f97316 !important;
+  font-weight: 600;
+}
+
 /* Tailwind color overrides */
 :root {
   --primary: #F97316;
