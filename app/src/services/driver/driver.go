@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.dhi13man.com/bombardment-runner/src/models/dto"
@@ -41,6 +42,13 @@ func (b *bombardmentDriver) CreateBombardmentAsync(
 	job *services.Job,
 ) string {
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				errMsg := fmt.Sprintf("bombardment panicked: %v", r)
+				zap.L().Error(errMsg, zap.String("job_id", job.ID))
+				job.Fail(errMsg)
+			}
+		}()
 		err := b.executeBombardment(bombardmentRequest, job)
 		if err != nil {
 			zap.L().Error("Bombardment failed", zap.String("job_id", job.ID), zap.Error(err))
@@ -130,6 +138,13 @@ func (b *bombardmentDriver) executeBombardment(
 			storagePath = "./responses"
 		}
 
+		// Validate storage path to prevent directory traversal
+		if strings.Contains(storagePath, "..") {
+			pathErr := fmt.Errorf("responses_storage_path must not contain directory traversal sequences")
+			failJob(pathErr)
+			return pathErr
+		}
+
 		err = os.MkdirAll(storagePath, 0755)
 		if err != nil {
 			zap.L().Error("Failed to create responses directory", zap.Error(err))
@@ -162,15 +177,16 @@ func (b *bombardmentDriver) executeBombardment(
 	var batchProcessor = batching.NewBatchProcessor(
 		bombardmentRequest.Driver.BatchSize,
 		func(rawData map[string]string) *modelsDtoResponses.ResponseSummary {
-			startTime := time.Now()
-			transformed, txErr := transformer.TransformRequest(rawData)
-			elapsedMs := time.Since(startTime).Milliseconds()
 			requestID := rawData["request_id"]
 			if requestID == "" {
 				requestID = fmt.Sprintf("req_%d", time.Now().UnixNano())
 			}
+
+			startTime := time.Now()
 			var statusPtr *int
 			var errMsg string
+
+			transformed, txErr := transformer.TransformRequest(rawData)
 			if txErr != nil {
 				errMsg = txErr.Error()
 				incrementFailed()
@@ -184,6 +200,10 @@ func (b *bombardmentDriver) executeBombardment(
 					incrementProcessed()
 				}
 			}
+
+			// Measure end-to-end time including both transformation and HTTP request
+			elapsedMs := time.Since(startTime).Milliseconds()
+
 			return &modelsDtoResponses.ResponseSummary{
 				Status:       statusPtr,
 				RequestID:    requestID,
@@ -219,7 +239,8 @@ func (b *bombardmentDriver) executeBombardment(
 	// Process the data in batches
 	responseChannel := batchProcessor.CreateProcessedBatchChannel(countedChannel)
 
-	// Process the responses
+	// Process the responses -- flush CSV in batches rather than per-row for performance
+	var csvRowCount int
 	for response := range responseChannel {
 		if response == nil {
 			continue
@@ -240,7 +261,10 @@ func (b *bombardmentDriver) executeBombardment(
 			if err != nil {
 				zap.L().Error("Failed to write response to CSV", zap.Error(err))
 			}
-			responseWriter.Flush()
+			csvRowCount++
+			if csvRowCount%100 == 0 {
+				responseWriter.Flush()
+			}
 		}
 	}
 

@@ -22,6 +22,9 @@ func CreateLoadBalancer(
 	context modelsDtoLoadBalancing.LoadBalancerContext,
 	client clients.BaseChannelClient,
 ) (BaseLoadBalancer, error) {
+	if len(context.Urls) == 0 {
+		return nil, errors.New("at least one URL is required for load balancing")
+	}
 	switch context.Strategy {
 	case modelsEnums.ROUND_ROBIN:
 		return NewRoundRobinLoadBalancer(context, client), nil

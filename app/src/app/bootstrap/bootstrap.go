@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -86,9 +87,22 @@ func (s *bootstrapImpl) RunServer(bindAddr string, port int) {
 		})
 	}))
 
-	// CORS middleware
+	// Security headers middleware
+	r.Use(func(c *gin.Context) {
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+		c.Header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+		c.Next()
+	})
+
+	// CORS middleware -- configurable via CORS_ORIGINS env var (comma-separated)
+	allowedOrigins := []string{"*"}
+	if envOrigins := os.Getenv("CORS_ORIGINS"); envOrigins != "" {
+		allowedOrigins = strings.Split(envOrigins, ",")
+	}
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
+		AllowOrigins:     allowedOrigins,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -116,8 +130,12 @@ func (s *bootstrapImpl) RunServer(bindAddr string, port int) {
 	portStr := strconv.Itoa(port)
 	addr := bindAddr + ":" + portStr
 	srv := &http.Server{
-		Addr:    addr,
-		Handler: r,
+		Addr:              addr,
+		Handler:           r,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      120 * time.Second, // Long timeout for bombardment jobs that return large responses
+		IdleTimeout:       120 * time.Second,
 	}
 
 	go func() {

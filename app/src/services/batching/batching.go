@@ -26,15 +26,16 @@ func NewBatchProcessor[T any, R any](
 }
 
 func (bp *batchProcessor[T, R]) CreateProcessedBatchChannel(requests chan T) chan R {
-	// Create a channel to store the responses.
-	responseChannel := make(chan R)
+	// Buffer the response channel to batchSize to prevent goroutines from blocking
+	// on send while wg.Wait() holds the batch coordinator.
+	responseChannel := make(chan R, bp.batchSize)
 
 	// Create batches of requests and process them concurrently.
 	go func() {
 		// Close the response channel when all batches are processed
 		defer close(responseChannel)
 		for {
-			var batch []T
+			batch := make([]T, 0, bp.batchSize)
 			for i := 0; i < bp.batchSize; i++ {
 				request, ok := <-requests
 				if !ok {

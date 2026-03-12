@@ -47,7 +47,10 @@ func TestCsvParser_ValidFile(t *testing.T) {
 		Strategy: modelsEnums.CSV,
 		FilePath: filePath,
 	}
-	parser := NewCsvParser[map[string]string](context)
+	parser, pErr := NewCsvParser[map[string]string](context)
+	if pErr != nil {
+		t.Fatalf("NewCsvParser() error: %v", pErr)
+	}
 	defer parser.Close()
 
 	rawChannel, err := parser.CreateRawDataStream()
@@ -91,7 +94,10 @@ func TestCsvParser_EmptyFile(t *testing.T) {
 		Strategy: modelsEnums.CSV,
 		FilePath: filePath,
 	}
-	parser := NewCsvParser[map[string]string](context)
+	parser, pErr := NewCsvParser[map[string]string](context)
+	if pErr != nil {
+		t.Fatalf("NewCsvParser() error: %v", pErr)
+	}
 	defer parser.Close()
 
 	rawChannel, err := parser.CreateRawDataStream()
@@ -120,7 +126,10 @@ func TestCsvParser_SpecialCharacters(t *testing.T) {
 		Strategy: modelsEnums.CSV,
 		FilePath: filePath,
 	}
-	parser := NewCsvParser[map[string]string](context)
+	parser, pErr := NewCsvParser[map[string]string](context)
+	if pErr != nil {
+		t.Fatalf("NewCsvParser() error: %v", pErr)
+	}
 	defer parser.Close()
 
 	rawChannel, err := parser.CreateRawDataStream()
@@ -168,7 +177,10 @@ func TestCsvParser_StreamCompleteness(t *testing.T) {
 		Strategy: modelsEnums.CSV,
 		FilePath: filePath,
 	}
-	parser := NewCsvParser[map[string]string](context)
+	parser, pErr := NewCsvParser[map[string]string](context)
+	if pErr != nil {
+		t.Fatalf("NewCsvParser() error: %v", pErr)
+	}
 	defer parser.Close()
 
 	rawChannel, err := parser.CreateRawDataStream()
@@ -196,7 +208,10 @@ func TestCsvParser_CreateParsedDataStream(t *testing.T) {
 		Strategy: modelsEnums.CSV,
 		FilePath: filePath,
 	}
-	parser := NewCsvParser[string](context)
+	parser, pErr := NewCsvParser[string](context)
+	if pErr != nil {
+		t.Fatalf("NewCsvParser() error: %v", pErr)
+	}
 	defer parser.Close()
 
 	ch, err := parser.CreateParsedDataStream(func(row map[string]string) string {
@@ -234,7 +249,10 @@ func TestCsvParser_GetStrategy(t *testing.T) {
 		Strategy: modelsEnums.CSV,
 		FilePath: filePath,
 	}
-	parser := NewCsvParser[map[string]string](context)
+	parser, pErr := NewCsvParser[map[string]string](context)
+	if pErr != nil {
+		t.Fatalf("NewCsvParser() error: %v", pErr)
+	}
 	defer parser.Close()
 
 	if got := parser.GetStrategy(); got != modelsEnums.CSV {

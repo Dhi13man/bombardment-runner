@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.dhi13man.com/bombardment-runner/src/models/dto"
@@ -56,14 +57,20 @@ func (bc *bombardmentControllerImpl) RegisterRoutes(r *gin.Engine) {
 func (bc *bombardmentControllerImpl) Bombard(c *gin.Context) {
 	var req dto.BombardmentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(400, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	// Server-side input validation
+	if errs := validateBombardmentRequest(req); len(errs) > 0 {
+		c.JSON(400, gin.H{"error": "Validation failed", "details": errs})
 		return
 	}
 
 	// Create data directory if it doesn't exist and if we have a file upload
 	if req.Parser.FileContentB64 != "" {
 		if err := os.MkdirAll("./data", 0755); err != nil {
-			c.JSON(500, gin.H{"error": "Failed to create data directory: " + err.Error()})
+			c.JSON(500, gin.H{"error": "Failed to create data directory"})
 			return
 		}
 	}
@@ -73,6 +80,30 @@ func (bc *bombardmentControllerImpl) Bombard(c *gin.Context) {
 	bc.driver.CreateBombardmentAsync(req, job)
 
 	c.JSON(201, job.Snapshot())
+}
+
+// validateBombardmentRequest performs server-side validation of the request.
+func validateBombardmentRequest(req dto.BombardmentRequest) []string {
+	var errs []string
+
+	if req.Driver.BatchSize <= 0 {
+		errs = append(errs, "batch_size must be greater than 0")
+	}
+
+	if len(req.LoadBalancer.Urls) == 0 {
+		errs = append(errs, "at least one target URL is required")
+	}
+
+	if req.Parser.FilePath == "" && req.Parser.FileContentB64 == "" {
+		errs = append(errs, "either file_path or file_content_b64 is required")
+	}
+
+	// Validate ResponsesStoragePath doesn't contain traversal sequences
+	if req.Driver.ResponsesStoragePath != "" && strings.Contains(req.Driver.ResponsesStoragePath, "..") {
+		errs = append(errs, "responses_storage_path must not contain directory traversal sequences")
+	}
+
+	return errs
 }
 
 // GetJobStatus returns the status of a bombardment job

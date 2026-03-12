@@ -62,6 +62,9 @@ func TestBombardmentController_Bombard_Success(t *testing.T) {
 	router := setupRouter(driver)
 
 	reqBody := dto.BombardmentRequest{}
+	reqBody.Driver.BatchSize = 10
+	reqBody.LoadBalancer.Urls = []string{"http://example.com"}
+	reqBody.Parser.FilePath = "/tmp/test.csv"
 	body, _ := json.Marshal(reqBody)
 
 	w := httptest.NewRecorder()
@@ -208,6 +211,8 @@ func TestBombardmentController_Bombard_WithFileContentB64(t *testing.T) {
 	router := setupRouterWithStore(driver, store)
 
 	reqBody := dto.BombardmentRequest{}
+	reqBody.Driver.BatchSize = 10
+	reqBody.LoadBalancer.Urls = []string{"http://example.com"}
 	reqBody.Parser.FileContentB64 = "dGVzdA==" // base64("test")
 	body, _ := json.Marshal(reqBody)
 

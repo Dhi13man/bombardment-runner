@@ -2,6 +2,7 @@ package parsing
 
 import (
 	"encoding/csv"
+	"fmt"
 	"io"
 	"os"
 
@@ -18,13 +19,12 @@ type csvParser[T any] struct {
 	file *os.File
 }
 
-func NewCsvParser[T any](parserContext modelsDtoParsing.ParserContext) CsvFileParser[T] {
+func NewCsvParser[T any](parserContext modelsDtoParsing.ParserContext) (CsvFileParser[T], error) {
 	file, filePath, err := OpenFileFromPathOrContent(parserContext.FilePath, parserContext.FileContentB64)
 	if err != nil {
-		zap.L().Fatal("Error opening file", zap.Error(err))
+		return nil, fmt.Errorf("failed to open CSV file: %w", err)
 	}
 
-	// Log a successful file opening
 	if parserContext.FileContentB64 != "" {
 		zap.L().Info("Opened file from uploaded content", zap.String("path", filePath))
 	} else {
@@ -33,7 +33,7 @@ func NewCsvParser[T any](parserContext modelsDtoParsing.ParserContext) CsvFilePa
 
 	return &csvParser[T]{
 		file: file,
-	}
+	}, nil
 }
 
 func (c *csvParser[T]) CreateRawDataStream() (rawChannel chan map[string]string, err error) {

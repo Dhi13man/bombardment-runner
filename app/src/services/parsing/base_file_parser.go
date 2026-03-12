@@ -26,9 +26,9 @@ func CreateFileParser[T any](
 ) (BaseFileParser[T], error) {
 	switch context.Strategy {
 	case modelsEnums.CSV:
-		return NewCsvParser[T](context), nil
+		return NewCsvParser[T](context)
 	case modelsEnums.JSON:
-		return NewJsonParser[T](context), nil
+		return NewJsonParser[T](context)
 	default:
 		return nil, errors.New("invalid parser strategy: " + string(context.Strategy))
 	}

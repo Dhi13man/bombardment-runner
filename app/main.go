@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	appBootstrap "github.dhi13man.com/bombardment-runner/src/app/bootstrap"
 	appCli "github.dhi13man.com/bombardment-runner/src/app/cli"
 	"github.dhi13man.com/bombardment-runner/src/services"
@@ -36,6 +38,7 @@ func main() {
 		AttachServerRunCommand(bootstrap.RunServer).
 		Execute()
 	if err != nil {
-		return
+		zap.L().Error("Application exited with error", zap.Error(err))
+		os.Exit(1)
 	}
 }
