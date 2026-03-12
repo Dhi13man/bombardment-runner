@@ -54,3 +54,22 @@ func TestCreateLoadBalancer_InvalidStrategy(t *testing.T) {
 		t.Fatal("expected error for invalid strategy, got nil")
 	}
 }
+
+func TestCreateLoadBalancer_WhenLeastConnection_ThenReturnsError(t *testing.T) {
+	// Arrange — LEAST_CONNECTION is a defined enum but has no implementation yet
+	mock := &randomMockClient{}
+
+	// Act
+	_, err := CreateLoadBalancer(
+		modelsDtoLoadBalancing.LoadBalancerContext{
+			Strategy: modelsEnums.LEAST_CONNECTION,
+			Urls:     []string{"http://a"},
+		},
+		mock,
+	)
+
+	// Assert — should fall through to default error branch
+	if err == nil {
+		t.Fatal("expected error for unimplemented LEAST_CONNECTION strategy, got nil")
+	}
+}

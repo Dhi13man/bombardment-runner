@@ -1,6 +1,7 @@
 package load_balancing
 
 import (
+	"errors"
 	"sync"
 	"testing"
 
@@ -9,6 +10,20 @@ import (
 	modelsDtoLoadBalancing "github.dhi13man.com/bombardment-runner/src/models/dto/load_balancing"
 	"github.dhi13man.com/bombardment-runner/src/models/enums"
 )
+
+// errorMockClient always returns an error from Execute.
+type errorMockClient struct{}
+
+func (m *errorMockClient) Execute(
+	_ modelsDtoRequests.BaseChannelRequest,
+	_ string,
+) (modelsDtoResponses.BaseChannelResponse, error) {
+	return nil, errors.New("connection refused")
+}
+
+func (m *errorMockClient) GetStrategy() modelsEnums.ClientChannel {
+	return modelsEnums.REST
+}
 
 // randomMockClient records which URL was passed to each Execute call.
 type randomMockClient struct {
@@ -147,5 +162,29 @@ func TestRandomLoadBalancer_GetStrategy(t *testing.T) {
 	got := lb.GetStrategy()
 	if got != modelsEnums.RANDOM {
 		t.Errorf("GetStrategy: got %q, want %q", got, modelsEnums.RANDOM)
+	}
+}
+
+func TestRandomLoadBalancer_Execute_WhenClientErrors_ThenPropagatesError(t *testing.T) {
+	// Arrange
+	mockErr := &errorMockClient{}
+	lb := NewRandomLoadBalancer(
+		modelsDtoLoadBalancing.LoadBalancerContext{
+			Strategy: modelsEnums.RANDOM,
+			Urls:     []string{"http://failing-host"},
+		},
+		mockErr,
+	)
+	req := modelsDtoRequests.NewRestChannelRequest(nil, "/test", nil, "GET")
+
+	// Act
+	resp, err := lb.Execute(req)
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error from Execute when client fails, got nil")
+	}
+	if resp != nil {
+		t.Errorf("expected nil response on error, got %v", resp)
 	}
 }

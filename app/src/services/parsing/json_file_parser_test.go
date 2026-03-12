@@ -223,3 +223,60 @@ func TestJsonParser_CreateParsedDataStream_EmptyArray(t *testing.T) {
 		t.Fatalf("expected 0 results, got %d", len(results))
 	}
 }
+
+func TestJsonParser_WhenNonStringValues_ThenCoercesToString(t *testing.T) {
+	// Arrange — JSON with numeric, boolean, and nested object values
+	jsonContent := `[{"count":42,"active":true,"tags":["a","b"],"meta":{"k":"v"}}]`
+	path := writeTempJSON(t, jsonContent)
+	parser := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.JSON,
+		FilePath: path,
+	})
+	defer func() { _ = parser.Close() }()
+
+	// Act
+	ch, err := parser.CreateRawDataStream()
+	if err != nil {
+		t.Fatalf("CreateRawDataStream returned error: %v", err)
+	}
+	rows := drainChannel(t, ch)
+
+	// Assert — fmt.Sprintf("%v", value) coercion
+	if len(rows) != 1 {
+		t.Fatalf("expected 1 row, got %d", len(rows))
+	}
+	row := rows[0]
+
+	// Numeric: json.Decoder renders numbers as float64, so 42 becomes "42"
+	if row["count"] != "42" {
+		t.Errorf("count: got %q, want %q", row["count"], "42")
+	}
+	// Boolean
+	if row["active"] != "true" {
+		t.Errorf("active: got %q, want %q", row["active"], "true")
+	}
+	// Nested values are coerced via %v — verify they produce non-empty strings
+	if row["tags"] == "" {
+		t.Error("tags: expected non-empty coerced string for array value")
+	}
+	if row["meta"] == "" {
+		t.Error("meta: expected non-empty coerced string for object value")
+	}
+}
+
+func TestJsonParser_Close_WhenValidFile_ThenReturnsNil(t *testing.T) {
+	// Arrange
+	path := writeTempJSON(t, `[]`)
+	parser := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.JSON,
+		FilePath: path,
+	})
+
+	// Act
+	err := parser.Close()
+
+	// Assert
+	if err != nil {
+		t.Errorf("Close returned unexpected error: %v", err)
+	}
+}
