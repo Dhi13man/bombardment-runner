@@ -5,6 +5,7 @@ import (
 
 	modelsDtoRequests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
 	modelsDtoResponses "github.dhi13man.com/bombardment-runner/src/models/dto/clients/responses"
+	modelsDtoLoadBalancing "github.dhi13man.com/bombardment-runner/src/models/dto/load_balancing"
 	"github.dhi13man.com/bombardment-runner/src/models/enums"
 	"github.dhi13man.com/bombardment-runner/src/services/clients"
 )
@@ -19,7 +20,7 @@ type randomLoadBalancer struct {
 }
 
 func NewRandomLoadBalancer(
-	ctx LoadBalancerContext,
+	ctx modelsDtoLoadBalancing.LoadBalancerContext,
 	client clients.BaseChannelClient,
 ) RandomLoadBalancer {
 	return &randomLoadBalancer{
