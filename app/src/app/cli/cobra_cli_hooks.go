@@ -124,48 +124,17 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 			TransformerContextExampleJSON,
 		),
 		Args: func(cmd *cobra.Command, args []string) error {
-			// Get the Flags
-			clientContextCommand := cmd.Flag(ClientContextLongKey)
-			driverContextCommand := cmd.Flag(DriverContextLongKey)
-			loadBalancerContextCommand := cmd.Flag(LoadBalancerContextLongKey)
-			parserContextCommand := cmd.Flag(ParserContextLongKey)
-			transformerContextCommand := cmd.Flag(TransformerContextLongKey)
-
-			// Check if the Flags are set properly
-			var clientContext modelsDtoClients.ClientContext
-			var driverContext modelsDtoDriver.DriverContext
-			var loadBalancerContext modelsDtoLoadBalancing.LoadBalancerContext
-			var parserContext modelsDtoParsing.ParserContext
-			var transformerContext modelsDtoTransforming.TransformerContext
-
-			// Try Parsing the Client Context
-			err := json.Unmarshal([]byte(clientContextCommand.Value.String()), &clientContext)
-			if err != nil {
-				return fmt.Errorf("error parsing client context: %v", err)
+			// Validate that all required flags are provided
+			requiredFlags := []string{
+				ClientContextLongKey, DriverContextLongKey,
+				LoadBalancerContextLongKey, ParserContextLongKey,
+				TransformerContextLongKey,
 			}
-
-			// Try Parsing the Driver Context
-			err = json.Unmarshal([]byte(driverContextCommand.Value.String()), &driverContext)
-			if err != nil {
-				return fmt.Errorf("error parsing driver context: %v", err)
-			}
-
-			// Try Parsing the Load Balancer Context
-			err = json.Unmarshal([]byte(loadBalancerContextCommand.Value.String()), &loadBalancerContext)
-			if err != nil {
-				return fmt.Errorf("error parsing load balancer context: %v", err)
-			}
-
-			// Try Parsing the Parser Context
-			err = json.Unmarshal([]byte(parserContextCommand.Value.String()), &parserContext)
-			if err != nil {
-				return fmt.Errorf("error parsing parser context: %v", err)
-			}
-
-			// Try Parsing the Transformer Context
-			err = json.Unmarshal([]byte(transformerContextCommand.Value.String()), &transformerContext)
-			if err != nil {
-				return fmt.Errorf("error parsing transformer context: %v", err)
+			for _, flag := range requiredFlags {
+				val := cmd.Flag(flag).Value.String()
+				if val == "" {
+					return fmt.Errorf("--%s is required", flag)
+				}
 			}
 			return nil
 		},

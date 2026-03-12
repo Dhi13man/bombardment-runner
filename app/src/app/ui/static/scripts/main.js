@@ -66,6 +66,14 @@ const $$ = s => Array.from(document.querySelectorAll(s));
 const getVal = (sel, parser = v => v) => parser($(sel)?.value?.trim() || '');
 const checkedVal = name => document.querySelector(`input[name="${name}"]:checked`)?.value;
 
+// Security: HTML escaping to prevent XSS
+function escapeHtml(str) {
+  if (str == null) return '';
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(String(str)));
+  return div.innerHTML;
+}
+
 // Validation state
 const validationState = {
   step1: false,
@@ -425,7 +433,7 @@ function populateReview() {
             Format
           </div>
           <div class="config-item-value">
-            <span class="tag tag-blue">${parser}</span>
+            <span class="tag tag-blue">${escapeHtml(parser)}</span>
           </div>
         </div>
         <div class="config-item">
@@ -434,12 +442,12 @@ function populateReview() {
             File Path
           </div>
           <div class="config-item-value">
-            ${file}
+            ${escapeHtml(file)}
           </div>
         </div>
       </div>
     </div>
-    
+
     <!-- Transform Configuration Card -->
     <div class="config-card">
       <div class="config-card-header">
@@ -455,7 +463,7 @@ function populateReview() {
             Strategy
           </div>
           <div class="config-item-value">
-            <span class="tag tag-purple">${trans}</span>
+            <span class="tag tag-purple">${escapeHtml(trans)}</span>
           </div>
         </div>
         <div class="config-item">
@@ -464,7 +472,7 @@ function populateReview() {
             Method
           </div>
           <div class="config-item-value">
-            ${method}
+            ${escapeHtml(method)}
           </div>
         </div>
         <div class="config-item">
@@ -473,7 +481,7 @@ function populateReview() {
             Endpoint
           </div>
           <div class="config-item-value">
-            ${endpoint}
+            ${escapeHtml(endpoint)}
           </div>
         </div>
         <div class="config-item">
@@ -496,7 +504,7 @@ function populateReview() {
         </div>
       </div>
     </div>
-    
+
     <!-- Target Configuration Card -->
     <div class="config-card">
       <div class="config-card-header">
@@ -512,7 +520,7 @@ function populateReview() {
             Channel
           </div>
           <div class="config-item-value">
-            <span class="tag tag-orange">${clientChannel}</span>
+            <span class="tag tag-orange">${escapeHtml(clientChannel)}</span>
           </div>
         </div>
         <div class="config-item">
@@ -521,53 +529,53 @@ function populateReview() {
             Client
           </div>
           <div class="config-item-value">
-            <button type="button" class="view-client-btn text-sm text-blue-600 hover:text-blue-800" 
+            <button type="button" class="view-client-btn text-sm text-blue-600 hover:text-blue-800"
               onclick="toggleClientDetails()">View Details</button>
           </div>
         </div>
-        
+
         <div id="timeout-details" class="config-item-details" style="display: none;">
           <div class="config-detail-item">
             <div class="detail-label">
               <i class="fas fa-clock"></i>
               Dial Timeout
             </div>
-            <div class="detail-value">${dial} ms</div>
+            <div class="detail-value">${escapeHtml(dial)} ms</div>
           </div>
           <div class="config-detail-item">
             <div class="detail-label">
               <i class="fas fa-heartbeat"></i>
               Keep Alive
             </div>
-            <div class="detail-value">${keep} ms</div>
+            <div class="detail-value">${escapeHtml(keep)} ms</div>
           </div>
           <div class="config-detail-item">
             <div class="detail-label">
               <i class="fas fa-shield-alt"></i>
               TLS Handshake
             </div>
-            <div class="detail-value">${tlsHandshake} ms</div>
+            <div class="detail-value">${escapeHtml(tlsHandshake)} ms</div>
           </div>
           <div class="config-detail-item">
             <div class="detail-label">
               <i class="fas fa-file-code"></i>
               Response Header
             </div>
-            <div class="detail-value">${responseHeader} ms</div>
+            <div class="detail-value">${escapeHtml(responseHeader)} ms</div>
           </div>
           <div class="config-detail-item">
             <div class="detail-label">
               <i class="fas fa-hourglass-half"></i>
               Expect-Continue
             </div>
-            <div class="detail-value">${expectContinue} ms</div>
+            <div class="detail-value">${escapeHtml(expectContinue)} ms</div>
           </div>
           <div class="config-detail-item">
             <div class="detail-label">
               <i class="fas fa-stopwatch"></i>
               Request Timeout
             </div>
-            <div class="detail-value">${requestTimeout} ms</div>
+            <div class="detail-value">${escapeHtml(requestTimeout)} ms</div>
           </div>
           <div class="config-detail-item">
             <div class="detail-label">
@@ -583,7 +591,7 @@ function populateReview() {
             Load Balancer
           </div>
           <div class="config-item-value">
-            <span class="tag tag-green">${lbStrat}</span>
+            <span class="tag tag-green">${escapeHtml(lbStrat)}</span>
           </div>
         </div>
         <div class="config-item">
@@ -601,7 +609,7 @@ function populateReview() {
             ${urlsArray.map(url => `
               <div class="url-item">
                 <i class="fas fa-link"></i>
-                <span>${url}</span>
+                <span>${escapeHtml(url)}</span>
               </div>
             `).join('')}
           </div>
