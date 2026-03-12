@@ -3,6 +3,7 @@
 > A lightweight, extensible tool for bulk API testing and data migration with streaming processing, JSONata transformations, and real-time progress tracking.
 
 [![Go Version](https://img.shields.io/badge/Go-1.23+-00ADD8?style=flat&logo=go)](https://go.dev)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## What is Bombardment?
 
@@ -15,12 +16,20 @@ Bombardment reads data from files (CSV, JSON), transforms each record using JSON
 - **Concurrent batch processing** — Configurable batch sizes with goroutine-per-request parallelism
 - **Load balancing** — Round-robin, random, and least-connection strategies across multiple target URLs
 - **Multiple client channels** — REST support with GRPC and Kafka channels planned
+- **Real-time progress** — REST API for job status with processed/failed/total counters
 - **Web UI** — Guided wizard for configuring and monitoring bombardment jobs
 - **CLI mode** — Full feature access from the command line for scripting and CI/CD
 - **Response capture** — Optional CSV export of all API responses
 - **Extensible architecture** — Strategy pattern makes it trivial to add new parsers, transformers, clients, and load balancers
 
 ## Quick Start
+
+### Docker (recommended)
+
+```bash
+docker compose up --build
+# Visit http://localhost:8080
+```
 
 ### From Source
 
@@ -66,6 +75,8 @@ go run main.go cli \
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/v1/bombardment` | `POST` | Start a new bombardment job |
+| `/v1/bombardment` | `GET` | List all jobs with status |
+| `/v1/bombardment/:id` | `GET` | Get detailed job status and progress |
 | `/v1/ping` | `GET` | Health check (returns `{"message": "pong"}`) |
 | `/swagger/*any` | `GET` | Interactive Swagger API documentation |
 | `/` | `GET` | Web UI |
@@ -118,25 +129,13 @@ The `POST /v1/bombardment` payload accepts these configuration sections:
 ## Development
 
 ```bash
-cd app
-
-# Install dependencies
-go mod download
-
-# Run the server (default: 127.0.0.1:8080)
-go run main.go server
-
-# Run the server on a custom address and port
-go run main.go server --bind-addr 0.0.0.0 --port 9090
-
-# Run in CLI mode
-go run main.go cli --help
-
-# Run tests
-go test ./...
-
-# Regenerate Swagger docs (requires swag CLI)
-swag init
+make help          # Show all available targets
+make build         # Build the binary
+make test          # Run tests with race detector
+make lint          # Run golangci-lint
+make run           # Start the server
+make docker        # Build Docker image
+make swagger       # Regenerate Swagger docs
 ```
 
 ## Extending Bombardment
@@ -147,6 +146,8 @@ Bombardment uses the strategy pattern throughout. To add support for a new proto
 2. **New transformer** — Implement the `BaseTransformer` interface, add an enum value to `TransformerStrategy`, and add a case in `CreateTransformer()`
 3. **New load balancer** — Implement the `BaseLoadBalancer` interface, add an enum value to `LoadBalancerStrategy`, and add a case in `CreateLoadBalancer()`
 4. **New client channel** — Implement the `BaseChannelClient` interface, add an enum value to `ClientChannel`, and add a case in `CreateChannelClient()`
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full extension guide.
 
 ### Project Layout
 
@@ -173,3 +174,7 @@ app/
 │       └── transforming/            # Data transformer strategies
 └── docs/                            # Generated Swagger documentation
 ```
+
+## License
+
+MIT — see [LICENSE](LICENSE)
