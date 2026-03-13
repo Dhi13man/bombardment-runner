@@ -1180,6 +1180,96 @@ svg[class*="w-"] {
   border-radius: 4px;
 }
 
+/* ==========================================================================
+   Light Mode Overrides
+   ========================================================================== */
+
+/* Surfaces: add subtle shadows for depth since glass is disabled */
+.light .card-flat,
+.light .stat-card,
+.light .config-card,
+.light .table-container {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.light .card-inset {
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* Buttons: no glow on light backgrounds */
+.light .btn-primary:hover {
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.25);
+}
+.light .btn-primary:active {
+  transform: none;
+  background: #0E7490;
+}
+
+/* Badge cyan: use darker color for light bg readability */
+.light .badge-cyan {
+  color: #0891B2;
+}
+
+/* Status muted backgrounds: increase opacity for visibility on white */
+.light .badge-success,
+.light .badge-green,
+.light .toast-success {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.30);
+}
+.light .badge-warning,
+.light .badge-amber,
+.light .toast-warning {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.30);
+}
+.light .badge-error,
+.light .badge-red,
+.light .toast-error {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.30);
+}
+.light .badge-info {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.30);
+}
+
+/* Select arrow: darker stroke for light bg contrast (3:1+) */
+.light .select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* Sidebar: lighter surface with bottom border for link separation */
+.light .sidebar {
+  box-shadow: 1px 0 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Table: subtle row hover */
+.light .table tr:hover td {
+  background: rgba(8, 145, 178, 0.04);
+}
+
+/* Stat card colored borders: more visible */
+.light .stat-card-success { border-color: rgba(16, 185, 129, 0.35); }
+.light .stat-card-error { border-color: rgba(239, 68, 68, 0.35); }
+.light .stat-card-info { border-color: rgba(8, 145, 178, 0.35); }
+
+/* Progress bar: solid fill, no glow */
+.light .progress-fill {
+  background: #0891B2;
+}
+.light .progress-fill[data-status="success"] {
+  background: #059669;
+}
+.light .progress-fill[data-status="error"] {
+  background: #DC2626;
+}
+
+/* Input/textarea code variant: lighter inset */
+.light .input-code,
+.light .textarea-code {
+  background: #F1F5F9;
+}
+
 /* --- Reduced Motion (WCAG 2.3.3) --- */
 @media (prefers-reduced-motion: reduce) {
   *,

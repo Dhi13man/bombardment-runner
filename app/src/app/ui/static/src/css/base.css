@@ -104,9 +104,9 @@
   --accent: #0891B2;
   --accent-hover: #06B6D4;
   --accent-active: #0E7490;
-  --accent-muted: rgba(8, 145, 178, 0.10);
-  --accent-subtle: rgba(8, 145, 178, 0.05);
-  --accent-border: rgba(8, 145, 178, 0.25);
+  --accent-muted: rgba(8, 145, 178, 0.15);
+  --accent-subtle: rgba(8, 145, 178, 0.08);
+  --accent-border: rgba(8, 145, 178, 0.30);
 
   --border-default: #E2E8F0;
   --border-hover: #CBD5E1;
