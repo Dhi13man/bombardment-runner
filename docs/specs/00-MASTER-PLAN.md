@@ -13,24 +13,36 @@ Complete frontend rewrite from light/orange consumer aesthetic to dark/cyan prof
 
 | Agent | Status | Key Findings |
 |-------|--------|-------------|
-| **Architect Reviewer** | Complete | Vanilla JS acceptable with ES modules + esbuild; centralized state object; render function pattern for components |
+| **Architect Reviewer** | Complete (Revised) | TypeScript + Preact recommended over vanilla JS; wizard state management, XSS-safe JSX, 4KB runtime cost; esbuild handles TSX natively |
 | **Performance Engineer** | Complete | ~90% bundle reduction achievable; esbuild + Tailwind build pipeline; polling backoff + visibility API |
 | **Product Strategist** | Partial | Covered by design system roadmap + my own analysis |
 | **Product Designer** | Partial | Covered by design system page patterns + my own analysis |
 | **Accessibility Expert** | Partial | Covered by design system WCAG section + my own spec |
 
-## Architecture Decisions (from Architect Review)
+## Architecture Decisions (from Architect Review — Revised 2026-03-13)
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Framework | Vanilla JS (ES2022+) with ES modules | Sufficient for 4 endpoints, 2-3 views. Threshold: reconsider at 8+ endpoints |
-| Bundler | esbuild | Sub-100ms builds, zero config, ~8KB binary. Already need npm for Tailwind |
-| State Management | Centralized `AppState` object with pub/sub event bus | Eliminates DOM-scraping, traceable data flow |
-| Component Pattern | Render functions returning HTML strings via `esc()` | XSS-safe, reusable, no framework overhead |
+| Language | TypeScript (ES2022+ target) | Type safety for API contracts, enum synchronization with Go backend, compile-time mismatch detection |
+| Framework | Preact with Hooks | 4KB gzip runtime; same React hooks API (`useState`, `useEffect`, `useContext`); wizard state management via context eliminates DOM-scraping; JSX auto-escapes (XSS-safe by default); trivial migration path to React if needed |
+| Bundler | esbuild | Sub-100ms builds; handles `.tsx` natively with `jsxImportSource: "preact"`; zero config for TypeScript transpilation |
+| State Management | Preact Context (`useContext`) + `useState` hooks | Replaces custom pub/sub (~200 lines of infrastructure); typed wizard state shared across steps; no DOM-scraping for cross-step data |
+| Component Pattern | Functional components (`.tsx`) returning JSX | XSS-safe by default (no manual `esc()` calls); typed props; declarative rendering; component lifecycle via `useEffect` |
 | CSS Architecture | `base.css` + `components.css` → single `output.css` via Tailwind | <15KB total with purging |
-| Polling | Recursive `setTimeout` with backoff + Page Visibility API | Prevents request flooding on long jobs |
+| Polling | Custom `useJobPolling(id)` hook with backoff + Page Visibility API | Encapsulates polling lifecycle; component just renders state |
 | Icons | Lucide SVG sprite (~3.5KB) | Replaces 400KB FontAwesome |
 | Fonts | Self-hosted, Latin subset, 5 woff2 files (~95KB) | Replaces 200KB Google Fonts CDN |
+
+### Why Preact Over Vanilla TS (Architect Review Finding)
+
+The 4-step wizard with cross-step validation, conditional fields, dynamic URL list, and review summary is the textbook use case for component state management. Key advantages:
+
+- **Wizard state**: `useContext` with typed `WizardState` — single source of truth, no DOM scraping
+- **Dynamic URL list**: `{urls.map(u => <UrlRow />)}` — add/remove is array mutation, not manual DOM manipulation
+- **Form validation**: State-driven, not 522 lines of DOM queries
+- **Review step**: Reads typed context directly (`wizardState.parserContext.filePath`) — compile-time safe, no string-based DOM selectors
+- **XSS safety**: JSX auto-escapes all interpolations by default
+- **Migration path**: Preact → React is a trivial import swap via `preact/compat`
 
 ## Deliverable Units
 
@@ -163,36 +175,52 @@ These groups can be worked on simultaneously by different people:
 
 ```
 app/src/app/ui/
-├── index.html                    # Rewritten, semantic HTML
+├── index.html                    # Minimal shell: <div id="app"> + <script src="js/app.min.js">
+├── package.json                  # preact, typescript, esbuild, tailwindcss
+├── tsconfig.json                 # strict, jsx: "react-jsx", jsxImportSource: "preact"
+├── esbuild.config.ts             # Build script (CSS + JS bundling)
+├── tailwind.config.ts            # Tailwind with design token integration
 └── static/
-    ├── src/                      # Source (development)
+    ├── src/                      # Source (TypeScript + TSX)
     │   ├── css/
     │   │   ├── base.css          # @tailwind + tokens + @font-face
-    │   │   └── components.css    # Component classes
-    │   ├── js/
-    │   │   ├── main.js           # Entry point
-    │   │   ├── state.js          # AppState + pub/sub
-    │   │   ├── api.js            # API client (4 endpoints)
-    │   │   ├── router.js         # View switching
-    │   │   ├── theme.js          # Dark/light toggle
-    │   │   ├── validation.js     # Validation logic
-    │   │   ├── components/
-    │   │   │   ├── wizard.js     # Step navigation
-    │   │   │   ├── form-fields.js # Dynamic URL list, file picker
-    │   │   │   ├── config-review.js # Review step
-    │   │   │   ├── job-progress.js  # Polling + progress
-    │   │   │   └── job-history.js   # History table
-    │   │   └── utils/
-    │   │       ├── dom.js        # $, $$, esc, debounce
-    │   │       └── format.js     # formatDate, formatFileSize
-    │   └── icons/                # Source SVGs (pre-sprite)
+    │   │   └── components.css    # Component utility classes
+    │   ├── types/
+    │   │   ├── api.ts            # BombardmentRequest, JobSnapshot, enums (mirrors Go types)
+    │   │   └── wizard.ts         # WizardState, StepConfig types
+    │   ├── main.tsx              # Entry point: render(<App />, document.getElementById('app'))
+    │   ├── app.tsx               # Root <App /> with ThemeProvider, Router
+    │   ├── api.ts                # Typed API client (4 endpoints, ms↔ns conversion)
+    │   ├── router.tsx            # Hash-based view switching component
+    │   ├── hooks/
+    │   │   ├── useTheme.ts       # Dark/light toggle hook + localStorage persistence
+    │   │   ├── useJobPolling.ts  # Polling with backoff + Page Visibility API
+    │   │   └── useLocalStorage.ts # Generic localStorage hook for config persistence
+    │   ├── context/
+    │   │   ├── ThemeContext.tsx   # Theme provider
+    │   │   └── WizardContext.tsx  # Wizard state provider (shared across steps)
+    │   ├── components/
+    │   │   ├── primitives/       # Button, Input, Select, Radio, Badge, etc.
+    │   │   ├── composites/       # Toast, Modal, ProgressBar, ConfigCard, etc.
+    │   │   ├── wizard/
+    │   │   │   ├── Wizard.tsx        # Step navigation chrome
+    │   │   │   ├── StepSource.tsx    # Step 1: file source config
+    │   │   │   ├── StepTransform.tsx # Step 2: JSONata/GoTemplate expressions
+    │   │   │   ├── StepTarget.tsx    # Step 3: URLs, LB, client timeouts
+    │   │   │   └── StepReview.tsx    # Step 4: review + submit
+    │   │   ├── JobProgress.tsx   # Single job progress view with polling
+    │   │   └── JobHistory.tsx    # Job list table with inline progress
+    │   ├── utils/
+    │   │   ├── format.ts         # formatDate, formatDuration, formatFileSize
+    │   │   └── validation.ts     # Typed validation functions for each step
+    │   └── icons/                # Source SVGs (pre-sprite build)
     ├── css/
-    │   └── app.min.css           # Build output
+    │   └── app.min.css           # Build output (Tailwind purged)
     ├── js/
-    │   └── app.min.js            # Build output
-    ├── fonts/                    # Self-hosted woff2
+    │   └── app.min.js            # Build output (esbuild bundled)
+    ├── fonts/                    # Self-hosted woff2 (Inter/JetBrains Mono)
     ├── icons/
-    │   └── sprite.svg            # Lucide SVG sprite
+    │   └── sprite.svg            # Lucide SVG sprite (built from src/icons/)
     └── assets/
         └── favicon/
 ```
@@ -217,6 +245,61 @@ The backend uses **nanoseconds** (`time.Duration`). The UI must display and acce
 - API errors return `{error: string, details?: string[]}`
 - Toast notifications for success/error feedback
 - Inline validation messages below form fields
+
+## Known Backend-UI Mismatches (Fix During Redesign)
+
+These are confirmed bugs in the current UI that must be resolved. Fix as part of the relevant deliverable.
+
+| # | Issue | Impact | Fix In |
+|---|-------|--------|--------|
+| 1 | UI shows `JAVASCRIPT` transformer strategy; backend has no such enum | Users get server errors | D09 — remove from dropdown |
+| 2 | UI sends `GOTMPL`; backend expects `GOTEMPLATE` | Silent failure or 400 | D09 — fix value |
+| 3 | UI shows `GraphQL` as "Coming Soon" channel; backend has `KAFKA` | Misleading roadmap | D10 — replace with Kafka |
+| 4 | `LEAST_CONNECTION` LB strategy exists in backend but not in UI | Under-utilization | D10 — add to radio group |
+| 5 | Duration unit mismatch: UI collects ms, backend expects nanoseconds | All timeouts off by 10^6 | D10/D11 — convert ms→ns before submission |
+
+## Strategic Decisions
+
+| # | Decision | Rationale |
+|---|----------|-----------|
+| 1 | Fix all 5 mismatches before visual redesign | Broken functionality undermines aesthetic investment |
+| 2 | Token system + build pipeline as first visual PR | Everything depends on tokens; components before tokens = double-work |
+| 3 | Progressive disclosure for timeout fields | 6 fields overwhelm 80%+ of users who should use defaults |
+| 4 | Export/import config as JSON (not template gallery) | Zero backend changes; JSON is the native format developers expect |
+| 5 | Store submitted configs in localStorage for job recall | Backend doesn't persist request payloads; client-side is the only option |
+| 6 | Job History IS the monitoring dashboard (no separate page) | Inline progress bars cover both single-job and multi-job monitoring |
+| 7 | Remove JAVASCRIPT transformer from UI | Backend doesn't support it; showing it creates false expectations |
+| 8 | Dark mode as default | Design system is dark-first; developer audience overwhelmingly prefers dark |
+| 9 | Self-host all assets (zero CDN dependencies) | Eliminates external latency, GDPR concerns, CDN availability risks |
+| 10 | Keyboard shortcuts limited to 6 core actions | More than 6 creates discoverability and conflict problems |
+| 11 | TypeScript + Preact over Vanilla JS | Architect review (revised): wizard state management, XSS-safe JSX, typed API contracts justify 4KB runtime cost; prevents second rewrite if UI grows |
+| 12 | Functional components with hooks, no class components | Simpler mental model, better tree-shaking, consistent patterns across codebase |
+| 13 | Preact Context for wizard state, not Redux/Signals | 4 steps + 1 review is not complex enough for external state libraries; Context is built-in and sufficient |
+
+## Success Metrics
+
+| Metric | Current | Target | Measurement |
+|--------|---------|--------|-------------|
+| Total asset bundle size | ~740KB (4 CDN deps) | < 160KB | `wc -c` on all assets |
+| External HTTP requests at runtime | 4 | 0 | DevTools Network tab |
+| LCP | ~3-4s (CDN loads) | < 1.5s | Lighthouse |
+| TTI | ~4s | < 2.0s | Lighthouse |
+| First job submission (new user, with template) | ~5min | < 60s | Manual testing |
+| WCAG contrast violations | Multiple | 0 (AA minimum) | axe DevTools |
+| Backend-UI enum mismatches | 5 | 0 | Compare UI options to backend enums |
+
+## Out of Scope
+
+| Item | Reason |
+|------|--------|
+| Backend API changes (new endpoints, schema changes) | Frontend-only redesign; backend is a separate track |
+| Full expression playground (embedded JSONata evaluator) | High effort, low reach; link to jsonata.org as interim |
+| Real-time WebSocket job updates | Polling at 2s interval is sufficient for this tool's job volume |
+| User authentication / server-side saved configs | No auth system exists; localStorage covers single-user use case |
+| Mobile-first responsive design | Primary audience uses desktop; responsive is polish, not MVP |
+| Command palette (Ctrl+K) | Requires routing system and fuzzy search that doesn't exist yet |
+
+---
 
 ## How to Use These Specs
 

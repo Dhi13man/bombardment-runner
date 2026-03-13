@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/app/ui/static/src/*"]
+    }
+  },
+  "include": [
+    "src/app/ui/static/src/**/*.ts",
+    "src/app/ui/static/src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
