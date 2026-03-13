@@ -3,13 +3,13 @@
 
 /* Variables */
 :root {
-    --color-primary: #F97316;
-    --color-primary-light: #FFAC6A;
-    --color-primary-dark: #C75A1D;
-    --color-secondary: #FDAE42;
-    --color-secondary-light: #FFE3B8;
-    --color-accent: #FF6C37;
-    --color-accent-light: #FF9E7C;
+    --color-primary: #4F46E5;
+    --color-primary-light: #818CF8;
+    --color-primary-dark: #4338CA;
+    --color-secondary: #6366F1;
+    --color-secondary-light: #E0E7FF;
+    --color-accent: #6366F1;
+    --color-accent-light: #A5B4FC;
 
     /* Neutral colors */
     --color-white: #ffffff;
@@ -1172,11 +1172,11 @@ a:hover {
 
 @keyframes glow {
     from {
-        text-shadow: 0 0 10px rgba(255, 108, 55, 0.3);
+        text-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
     }
 
     to {
-        text-shadow: 0 0 20px rgba(255, 108, 55, 0.7);
+        text-shadow: 0 0 20px rgba(99, 102, 241, 0.7);
     }
 }
 

@@ -39,6 +39,21 @@
 - **Response capture** - Optional CSV export of all API responses with status codes, timestamps, and latencies
 - **Extensible architecture** - Strategy pattern makes it trivial to add new parsers, transformers, clients, and load balancers
 
+## Web UI
+
+Bombardment includes a guided 4-step wizard for configuring and monitoring jobs — no code required.
+
+| Source Configuration | Transform Rules | Review & Submit |
+| --- | --- | --- |
+| ![Source step — select format and provide file path](screenshots/02-source-step-filled.png) | ![Transform step — define JSONata expressions](screenshots/03-transform-step.png) | ![Review step — verify config before launch](screenshots/05-review-step.png) |
+
+<details>
+<summary>Dark mode</summary>
+
+![Review step in dark mode](screenshots/08-review-step-dark.png)
+
+</details>
+
 ## Architecture
 
 ```mermaid

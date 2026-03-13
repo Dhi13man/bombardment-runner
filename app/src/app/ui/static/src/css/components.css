@@ -49,15 +49,15 @@
 .btn-lg { height: 40px; padding: 0 20px; font-size: 15px; }
 
 .btn-primary {
-  background: linear-gradient(135deg, #06B6D4, #0891B2);
+  background: linear-gradient(135deg, #6366F1, #4F46E5);
   color: white;
   border: 1px solid var(--accent-border);
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #22D3EE, #06B6D4);
-  box-shadow: 0 0 20px rgba(6, 182, 212, 0.20);
+  background: linear-gradient(135deg, #818CF8, #6366F1);
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.20);
 }
-.btn-primary:active { background: #0891B2; transform: scale(0.98); }
+.btn-primary:active { background: #4F46E5; transform: scale(0.98); }
 
 .btn-secondary {
   background: transparent;
@@ -413,7 +413,7 @@
 /* Named color variants (D06 — design system) */
 .badge-cyan {
   background: var(--accent-muted);
-  color: #22D3EE;
+  color: #818CF8;
   border: 1px solid var(--accent-border);
 }
 .badge-green {
@@ -646,7 +646,7 @@ svg[class*="w-"] {
 .progress-fill {
   height: 100%;
   border-radius: 9999px;
-  background: linear-gradient(90deg, #06B6D4, #22D3EE);
+  background: linear-gradient(90deg, #6366F1, #818CF8);
   transition: width 500ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .progress-fill[data-status="success"] {
@@ -1197,16 +1197,16 @@ svg[class*="w-"] {
 
 /* Buttons: no glow on light backgrounds */
 .light .btn-primary:hover {
-  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.25);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
 }
 .light .btn-primary:active {
   transform: none;
-  background: #0E7490;
+  background: #4338CA;
 }
 
 /* Badge cyan: use darker color for light bg readability */
 .light .badge-cyan {
-  color: #0891B2;
+  color: #4F46E5;
 }
 
 /* Status muted backgrounds: increase opacity for visibility on white */
@@ -1245,17 +1245,17 @@ svg[class*="w-"] {
 
 /* Table: subtle row hover */
 .light .table tr:hover td {
-  background: rgba(8, 145, 178, 0.04);
+  background: rgba(79, 70, 229, 0.04);
 }
 
 /* Stat card colored borders: more visible */
 .light .stat-card-success { border-color: rgba(16, 185, 129, 0.35); }
 .light .stat-card-error { border-color: rgba(239, 68, 68, 0.35); }
-.light .stat-card-info { border-color: rgba(8, 145, 178, 0.35); }
+.light .stat-card-info { border-color: rgba(79, 70, 229, 0.35); }
 
 /* Progress bar: solid fill, no glow */
 .light .progress-fill {
-  background: #0891B2;
+  background: #4F46E5;
 }
 .light .progress-fill[data-status="success"] {
   background: #059669;
