@@ -1,0 +1,25 @@
+{
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i src/app/ui/static/src/css/base.css -o src/app/ui/static/css/app.min.css --minify",
+    "build:js": "esbuild src/app/ui/static/src/main.tsx --bundle --minify --target=es2022 --jsx=automatic --jsx-import-source=preact --outfile=src/app/ui/static/js/app.min.js",
+    "build:fonts": "node scripts/copy-fonts.js",
+    "build": "npm run build:fonts && npm run build:css && npm run build:js",
+    "watch:css": "tailwindcss -i src/app/ui/static/src/css/base.css -o src/app/ui/static/css/app.min.css --watch",
+    "watch:js": "esbuild src/app/ui/static/src/main.tsx --bundle --target=es2022 --jsx=automatic --jsx-import-source=preact --outfile=src/app/ui/static/js/app.min.js --watch --sourcemap",
+    "watch": "concurrently \"npm run watch:css\" \"npm run watch:js\"",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@fontsource/ibm-plex-sans": "^5.0.0",
+    "@fontsource/jetbrains-mono": "^5.0.0",
+    "concurrently": "^8.0.0",
+    "esbuild": "^0.24.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "preact": "^10.25.0"
+  }
+}

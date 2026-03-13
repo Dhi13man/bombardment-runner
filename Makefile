@@ -1,4 +1,4 @@
-.PHONY: build test test-cover lint run run-cli docker docker-run swagger clean help
+.PHONY: build test test-cover lint run run-cli docker docker-run swagger clean help ui-install ui-build ui-watch ui-typecheck
 
 GO_DIR := ./app
 BINARY := bombardment
@@ -6,7 +6,19 @@ BINARY := bombardment
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
-build: ## Build the Go binary
+ui-install: ## Install frontend dependencies
+	cd $(GO_DIR) && npm install
+
+ui-build: ## Build frontend assets (CSS + JS)
+	cd $(GO_DIR) && npm run build
+
+ui-watch: ## Watch mode for frontend development
+	cd $(GO_DIR) && npm run watch
+
+ui-typecheck: ## Run TypeScript type checking
+	cd $(GO_DIR) && npm run typecheck
+
+build: ui-build ## Build frontend assets then Go binary
 	cd $(GO_DIR) && CGO_ENABLED=0 go build -o $(BINARY) .
 
 test: ## Run tests with race detector
