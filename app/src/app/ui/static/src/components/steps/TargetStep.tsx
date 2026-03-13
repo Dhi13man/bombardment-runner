@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'preact/hooks';
+import { useEffect, useCallback, useRef } from 'preact/hooks';
 import { useJobForm } from '../../context/JobFormContext';
 import { useWizard } from '../../context/WizardContext';
 import { RadioCardGroup, Input, Checkbox } from '../primitives';
@@ -25,7 +25,7 @@ const MAX_TIMEOUT = 60000;
 const MIN_BATCH_SIZE = 1;
 const MAX_BATCH_SIZE = 10000;
 
-const URL_REGEX = /^https?:\/\/([a-zA-Z0-9][-a-zA-Z0-9]*(\.[a-zA-Z0-9][-a-zA-Z0-9]*)+|localhost)(:[0-9]{1,5})?(\/[-a-zA-Z0-9()@:%_+.~#?&/=]*)?$/;
+const URL_REGEX = /^https?:\/\/([a-zA-Z0-9][-a-zA-Z0-9]*(\.[a-zA-Z0-9][-a-zA-Z0-9]*)*)(:(6553[0-5]|655[0-2]\d|65[0-4]\d{2}|6[0-4]\d{3}|[1-5]?\d{1,4}))?(\/[-a-zA-Z0-9()@:%_+.~#?&/=]*)?$/;
 
 interface TimeoutField {
   key: 'dialTimeoutMs' | 'keepAliveMs' | 'tlsHandshakeMs' | 'responseHeaderMs' | 'expectContinueMs' | 'requestTimeoutMs';
@@ -45,8 +45,8 @@ const TIMEOUT_FIELDS: TimeoutField[] = [
 /* ---------- Helpers ---------- */
 
 function getTimeoutError(value: number): string {
-  if (isNaN(value) || value < MIN_TIMEOUT || value > MAX_TIMEOUT) {
-    return `Must be between ${MIN_TIMEOUT} and ${MAX_TIMEOUT} ms`;
+  if (isNaN(value) || !Number.isInteger(value) || value < MIN_TIMEOUT || value > MAX_TIMEOUT) {
+    return `Must be a whole number between ${MIN_TIMEOUT} and ${MAX_TIMEOUT} ms`;
   }
   return '';
 }
@@ -58,8 +58,8 @@ function getUrlError(url: string): string {
 }
 
 function getBatchSizeError(value: number): string {
-  if (isNaN(value) || value < MIN_BATCH_SIZE || value > MAX_BATCH_SIZE) {
-    return `Must be between ${MIN_BATCH_SIZE} and ${MAX_BATCH_SIZE}`;
+  if (isNaN(value) || !Number.isInteger(value) || value < MIN_BATCH_SIZE || value > MAX_BATCH_SIZE) {
+    return `Must be a whole number between ${MIN_BATCH_SIZE} and ${MAX_BATCH_SIZE}`;
   }
   return '';
 }
@@ -76,6 +76,9 @@ function getResponsesPathError(path: string, isRequired: boolean): string {
 export function TargetStep() {
   const { form, update } = useJobForm();
   const { setValid } = useWizard();
+  const urlIdCounter = useRef(form.urls.length);
+  const urlKeys = useRef<number[]>(form.urls.map((_, i) => i));
+  const lastUrlRef = useRef<HTMLInputElement>(null);
 
   const validate = useCallback(() => {
     // Validate timeouts
@@ -116,13 +119,31 @@ export function TargetStep() {
   }
 
   function addUrl() {
+    urlKeys.current = [...urlKeys.current, ++urlIdCounter.current];
     update('urls', [...form.urls, '']);
+    // Focus the new input after render
+    requestAnimationFrame(() => lastUrlRef.current?.focus());
   }
 
   function removeUrl(index: number) {
+    // Determine focus target before removing
+    const focusIndex = index > 0 ? index - 1 : 0;
+
+    urlKeys.current = urlKeys.current.filter((_, i) => i !== index);
     const newUrls = form.urls.filter((_, i) => i !== index);
     // Keep at least one URL field
+    if (newUrls.length === 0) {
+      urlKeys.current = [++urlIdCounter.current];
+    }
     update('urls', newUrls.length > 0 ? newUrls : ['']);
+
+    // Restore focus to nearest remaining URL input
+    requestAnimationFrame(() => {
+      const target = document.getElementById(`target-url-${focusIndex}`);
+      if (target) {
+        (target as HTMLElement).focus();
+      }
+    });
   }
 
   // Compute errors for display
@@ -221,10 +242,13 @@ export function TargetStep() {
           <div>
             {form.urls.map((url, i) => {
               const urlError = url.trim() ? getUrlError(url) : '';
+              const isLast = i === form.urls.length - 1;
               return (
-                <div key={i} class="url-row">
+                <div key={urlKeys.current[i] ?? i} class="url-row">
                   <Input
                     id={`target-url-${i}`}
+                    aria-label={`Target URL ${i + 1}`}
+                    ref={isLast ? lastUrlRef : undefined}
                     type="text"
                     value={url}
                     onInput={(e: JSX.TargetedEvent<HTMLInputElement>) => handleUrlChange(i, e)}

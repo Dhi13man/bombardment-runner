@@ -1158,3 +1158,28 @@ svg[class*="w-"] {
 .shake {
   animation: shake 400ms ease-in-out;
 }
+
+/* ==========================================================================
+   Accessibility (D14)
+   ========================================================================== */
+
+/* --- Focus-within for radio cards (keyboard indicator on internal radio focus) --- */
+.radio-card:focus-within {
+  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
+}
+
+/* --- Reduced Motion (WCAG 2.3.3) --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .progress-fill {
+    transition: none !important;
+  }
+}
