@@ -939,6 +939,40 @@ svg[class*="w-"] {
 .mt-4 { margin-top: 16px; }
 
 /* ==========================================================================
+   Job Progress View (D12)
+   ========================================================================== */
+
+.progress-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 24px 0;
+}
+@media (max-width: 480px) {
+  .progress-stats { grid-template-columns: 1fr; }
+}
+
+.progress-error-card {
+  border-color: var(--status-error-muted);
+}
+.progress-error-icon {
+  color: var(--status-error-text);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.progress-error-title {
+  color: var(--status-error-text);
+}
+
+.progress-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-default);
+}
+
+/* ==========================================================================
    Step 4: Review & Submit (D11)
    ========================================================================== */
 

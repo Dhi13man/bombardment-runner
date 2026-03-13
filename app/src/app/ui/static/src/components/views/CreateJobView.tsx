@@ -27,7 +27,7 @@ function CreateJobWizard() {
       const job = await createJob(payload);
       showToast('success', `Job ${job.id.substring(0, 8)}... created successfully`);
       reset();
-      navigateTo('job-progress');
+      navigateTo('job-progress', { jobId: job.id });
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Failed to create job';
       showToast('error', message);
