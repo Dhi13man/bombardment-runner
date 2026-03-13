@@ -1,3 +1,6 @@
+/* 0. Component styles (must precede @tailwind for CLI import resolution) */
+@import './components.css';
+
 /* 1. Tailwind layers */
 @tailwind base;
 @tailwind components;
@@ -152,5 +155,4 @@ body {
   }
 }
 
-/* 8. Import component styles */
-@import './components.css';
+/* (component styles imported at top of file for Tailwind CLI compatibility) */
