@@ -86,7 +86,7 @@ export function JobProgressView() {
     if (mountedRef.current) {
       timeoutRef.current = setTimeout(() => poll(id), intervalRef.current);
     }
-  }, [stopPolling]);
+  }, [stopPolling, showToast]);
 
   // Start/stop polling on mount/unmount or jobId change
   useEffect(() => {
