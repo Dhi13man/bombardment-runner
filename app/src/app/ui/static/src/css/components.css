@@ -909,3 +909,122 @@ svg[class*="w-"] {
     font-size: 12px;
   }
 }
+
+/* ==========================================================================
+   Wizard Navigation (D07)
+   ========================================================================== */
+
+/* ---------- Step Indicator ---------- */
+
+.steps {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.step {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+/* Connector line */
+.step:not(:last-child)::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: var(--border-default);
+  margin: 0 12px;
+  transition: background 300ms;
+}
+.step.completed:not(:last-child)::after {
+  background: var(--accent);
+}
+
+/* Step circle + label */
+.step-trigger {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.step-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  border: 2px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-tertiary);
+  transition: all 200ms;
+}
+.step-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  transition: color 200ms;
+}
+
+/* Active step */
+.step.active .step-circle {
+  border-color: var(--accent);
+  background: var(--accent-muted);
+  color: var(--accent-hover);
+  box-shadow: 0 0 0 4px var(--accent-subtle);
+}
+.step.active .step-label { color: var(--accent-hover); }
+
+/* Completed step */
+.step.completed .step-circle {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+.step.completed .step-label { color: var(--text-primary); }
+
+/* Responsive: hide labels on small screens */
+@media (max-width: 480px) {
+  .step-label { display: none; }
+  .step-circle { width: 32px; height: 32px; font-size: 12px; }
+}
+
+/* ---------- Wizard Container ---------- */
+
+.wizard-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-default);
+}
+.wizard-nav-end {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.step-panel {
+  display: none;
+}
+.step-panel.active {
+  display: block;
+}
+
+/* ---------- Shake Animation ---------- */
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+.shake {
+  animation: shake 400ms ease-in-out;
+}
