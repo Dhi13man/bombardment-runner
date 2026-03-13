@@ -1,6 +1,5 @@
 import { useRef, useEffect } from 'preact/hooks';
 import { useRouter, type ViewName } from '../context/RouterContext';
-import { ThemeToggle } from './ThemeToggle';
 import { Icon, type IconName } from './Icon';
 
 interface NavItem {
@@ -90,9 +89,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           })}
         </div>
 
-        <div class="sidebar-footer">
-          <ThemeToggle />
-        </div>
+        <div class="sidebar-footer" />
       </nav>
 
       {/* Mobile overlay */}
