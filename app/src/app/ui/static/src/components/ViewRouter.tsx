@@ -4,6 +4,7 @@ import { PageHeader } from './PageHeader';
 import { Wizard } from './wizard';
 import { SourceStep } from './steps/SourceStep';
 import { TransformStep } from './steps/TransformStep';
+import { TargetStep } from './steps/TargetStep';
 
 /**
  * Renders the active view based on router state.
@@ -25,11 +26,7 @@ export function ViewRouter() {
               <TransformStep />
 
               {/* Step 3: Target (D10) */}
-              <div>
-                <p class="text-text-secondary text-sm">
-                  Target configuration will be built in D10.
-                </p>
-              </div>
+              <TargetStep />
 
               {/* Step 4: Review (D11) */}
               <div>
