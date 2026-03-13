@@ -1,10 +1,12 @@
 import { useRouter } from '../context/RouterContext';
+import { JobFormProvider } from '../context/JobFormContext';
 import { PageHeader } from './PageHeader';
 import { Wizard } from './wizard';
+import { SourceStep } from './steps/SourceStep';
 
 /**
  * Renders the active view based on router state.
- * Placeholder step content will be replaced by D08-D13.
+ * Step content will be replaced by D09-D13.
  */
 export function ViewRouter() {
   const { activeView } = useRouter();
@@ -13,35 +15,33 @@ export function ViewRouter() {
     case 'create-job':
       return (
         <div id="view-create-job">
-          <Wizard onSubmit={() => { /* D11 will wire this */ }}>
-            {/* Step 1: Source (D08) */}
-            <div>
-              <p class="text-text-secondary text-sm">
-                Source configuration will be built in D08.
-              </p>
-            </div>
+          <JobFormProvider>
+            <Wizard onSubmit={() => { /* D11 will wire submission */ }}>
+              {/* Step 1: Source (D08) */}
+              <SourceStep />
 
-            {/* Step 2: Transform (D09) */}
-            <div>
-              <p class="text-text-secondary text-sm">
-                Transform configuration will be built in D09.
-              </p>
-            </div>
+              {/* Step 2: Transform (D09) */}
+              <div>
+                <p class="text-text-secondary text-sm">
+                  Transform configuration will be built in D09.
+                </p>
+              </div>
 
-            {/* Step 3: Target (D10) */}
-            <div>
-              <p class="text-text-secondary text-sm">
-                Target configuration will be built in D10.
-              </p>
-            </div>
+              {/* Step 3: Target (D10) */}
+              <div>
+                <p class="text-text-secondary text-sm">
+                  Target configuration will be built in D10.
+                </p>
+              </div>
 
-            {/* Step 4: Review (D11) */}
-            <div>
-              <p class="text-text-secondary text-sm">
-                Review &amp; submit will be built in D11.
-              </p>
-            </div>
-          </Wizard>
+              {/* Step 4: Review (D11) */}
+              <div>
+                <p class="text-text-secondary text-sm">
+                  Review &amp; submit will be built in D11.
+                </p>
+              </div>
+            </Wizard>
+          </JobFormProvider>
         </div>
       );
 
