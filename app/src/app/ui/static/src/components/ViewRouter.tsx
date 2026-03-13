@@ -1,43 +1,16 @@
 import { useRouter } from '../context/RouterContext';
-import { JobFormProvider } from '../context/JobFormContext';
 import { PageHeader } from './PageHeader';
-import { Wizard } from './wizard';
-import { SourceStep } from './steps/SourceStep';
-import { TransformStep } from './steps/TransformStep';
-import { TargetStep } from './steps/TargetStep';
+import { CreateJobView } from './views/CreateJobView';
 
 /**
  * Renders the active view based on router state.
- * Step content will be replaced by D10-D13.
  */
 export function ViewRouter() {
   const { activeView } = useRouter();
 
   switch (activeView) {
     case 'create-job':
-      return (
-        <div id="view-create-job">
-          <JobFormProvider>
-            <Wizard onSubmit={() => { /* D11 will wire submission */ }}>
-              {/* Step 1: Source (D08) */}
-              <SourceStep />
-
-              {/* Step 2: Transform (D09) */}
-              <TransformStep />
-
-              {/* Step 3: Target (D10) */}
-              <TargetStep />
-
-              {/* Step 4: Review (D11) */}
-              <div>
-                <p class="text-text-secondary text-sm">
-                  Review &amp; submit will be built in D11.
-                </p>
-              </div>
-            </Wizard>
-          </JobFormProvider>
-        </div>
-      );
+      return <CreateJobView />;
 
     case 'job-history':
       return (
