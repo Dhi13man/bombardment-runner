@@ -1,12 +1,12 @@
 import type { JSX } from 'preact';
 
-interface CheckboxProps extends Omit<JSX.HTMLAttributes<HTMLInputElement>, 'type'> {
+interface CheckboxProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label: string;
 }
 
 export function Checkbox({ label, id, class: className, ...rest }: CheckboxProps) {
   return (
-    <label class="checkbox-wrapper" for={id}>
+    <label class="checkbox-wrapper">
       <input
         type="checkbox"
         id={id}

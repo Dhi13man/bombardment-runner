@@ -3,10 +3,11 @@ import { JobFormProvider } from '../context/JobFormContext';
 import { PageHeader } from './PageHeader';
 import { Wizard } from './wizard';
 import { SourceStep } from './steps/SourceStep';
+import { TransformStep } from './steps/TransformStep';
 
 /**
  * Renders the active view based on router state.
- * Step content will be replaced by D09-D13.
+ * Step content will be replaced by D10-D13.
  */
 export function ViewRouter() {
   const { activeView } = useRouter();
@@ -21,11 +22,7 @@ export function ViewRouter() {
               <SourceStep />
 
               {/* Step 2: Transform (D09) */}
-              <div>
-                <p class="text-text-secondary text-sm">
-                  Transform configuration will be built in D09.
-                </p>
-              </div>
+              <TransformStep />
 
               {/* Step 3: Target (D10) */}
               <div>

@@ -1,6 +1,6 @@
 import type { JSX, ComponentChildren } from 'preact';
 
-interface SelectProps extends JSX.HTMLAttributes<HTMLSelectElement> {
+interface SelectProps extends JSX.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
   children: ComponentChildren;
@@ -23,11 +23,12 @@ export function Select({
         id={id}
         class={classes}
         aria-invalid={error ? 'true' : undefined}
+        aria-describedby={error && id ? `${id}-error` : undefined}
         {...rest}
       >
         {children}
       </select>
-      {error && <p class="field-error" role="alert">{error}</p>}
+      {error && <p id={id ? `${id}-error` : undefined} class="field-error" role="alert">{error}</p>}
     </div>
   );
 }

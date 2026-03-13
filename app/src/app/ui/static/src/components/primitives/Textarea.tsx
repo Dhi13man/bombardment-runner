@@ -1,6 +1,6 @@
 import type { JSX } from 'preact';
 
-interface TextareaProps extends JSX.HTMLAttributes<HTMLTextAreaElement> {
+interface TextareaProps extends JSX.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
   help?: string;

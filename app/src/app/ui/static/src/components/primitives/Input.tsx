@@ -1,7 +1,7 @@
 import type { JSX } from 'preact';
 import { Icon, type IconName } from '../Icon';
 
-interface InputProps extends Omit<JSX.HTMLAttributes<HTMLInputElement>, 'icon'> {
+interface InputProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, 'icon'> {
   label?: string;
   error?: string;
   help?: string;
@@ -31,7 +31,7 @@ export function Input({
       id={id}
       class={inputClasses}
       aria-invalid={error ? 'true' : undefined}
-      aria-describedby={error ? `${id}-error` : undefined}
+      aria-describedby={error && id ? `${id}-error` : undefined}
       {...rest}
     />
   );
@@ -47,7 +47,7 @@ export function Input({
       ) : (
         inputEl
       )}
-      {error && <p id={`${id}-error`} class="field-error" role="alert">{error}</p>}
+      {error && <p id={id ? `${id}-error` : undefined} class="field-error" role="alert">{error}</p>}
       {help && !error && <p class="field-help">{help}</p>}
     </div>
   );
