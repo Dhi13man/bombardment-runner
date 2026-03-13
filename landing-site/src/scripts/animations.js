@@ -146,6 +146,25 @@ function showUsageTab(tabId) {
     document.querySelector(`.tab-button[onclick="showUsageTab('${tabId}')"]`).classList.add('active');
 }
 
+// Screenshot tab switching functionality
+function showScreenshot(screenshotId) {
+    // Hide all screenshot content
+    document.querySelectorAll('.screenshot-content').forEach(content => {
+        content.classList.remove('active');
+    });
+
+    // Deactivate all screenshot tab buttons
+    document.querySelectorAll('.screenshot-tab').forEach(button => {
+        button.classList.remove('active');
+    });
+
+    // Show the selected screenshot
+    document.getElementById(screenshotId).classList.add('active');
+
+    // Activate the clicked button
+    document.querySelector(`.screenshot-tab[onclick="showScreenshot('${screenshotId}')"]`).classList.add('active');
+}
+
 // Initialize all functionality when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Start the typing animation with a small delay

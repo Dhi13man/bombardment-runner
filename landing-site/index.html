@@ -226,15 +226,39 @@
 
                 <div id="gui-tab" class="usage-tab active">
                     <div class="gui-container">
-                        <h3>Data Migration Job Configuration</h3>
-                        <p>Bombardment offers an intuitive graphical interface for configuring and managing data
-                            migration jobs.</p>
-                        <div class="image-container">
-                            <img src="assets/usage-ui-configuration.png" alt="Bombardment GUI Configuration Interface"
-                                class="gui-screenshot">
-                            <p class="image-caption">The Bombardment GUI allows you to configure your data source,
-                                transformation rules, and target system without writing any code.</p>
+                        <h3>4-Step Wizard Interface</h3>
+                        <p>Configure source, transformations, targets, and review — all through a guided wizard with validation at every step.</p>
+                        <div class="screenshot-tabs">
+                            <button class="screenshot-tab active" onclick="showScreenshot('ss-source')" type="button">1. Source</button>
+                            <button class="screenshot-tab" onclick="showScreenshot('ss-transform')" type="button">2. Transform</button>
+                            <button class="screenshot-tab" onclick="showScreenshot('ss-target')" type="button">3. Target</button>
+                            <button class="screenshot-tab" onclick="showScreenshot('ss-review')" type="button">4. Review</button>
                         </div>
+                        <div id="ss-source" class="screenshot-content active">
+                            <div class="screenshot-box">
+                                <img src="assets/ui-source-step.png" alt="Source configuration step — select CSV or JSON format and provide a file path">
+                            </div>
+                            <p class="screenshot-description">Choose your data format (CSV, JSON) and upload a file or enter a server-side path.</p>
+                        </div>
+                        <div id="ss-transform" class="screenshot-content">
+                            <div class="screenshot-box">
+                                <img src="assets/ui-transform-step.png" alt="Transform configuration step — define JSONata expressions for method, endpoint, headers, and body">
+                            </div>
+                            <p class="screenshot-description">Define JSONata expressions to shape each record into an HTTP request — method, endpoint, headers, and body.</p>
+                        </div>
+                        <div id="ss-target" class="screenshot-content">
+                            <div class="screenshot-box">
+                                <img src="assets/ui-target-step.png" alt="Target configuration step — configure HTTP client, load balancing, and batch processing">
+                            </div>
+                            <p class="screenshot-description">Configure HTTP client settings, load balancing strategy, target URLs, and batch processing options.</p>
+                        </div>
+                        <div id="ss-review" class="screenshot-content">
+                            <div class="screenshot-box">
+                                <img src="assets/ui-review-step.png" alt="Review step — verify all configuration before running the bombardment">
+                            </div>
+                            <p class="screenshot-description">Review your full configuration with validation checks before launching the bombardment.</p>
+                        </div>
+                        <p class="screenshot-note">Dark mode included — automatically follows your system preference.</p>
                     </div>
                 </div>
 

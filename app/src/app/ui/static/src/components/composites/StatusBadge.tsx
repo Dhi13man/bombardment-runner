@@ -1,9 +1,9 @@
 import type { JobStatus } from '../../types/api';
 
-export type StatusBadgeVariant = 'cyan' | 'green' | 'amber' | 'red' | 'slate';
+export type StatusBadgeVariant = 'indigo' | 'green' | 'amber' | 'red' | 'slate';
 
 const STATUS_VARIANT: Record<JobStatus, StatusBadgeVariant> = {
-  PENDING: 'cyan',
+  PENDING: 'indigo',
   RUNNING: 'amber',
   COMPLETED: 'green',
   FAILED: 'red',
