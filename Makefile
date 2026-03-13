@@ -1,4 +1,4 @@
-.PHONY: build test test-cover lint run run-cli docker docker-run swagger clean help
+.PHONY: build test test-cover lint run run-cli docker docker-run swagger clean help ui-install ui-build ui-watch ui-typecheck check-bundle-size
 
 GO_DIR := ./app
 BINARY := bombardment
@@ -6,7 +6,19 @@ BINARY := bombardment
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
-build: ## Build the Go binary
+ui-install: ## Install frontend dependencies
+	cd $(GO_DIR) && npm install
+
+ui-build: ## Build frontend assets (CSS + JS)
+	cd $(GO_DIR) && npm run build
+
+ui-watch: ## Watch mode for frontend development
+	cd $(GO_DIR) && npm run watch
+
+ui-typecheck: ## Run TypeScript type checking
+	cd $(GO_DIR) && npm run typecheck
+
+build: ui-build ## Build frontend assets then Go binary
 	cd $(GO_DIR) && CGO_ENABLED=0 go build -o $(BINARY) .
 
 test: ## Run tests with race detector
@@ -32,6 +44,19 @@ docker-run: ## Run with Docker Compose
 
 swagger: ## Regenerate Swagger docs
 	cd $(GO_DIR) && swag init -g main.go --parseDependency --parseInternal
+
+check-bundle-size: ui-build ## Check frontend bundle sizes against budgets
+	@echo "Checking bundle sizes..."
+	@CSS_SIZE=$$(wc -c < $(GO_DIR)/src/app/ui/static/css/app.min.css); \
+	JS_SIZE=$$(wc -c < $(GO_DIR)/src/app/ui/static/js/app.min.js); \
+	ICON_SIZE=$$(wc -c < $(GO_DIR)/src/app/ui/static/icons/sprite.svg); \
+	echo "  CSS:   $$CSS_SIZE bytes (budget: 30720 / 30KB)"; \
+	echo "  JS:    $$JS_SIZE bytes (budget: 56320 / 55KB)"; \
+	echo "  Icons: $$ICON_SIZE bytes (budget: 12288 / 12KB)"; \
+	if [ $$CSS_SIZE -gt 30720 ]; then echo "FAIL: CSS exceeds 30KB budget" && exit 1; fi; \
+	if [ $$JS_SIZE -gt 56320 ]; then echo "FAIL: JS exceeds 55KB budget (Preact framework)" && exit 1; fi; \
+	if [ $$ICON_SIZE -gt 12288 ]; then echo "FAIL: Icons exceed 12KB budget" && exit 1; fi; \
+	echo "All bundle sizes within budget."
 
 clean: ## Remove build artifacts
 	rm -f $(GO_DIR)/$(BINARY) $(GO_DIR)/coverage.out $(GO_DIR)/coverage.html

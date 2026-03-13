@@ -1,0 +1,158 @@
+/* 0. Component styles (must precede @tailwind for CLI import resolution) */
+@import './components.css';
+
+/* 1. Tailwind layers */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 2. Font faces — self-hosted, no external requests */
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('/static/fonts/ibm-plex-sans-latin-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('/static/fonts/ibm-plex-sans-latin-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Sans';
+  src: url('/static/fonts/ibm-plex-sans-latin-600.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/static/fonts/jetbrains-mono-latin-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('/static/fonts/jetbrains-mono-latin-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 3. CSS custom properties — Dark mode (default) */
+:root {
+  --bg-base: #0F172A;
+  --bg-surface: #1E293B;
+  --bg-elevated: #334155;
+  --bg-overlay: rgba(0, 0, 0, 0.60);
+  --bg-inset: #0B1120;
+
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
+  --text-inverse: #0F172A;
+
+  --accent: #06B6D4;
+  --accent-hover: #22D3EE;
+  --accent-active: #0891B2;
+  --accent-muted: rgba(6, 182, 212, 0.15);
+  --accent-subtle: rgba(6, 182, 212, 0.08);
+  --accent-border: rgba(6, 182, 212, 0.30);
+
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
+  --border-focus: #06B6D4;
+
+  --status-success: #10B981;
+  --status-success-muted: rgba(16, 185, 129, 0.15);
+  --status-success-text: #34D399;
+  --status-warning: #F59E0B;
+  --status-warning-muted: rgba(245, 158, 11, 0.15);
+  --status-warning-text: #FBBF24;
+  --status-error: #EF4444;
+  --status-error-muted: rgba(239, 68, 68, 0.15);
+  --status-error-text: #F87171;
+  --status-info: #3B82F6;
+  --status-info-muted: rgba(59, 130, 246, 0.15);
+  --status-info-text: #60A5FA;
+
+  --glass-bg: rgba(30, 41, 59, 0.70);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: 12px;
+
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+}
+
+/* 4. Light mode overrides */
+.light {
+  --bg-base: #F8FAFC;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #FFFFFF;
+  --bg-overlay: rgba(0, 0, 0, 0.40);
+  --bg-inset: #F1F5F9;
+
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-tertiary: #94A3B8;
+  --text-inverse: #F1F5F9;
+
+  --accent: #0891B2;
+  --accent-hover: #06B6D4;
+  --accent-active: #0E7490;
+  --accent-muted: rgba(8, 145, 178, 0.10);
+  --accent-subtle: rgba(8, 145, 178, 0.05);
+  --accent-border: rgba(8, 145, 178, 0.25);
+
+  --border-default: #E2E8F0;
+  --border-hover: #CBD5E1;
+  --border-focus: #0891B2;
+
+  --glass-bg: rgba(255, 255, 255, 0.80);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-blur: 12px;
+
+  --status-success-text: #059669;
+  --status-warning-text: #D97706;
+  --status-error-text: #DC2626;
+  --status-info-text: #2563EB;
+}
+
+/* 5. Base element styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 6. Utility layer */
+@layer utilities {
+  .font-mono {
+    font-family: var(--font-mono);
+    font-feature-settings: "tnum" 1, "zero" 1;
+    font-variant-numeric: tabular-nums slashed-zero;
+  }
+}
+
+/* 7. Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* (component styles imported at top of file for Tailwind CLI compatibility) */
