@@ -939,6 +939,55 @@ svg[class*="w-"] {
 .mt-4 { margin-top: 16px; }
 
 /* ==========================================================================
+   Step 4: Review & Submit (D11)
+   ========================================================================== */
+
+.review-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 1024px) {
+  .review-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.review-issues-card {
+  border-color: var(--status-error-muted);
+}
+.review-issues-icon {
+  color: var(--status-error-text);
+  flex-shrink: 0;
+}
+.review-issue-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-default);
+}
+.review-issue-item:last-child { border-bottom: none; }
+
+.review-clear-card {
+  border-color: var(--status-success-muted);
+}
+.review-clear-icon {
+  color: var(--status-success-text);
+}
+.review-clear-text {
+  color: var(--status-success-text);
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.flex.justify-end { display: flex; justify-content: flex-end; }
+
+/* ==========================================================================
    Wizard Navigation (D07)
    ========================================================================== */
 
