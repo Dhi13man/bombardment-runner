@@ -58,7 +58,7 @@ export function ReviewStep() {
     { label: 'Channel', value: form.clientChannel },
     { label: 'Load Balancer', value: formatStrategy(form.lbStrategy) },
     { label: 'URLs', value: `${validUrls.length} endpoint${validUrls.length !== 1 ? 's' : ''}` },
-    ...validUrls.map((u) => ({ label: '', value: u, mono: true })),
+    ...validUrls.map((u, i) => ({ label: `URL ${i + 1}`, value: u, mono: true })),
   ];
 
   // Driver summary

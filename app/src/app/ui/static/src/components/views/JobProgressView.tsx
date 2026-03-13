@@ -44,6 +44,7 @@ export function JobProgressView() {
   const intervalRef = useRef(INITIAL_POLL_MS);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
+  const errorCountRef = useRef(0);
 
   const stopPolling = useCallback(() => {
     if (timeoutRef.current !== null) {
@@ -54,6 +55,7 @@ export function JobProgressView() {
 
   const poll = useCallback(async (id: string) => {
     if (!mountedRef.current) return;
+    stopPolling(); // Cancel any pending successor to prevent duplicate chains
 
     try {
       const snapshot = await getJob(id);
@@ -65,11 +67,16 @@ export function JobProgressView() {
         return;
       }
 
+      errorCountRef.current = 0;
       intervalRef.current = Math.min(
         intervalRef.current * BACKOFF_FACTOR,
         MAX_POLL_MS,
       );
     } catch {
+      errorCountRef.current += 1;
+      if (errorCountRef.current === 3 && mountedRef.current) {
+        showToast('error', 'Lost connection to job status — retrying...');
+      }
       intervalRef.current = Math.min(
         intervalRef.current * ERROR_BACKOFF_FACTOR,
         MAX_POLL_MS,

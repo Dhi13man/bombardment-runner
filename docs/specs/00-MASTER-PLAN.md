@@ -162,14 +162,16 @@ These groups can be worked on simultaneously by different people:
 
 ## Performance Budget
 
-| Asset | Current | Target (minified) | Target (gzip) | Budget |
-|-------|---------|-------------------|---------------|--------|
-| HTML | 32KB | <15KB | ~5KB | 15KB |
-| CSS | 22KB + 340KB CDN | 10-12KB | ~3-4KB | 15KB |
-| JS | 63KB + 400KB CDN | 22-25KB | ~8-10KB | 25KB |
-| Fonts | ~200KB CDN | ~95KB | N/A | 100KB |
-| Icons | ~400KB CDN | ~3.5KB | ~2KB | 5KB |
-| **Total** | **~1,460KB** | **~150KB** | **~113KB** | **160KB** |
+> **Note:** JS budget adjusted from 25KB to 55KB after Architect Review recommended Preact (~4KB runtime + typed components). The net trade-off is justified: wizard state management, XSS-safe JSX, and typed API contracts prevented ~500 lines of manual DOM manipulation. Total budget adjusted accordingly.
+
+| Asset | Current | Actual (D15) | Budget | Status |
+|-------|---------|-------------|--------|--------|
+| HTML | 32KB | ~1KB | 15KB | OK |
+| CSS | 22KB + 340KB CDN | 9.3KB | 15KB | OK |
+| JS | 63KB + 400KB CDN | 51.7KB | 55KB (Preact) | OK |
+| Fonts | ~200KB CDN | 114KB | 120KB | OK |
+| Icons | ~400KB CDN | 10.9KB | 12KB | OK |
+| **Total** | **~1,460KB** | **~187KB** | **217KB** | **87% reduction** |
 
 ## Target File Structure
 

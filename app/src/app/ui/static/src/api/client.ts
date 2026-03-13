@@ -22,7 +22,12 @@ class ApiError extends Error {
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
-  const data = await res.json();
+  let data: unknown;
+  try {
+    data = await res.json();
+  } catch {
+    throw new ApiError(res.status, `Unexpected response format (HTTP ${res.status})`);
+  }
   if (!res.ok) {
     const err = data as ErrorResponse;
     throw new ApiError(res.status, err.error || 'Request failed', err.details);

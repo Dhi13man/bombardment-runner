@@ -3,6 +3,7 @@ import { useJobForm } from '../../context/JobFormContext';
 import { useWizard } from '../../context/WizardContext';
 import { RadioCardGroup } from '../primitives';
 import { Icon } from '../Icon';
+import { formatFileSize } from '../../utils/format';
 import type { ParserStrategy } from '../../types/api';
 
 const PARSER_OPTIONS: { value: ParserStrategy | 'XML' | 'YAML'; label: string; disabled?: boolean; comingSoon?: boolean }[] = [
@@ -14,11 +15,6 @@ const PARSER_OPTIONS: { value: ParserStrategy | 'XML' | 'YAML'; label: string; d
 
 const FILE_PATH_REGEX = /^(\.[/\\])?([a-zA-Z0-9_\-./\\]+)\.([a-zA-Z0-9]+)$/;
 
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 export function SourceStep() {
   const { form, update } = useJobForm();
