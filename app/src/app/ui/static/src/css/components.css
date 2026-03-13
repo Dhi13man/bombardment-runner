@@ -939,6 +939,25 @@ svg[class*="w-"] {
 .mt-4 { margin-top: 16px; }
 
 /* ==========================================================================
+   Job History View (D13)
+   ========================================================================== */
+
+.history-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.history-header .page-header { flex: 1; }
+
+.job-row {
+  cursor: pointer;
+}
+.job-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* ==========================================================================
    Job Progress View (D12)
    ========================================================================== */
 
