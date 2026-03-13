@@ -411,6 +411,7 @@
   border: 1px solid var(--border-default);
 }
 /* Named color variants (D06 — design system) */
+.badge-indigo,
 .badge-cyan {
   background: var(--accent-muted);
   color: #818CF8;
@@ -1204,7 +1205,8 @@ svg[class*="w-"] {
   background: #4338CA;
 }
 
-/* Badge cyan: use darker color for light bg readability */
+/* Badge: use darker color for light bg readability */
+.light .badge-indigo,
 .light .badge-cyan {
   color: #4F46E5;
 }
