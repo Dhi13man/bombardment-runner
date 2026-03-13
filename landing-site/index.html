@@ -231,8 +231,8 @@
                         <div class="screenshot-tabs">
                             <button class="screenshot-tab active" onclick="showScreenshot('ss-source')" type="button">1. Source</button>
                             <button class="screenshot-tab" onclick="showScreenshot('ss-transform')" type="button">2. Transform</button>
-                            <button class="screenshot-tab" onclick="showScreenshot('ss-review')" type="button">3. Review</button>
-                            <button class="screenshot-tab" onclick="showScreenshot('ss-dark')" type="button">Dark Mode</button>
+                            <button class="screenshot-tab" onclick="showScreenshot('ss-target')" type="button">3. Target</button>
+                            <button class="screenshot-tab" onclick="showScreenshot('ss-review')" type="button">4. Review</button>
                         </div>
                         <div id="ss-source" class="screenshot-content active">
                             <div class="screenshot-box">
@@ -246,18 +246,19 @@
                             </div>
                             <p class="screenshot-description">Define JSONata expressions to shape each record into an HTTP request — method, endpoint, headers, and body.</p>
                         </div>
+                        <div id="ss-target" class="screenshot-content">
+                            <div class="screenshot-box">
+                                <img src="assets/ui-target-step.png" alt="Target configuration step — configure HTTP client, load balancing, and batch processing">
+                            </div>
+                            <p class="screenshot-description">Configure HTTP client settings, load balancing strategy, target URLs, and batch processing options.</p>
+                        </div>
                         <div id="ss-review" class="screenshot-content">
                             <div class="screenshot-box">
                                 <img src="assets/ui-review-step.png" alt="Review step — verify all configuration before running the bombardment">
                             </div>
                             <p class="screenshot-description">Review your full configuration with validation checks before launching the bombardment.</p>
                         </div>
-                        <div id="ss-dark" class="screenshot-content">
-                            <div class="screenshot-box">
-                                <img src="assets/ui-review-step-dark.png" alt="Review step in dark mode — same configuration in the dark theme">
-                            </div>
-                            <p class="screenshot-description">Full dark mode support with automatic system preference detection.</p>
-                        </div>
+                        <p class="screenshot-note">Dark mode included — automatically follows your system preference.</p>
                     </div>
                 </div>
 

@@ -43,9 +43,9 @@
 
 Bombardment includes a guided 4-step wizard for configuring and monitoring jobs — no code required.
 
-| Source Configuration | Transform Rules | Review & Submit |
-| --- | --- | --- |
-| ![Source step — select format and provide file path](screenshots/02-source-step-filled.png) | ![Transform step — define JSONata expressions](screenshots/03-transform-step.png) | ![Review step — verify config before launch](screenshots/05-review-step.png) |
+| Source Configuration | Transform Rules | Target & Batching | Review & Submit |
+| --- | --- | --- | --- |
+| ![Source step — select format and provide file path](screenshots/02-source-step-filled.png) | ![Transform step — define JSONata expressions](screenshots/03-transform-step.png) | ![Target step — configure HTTP client, load balancing, and batching](screenshots/04-target-step.png) | ![Review step — verify config before launch](screenshots/05-review-step.png) |
 
 <details>
 <summary>Dark mode</summary>

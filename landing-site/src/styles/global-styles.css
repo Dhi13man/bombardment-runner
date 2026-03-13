@@ -514,6 +514,14 @@ h2 {
     margin-right: auto;
 }
 
+.screenshot-note {
+    text-align: center;
+    margin-top: 1rem;
+    color: var(--color-gray-500);
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
 /* Usage Options Tabs */
 .usage-options {
     margin-bottom: 2rem;
