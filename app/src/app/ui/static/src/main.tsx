@@ -1,13 +1,15 @@
 import { render } from 'preact';
+import { ThemeProvider } from './context/ThemeContext';
+import { RouterProvider } from './context/RouterContext';
+import { AppShell } from './components/AppShell';
 
 function App() {
   return (
-    <div class="min-h-screen bg-bg-base text-text-primary flex items-center justify-center">
-      <div class="text-center">
-        <h1 class="text-2xl font-semibold text-accent">Bombardment</h1>
-        <p class="mt-2 text-text-secondary">Build pipeline initialized. UI components coming soon.</p>
-      </div>
-    </div>
+    <ThemeProvider>
+      <RouterProvider>
+        <AppShell />
+      </RouterProvider>
+    </ThemeProvider>
   );
 }
 
