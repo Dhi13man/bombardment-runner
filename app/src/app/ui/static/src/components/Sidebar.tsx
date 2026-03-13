@@ -23,12 +23,32 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { activeView, navigateTo } = useRouter();
   const sidebarRef = useRef<HTMLElement>(null);
 
-  // Focus first nav link when mobile sidebar opens
+  // Focus first nav link when mobile sidebar opens + trap focus inside
   useEffect(() => {
-    if (isOpen) {
-      const firstLink = sidebarRef.current?.querySelector<HTMLButtonElement>('.sidebar-link');
-      firstLink?.focus();
+    if (!isOpen || !sidebarRef.current) return;
+
+    const firstLink = sidebarRef.current.querySelector<HTMLButtonElement>('.sidebar-link');
+    firstLink?.focus();
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Tab' || !sidebarRef.current) return;
+      const focusable = sidebarRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
   function handleNav(view: ViewName) {

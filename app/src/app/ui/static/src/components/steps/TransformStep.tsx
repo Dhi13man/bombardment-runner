@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'preact/hooks';
+import { useEffect, useCallback, useState } from 'preact/hooks';
 import { useJobForm } from '../../context/JobFormContext';
 import { useWizard } from '../../context/WizardContext';
 import { Select, Input, Textarea } from '../primitives';
@@ -60,6 +60,7 @@ function getFieldError(value: string, label: string): string {
 export function TransformStep() {
   const { form, update } = useJobForm();
   const { setValid } = useWizard();
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const validate = useCallback(() => {
     const allValid = EXPR_FIELDS.every(
@@ -123,7 +124,8 @@ export function TransformStep() {
             update('methodExpression', (e.currentTarget as HTMLInputElement).value)
           }
           placeholder='"POST"'
-          error={form.methodExpression ? methodError : undefined}
+          onBlur={() => setTouched(p => ({ ...p, methodExpression: true }))}
+          error={touched.methodExpression ? methodError : undefined}
         />
         <Input
           id="endpoint-expr"
@@ -135,7 +137,8 @@ export function TransformStep() {
             update('endpointExpression', (e.currentTarget as HTMLInputElement).value)
           }
           placeholder='"/api/v1/users"'
-          error={form.endpointExpression ? endpointError : undefined}
+          onBlur={() => setTouched(p => ({ ...p, endpointExpression: true }))}
+          error={touched.endpointExpression ? endpointError : undefined}
         />
       </div>
 
@@ -151,7 +154,8 @@ export function TransformStep() {
             update('headersExpression', (e.currentTarget as HTMLTextAreaElement).value)
           }
           placeholder='{"Content-Type": "application/json", "Authorization": "Bearer " & token}'
-          error={form.headersExpression ? headersError : undefined}
+          onBlur={() => setTouched(p => ({ ...p, headersExpression: true }))}
+          error={touched.headersExpression ? headersError : undefined}
         />
       </div>
 
@@ -167,7 +171,8 @@ export function TransformStep() {
             update('bodyExpression', (e.currentTarget as HTMLTextAreaElement).value)
           }
           placeholder='{"name": name, "email": email, "age": $number(age)}'
-          error={form.bodyExpression ? bodyError : undefined}
+          onBlur={() => setTouched(p => ({ ...p, bodyExpression: true }))}
+          error={touched.bodyExpression ? bodyError : undefined}
         />
       </div>
     </div>

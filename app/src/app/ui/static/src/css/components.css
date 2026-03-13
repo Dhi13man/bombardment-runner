@@ -1168,6 +1168,18 @@ svg[class*="w-"] {
   box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
 }
 
+/* --- Focus-visible for sidebar links and toast close (D14 gap fixes) --- */
+.sidebar-link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
+}
+
+.toast-close:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
+  border-radius: 4px;
+}
+
 /* --- Reduced Motion (WCAG 2.3.3) --- */
 @media (prefers-reduced-motion: reduce) {
   *,

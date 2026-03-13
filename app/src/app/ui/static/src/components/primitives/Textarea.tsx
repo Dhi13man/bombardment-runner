@@ -29,10 +29,10 @@ export function Textarea({
         id={id}
         class={classes}
         aria-invalid={error ? 'true' : undefined}
-        aria-describedby={error ? `${id}-error` : undefined}
+        aria-describedby={error && id ? `${id}-error` : undefined}
         {...rest}
       />
-      {error && <p id={`${id}-error`} class="field-error" role="alert">{error}</p>}
+      {error && <p id={id ? `${id}-error` : undefined} class="field-error" role="alert">{error}</p>}
       {help && !error && <p class="field-help">{help}</p>}
     </div>
   );
