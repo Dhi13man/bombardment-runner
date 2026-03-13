@@ -1,6 +1,10 @@
-/* Component styles — populated by D05 (Primitives) and D06 (Composites) */
+/* ==========================================================================
+   Component Styles
+   Primitive UI components — CSS classes used by Preact components.
+   ========================================================================== */
 
-/* Theme toggle button */
+/* ---------- Theme Toggle (D03) ---------- */
+
 .theme-toggle {
   width: 36px;
   height: 36px;
@@ -19,6 +23,374 @@
   color: var(--text-primary);
 }
 .theme-toggle:focus-visible {
-  outline: 2px solid var(--border-focus);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
+}
+
+/* ---------- Button (D05) ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  user-select: none;
+  height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+.btn-sm { height: 32px; padding: 0 12px; font-size: 13px; }
+.btn-lg { height: 40px; padding: 0 20px; font-size: 15px; }
+
+.btn-primary {
+  background: linear-gradient(135deg, #06B6D4, #0891B2);
+  color: white;
+  border: 1px solid var(--accent-border);
+}
+.btn-primary:hover {
+  background: linear-gradient(135deg, #22D3EE, #06B6D4);
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.20);
+}
+.btn-primary:active { background: #0891B2; transform: scale(0.98); }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--border-default);
+}
+.btn-secondary:hover {
+  background: var(--accent-subtle);
+  border-color: var(--accent-border);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+}
+.btn-ghost:hover { background: var(--accent-subtle); color: var(--text-primary); }
+
+.btn-destructive {
+  background: var(--status-error-muted);
+  color: var(--status-error-text);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+.btn-destructive:hover { background: rgba(239, 68, 68, 0.25); }
+
+.btn:disabled, .btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
+}
+
+/* ---------- Input (D05) ---------- */
+
+.input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.input::placeholder { color: var(--text-tertiary); }
+.input:hover { border-color: var(--border-hover); }
+.input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px var(--accent-muted);
+}
+.input-error { border-color: var(--status-error); }
+.input-error:focus { box-shadow: 0 0 0 2px var(--status-error-muted); }
+.input-success { border-color: var(--status-success); }
+.input-code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  background: var(--bg-inset);
+  letter-spacing: -0.01em;
+}
+.input-group { position: relative; }
+.input-group .input { padding-left: 36px; }
+.input-group .input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+.input-addon {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.input-addon + .input { border-radius: 0 8px 8px 0; }
+
+/* ---------- Textarea (D05) ---------- */
+
+.textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  resize: vertical;
+  transition: border-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  line-height: 1.6;
+}
+.textarea:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px var(--accent-muted);
+}
+.textarea-code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  background: var(--bg-inset);
+  line-height: 1.7;
+  tab-size: 2;
+}
+
+/* ---------- Select (D05) ---------- */
+
+.select {
+  appearance: none;
+  width: 100%;
+  height: 36px;
+  padding: 0 36px 0 12px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+.select:hover { border-color: var(--border-hover); }
+.select:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px var(--accent-muted);
+}
+
+/* ---------- Radio Card Group (D05) ---------- */
+
+.radio-card-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.radio-card {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  position: relative;
+}
+.radio-card:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-subtle);
+}
+.radio-card.active,
+.radio-card:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-muted);
+  color: var(--accent-hover);
+}
+.radio-card.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.radio-card input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.radio-card .radio-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.badge-soon {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--border-default);
+}
+
+/* ---------- Checkbox (D05) ---------- */
+
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.checkbox {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: all 150ms;
+  position: relative;
+  flex-shrink: 0;
+}
+.checkbox:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.checkbox:focus-visible {
+  box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
+}
+.checkbox-label {
+  font-size: 14px;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+/* ---------- Label & Field Helpers (D05) ---------- */
+
+.label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.field-error {
+  font-size: 13px;
+  color: var(--status-error-text);
+  margin-top: 4px;
+}
+.field-help {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---------- Card Surfaces (D05) ---------- */
+
+.card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 24px;
+}
+.card-flat {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 20px;
+}
+.card-inset {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+/* ---------- Badge (D05) ---------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+.badge-success {
+  background: var(--status-success-muted);
+  color: var(--status-success-text);
+}
+.badge-warning {
+  background: var(--status-warning-muted);
+  color: var(--status-warning-text);
+}
+.badge-error {
+  background: var(--status-error-muted);
+  color: var(--status-error-text);
+}
+.badge-info {
+  background: var(--status-info-muted);
+  color: var(--status-info-text);
+}
+.badge-neutral {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+}
+
+/* ---------- Icon Sizing (D02) ---------- */
+
+svg[class*="w-"] {
+  flex-shrink: 0;
 }
