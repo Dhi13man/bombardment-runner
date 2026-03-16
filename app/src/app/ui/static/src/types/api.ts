@@ -15,7 +15,7 @@
 
 export type ParserStrategy = 'CSV' | 'JSON';
 
-export type TransformerStrategy = 'JSONATA' | 'GOTEMPLATE';
+export type TransformerStrategy = 'JSONATA' | 'GOTEMPLATE' | 'PASSTHROUGH';
 
 export type ClientChannel = 'REST' | 'GRPC' | 'KAFKA';
 

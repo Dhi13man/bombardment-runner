@@ -36,6 +36,58 @@ func TestCreateTransformer_WhenJsonata_ThenReturnsTransformer(t *testing.T) {
 	}
 }
 
+func TestCreateTransformer_WhenGoTemplate_ThenReturnsTransformer(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.GO_TEMPLATE,
+		BodyExpression:     `{"name": "{{.name}}"}`,
+		EndpointExpression: `/api/test`,
+		MethodExpression:   `POST`,
+	}
+
+	// Act
+	transformer, err := CreateTransformer(modelsEnums.REST, ctx)
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if transformer == nil {
+		t.Fatal("expected non-nil transformer")
+	}
+	if got := transformer.GetStrategy(); got != modelsEnums.GO_TEMPLATE {
+		t.Errorf("GetStrategy(): got %q, want %q", got, modelsEnums.GO_TEMPLATE)
+	}
+}
+
+func TestCreateTransformer_WhenPassthrough_ThenReturnsTransformer(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.PASSTHROUGH,
+		BodyExpression:     "*",
+		EndpointExpression: "/api/test",
+		MethodExpression:   "POST",
+	}
+
+	// Act
+	transformer, err := CreateTransformer(modelsEnums.REST, ctx)
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if transformer == nil {
+		t.Fatal("expected non-nil transformer")
+	}
+	if got := transformer.GetStrategy(); got != modelsEnums.PASSTHROUGH {
+		t.Errorf("GetStrategy(): got %q, want %q", got, modelsEnums.PASSTHROUGH)
+	}
+}
+
 func TestCreateTransformer_WhenInvalidStrategy_ThenReturnsError(t *testing.T) {
 	t.Parallel()
 
@@ -43,7 +95,6 @@ func TestCreateTransformer_WhenInvalidStrategy_ThenReturnsError(t *testing.T) {
 		name     string
 		strategy modelsEnums.TransformerStrategy
 	}{
-		{"GO_TEMPLATE unimplemented", modelsEnums.GO_TEMPLATE},
 		{"unknown strategy", modelsEnums.TransformerStrategy("UNKNOWN")},
 	}
 

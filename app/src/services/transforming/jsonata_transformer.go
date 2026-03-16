@@ -1,13 +1,12 @@
 package transforming
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/blues/jsonata-go"
-	"github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
-	"github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
-	"github.dhi13man.com/bombardment-runner/src/models/enums"
+	modelsDtoRequests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
+	modelsDtoTransforming "github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
+	modelsEnums "github.dhi13man.com/bombardment-runner/src/models/enums"
 	"go.uber.org/zap"
 )
 
@@ -108,28 +107,13 @@ func (jt *jsonataTransformer) TransformRequest(data map[string]string) (
 		method = methodStr
 	}
 
-	return jt.createChannelRequest(
+	return createChannelRequest(
 		jt.clientChannel,
 		endpoint,
 		body,
 		headers,
 		method,
 	)
-}
-
-func (jt *jsonataTransformer) createChannelRequest(
-	clientChannel modelsEnums.ClientChannel,
-	endpoint string,
-	body interface{},
-	headers map[string]string,
-	method string,
-) (modelsDtoRequests.BaseChannelRequest, error) {
-	switch clientChannel {
-	case modelsEnums.REST:
-		return modelsDtoRequests.NewRestChannelRequest(body, endpoint, headers, method), nil
-	default:
-		return nil, errors.New("invalid client channel")
-	}
 }
 
 func compileGracefully(expression string) *jsonata.Expr {

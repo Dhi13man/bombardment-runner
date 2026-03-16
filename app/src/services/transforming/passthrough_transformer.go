@@ -1,0 +1,113 @@
+package transforming
+
+import (
+	"strings"
+
+	modelsDtoRequests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
+	modelsDtoTransforming "github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
+	modelsEnums "github.dhi13man.com/bombardment-runner/src/models/enums"
+)
+
+type PassthroughTransformer interface {
+	BaseTransformer
+}
+
+type passthroughTransformer struct {
+	clientChannel  modelsEnums.ClientChannel
+	bodyColumns    []string          // column names to include, or ["*"] for all
+	endpointMapping string           // column name or literal value
+	methodMapping   string           // column name or literal value
+	headerMappings  map[string]string // header-name -> column-name
+}
+
+func (pt *passthroughTransformer) GetStrategy() modelsEnums.TransformerStrategy {
+	return modelsEnums.PASSTHROUGH
+}
+
+func NewPassthroughTransformer(
+	clientChannel modelsEnums.ClientChannel,
+	transformerContext modelsDtoTransforming.TransformerContext,
+) PassthroughTransformer {
+	transformer := passthroughTransformer{
+		clientChannel: clientChannel,
+	}
+
+	// Parse body columns
+	if transformerContext.BodyExpression != "" {
+		cols := strings.Split(transformerContext.BodyExpression, ",")
+		for i := range cols {
+			cols[i] = strings.TrimSpace(cols[i])
+		}
+		transformer.bodyColumns = cols
+	}
+
+	// Endpoint mapping
+	transformer.endpointMapping = strings.TrimSpace(transformerContext.EndpointExpression)
+
+	// Method mapping
+	transformer.methodMapping = strings.TrimSpace(transformerContext.MethodExpression)
+
+	// Parse header mappings (format: "Header-Name=column_name,Another=col2")
+	if transformerContext.HeadersExpression != "" {
+		transformer.headerMappings = make(map[string]string)
+		pairs := strings.Split(transformerContext.HeadersExpression, ",")
+		for _, pair := range pairs {
+			parts := strings.SplitN(strings.TrimSpace(pair), "=", 2)
+			if len(parts) == 2 {
+				transformer.headerMappings[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
+			}
+		}
+	}
+
+	return &transformer
+}
+
+func (pt *passthroughTransformer) TransformRequest(data map[string]string) (
+	modelsDtoRequests.BaseChannelRequest,
+	error,
+) {
+	// Build body
+	var body interface{}
+	if len(pt.bodyColumns) > 0 {
+		bodyMap := make(map[string]interface{})
+		if len(pt.bodyColumns) == 1 && pt.bodyColumns[0] == "*" {
+			for k, v := range data {
+				bodyMap[k] = v
+			}
+		} else {
+			for _, col := range pt.bodyColumns {
+				if val, ok := data[col]; ok {
+					bodyMap[col] = val
+				}
+			}
+		}
+		body = bodyMap
+	}
+
+	// Resolve endpoint: if column exists in data, use its value; otherwise treat as literal
+	endpoint := pt.resolveMapping(pt.endpointMapping, data)
+
+	// Resolve method
+	method := pt.resolveMapping(pt.methodMapping, data)
+
+	// Resolve headers
+	var headers map[string]string
+	if len(pt.headerMappings) > 0 {
+		headers = make(map[string]string)
+		for headerName, colName := range pt.headerMappings {
+			headers[headerName] = pt.resolveMapping(colName, data)
+		}
+	}
+
+	return createChannelRequest(pt.clientChannel, endpoint, body, headers, method)
+}
+
+func (pt *passthroughTransformer) resolveMapping(mapping string, data map[string]string) string {
+	if mapping == "" {
+		return ""
+	}
+	if val, ok := data[mapping]; ok {
+		return val
+	}
+	return mapping
+}
