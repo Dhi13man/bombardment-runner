@@ -1,0 +1,53 @@
+erDiagram
+    JobEntity {
+        int64 id PK
+        string job_name
+        string job_description
+        JobStatus job_status
+        int batch_size
+        bool is_active
+    }
+
+    Job {
+        string ID PK
+        JobStatus Status
+        time CreatedAt
+        time CompletedAt
+        int64 processedAtomic
+        int64 failedAtomic
+        int64 totalAtomic
+        string ErrorMessage
+    }
+
+    JobSnapshot {
+        string ID
+        JobStatus Status
+        time CreatedAt
+        time CompletedAt
+        int64 TotalRows
+        int64 ProcessedRows
+        int64 FailedRows
+        float64 ProgressPercent
+        string ErrorMessage
+    }
+
+    BombardmentRequest {
+        ClientContext client_context
+        DriverContext driver_context
+        LoadBalancerContext load_balancer_context
+        ParserContext parser_context
+        TransformerContext transformer_context
+    }
+
+    ResponseSummary {
+        int Status
+        string RequestID
+        int64 ResponseTime
+        time Timestamp
+        string ErrorMessage
+    }
+
+    Job ||--o{ JobSnapshot : "Snapshot()"
+    JobEntity ||--|| Job : "ORM entity (inactive)"
+    BombardmentRequest ||--|| Job : "triggers creation"
+    Job ||--o{ ResponseSummary : "produces per row"

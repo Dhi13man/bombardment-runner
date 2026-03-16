@@ -1,0 +1,66 @@
+flowchart TB
+    subgraph Strategy[Strategy Pattern Core]
+        BaseStrategy["BaseStrategy~T~<br/>GetStrategy() T"]
+    end
+
+    subgraph Parsing[File Parsing]
+        BaseFileParser["BaseFileParser~T~<br/>CreateRawDataStream()<br/>CreateParsedDataStream()"]
+        CsvParser[CsvParser<br/>Streaming CSV rows]
+        JsonParser[JsonParser<br/>JSON array decode]
+        ParserFactory{CreateFileParser}
+
+        BaseFileParser --> BaseStrategy
+        CsvParser --> BaseFileParser
+        JsonParser --> BaseFileParser
+        ParserFactory -->|CSV| CsvParser
+        ParserFactory -->|JSON| JsonParser
+    end
+
+    subgraph Transforming[Request Transformation]
+        BaseTransformer["BaseTransformer<br/>TransformRequest()"]
+        JsonataXformer[JsonataTransformer<br/>Compiled expressions]
+
+        BaseTransformer --> BaseStrategy
+        JsonataXformer --> BaseTransformer
+    end
+
+    subgraph LoadBalancing[Load Balancing]
+        BaseLB["BaseLoadBalancer<br/>Execute()"]
+        RoundRobinLB[RoundRobinLoadBalancer<br/>Thread-safe index rotation]
+        RandomLB[RandomLoadBalancer<br/>rand.IntN selection]
+        LBFactory{CreateLoadBalancer}
+
+        BaseLB --> BaseStrategy
+        RoundRobinLB --> BaseLB
+        RandomLB --> BaseLB
+        LBFactory -->|ROUND_ROBIN| RoundRobinLB
+        LBFactory -->|RANDOM| RandomLB
+    end
+
+    subgraph Clients[Channel Clients]
+        BaseClient["BaseChannelClient<br/>Execute()"]
+        RestClient[RestChannelClient<br/>HTTP/2 + pool]
+        ClientFactory{CreateChannelClient}
+
+        BaseClient --> BaseStrategy
+        RestClient --> BaseClient
+        ClientFactory -->|REST| RestClient
+    end
+
+    subgraph Batching[Batch Processing]
+        BatchProc["BatchProcessor~T,R~<br/>CreateProcessedBatchChannel()"]
+    end
+
+    subgraph Orchestration[Driver]
+        BombDriver[BombardmentDriver<br/>executeBombardment]
+    end
+
+    BombDriver --> ParserFactory
+    BombDriver --> JsonataXformer
+    BombDriver --> BatchProc
+    BombDriver --> LBFactory
+    BatchProc --> JsonataXformer
+    BatchProc --> RoundRobinLB
+    BatchProc --> RandomLB
+    RoundRobinLB --> RestClient
+    RandomLB --> RestClient

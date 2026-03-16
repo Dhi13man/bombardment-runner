@@ -1,0 +1,50 @@
+graph TB
+    subgraph External[External Systems]
+        User((User / CLI))
+        TargetAPIs[Target API Servers<br/>User-specified URLs]
+    end
+
+    subgraph Bombardment[Bombardment Runner]
+        subgraph Entrypoints[Entrypoint Layer]
+            CobraCLI[Cobra CLI<br/>Go CLI]
+            GinServer[Gin HTTP Server<br/>Go / Port 8080]
+            WebUI[Web UI<br/>Preact + TypeScript]
+        end
+
+        subgraph Services[Service Layer]
+            Driver[BombardmentDriver<br/>Pipeline Orchestrator]
+            JobStore[JobStore<br/>In-Memory / sync.RWMutex]
+        end
+
+        subgraph Pipeline[Processing Pipeline]
+            Parser[FileParser<br/>CSV / JSON Streaming]
+            Transformer[JSONata Transformer<br/>Expression Engine]
+            BatchProc[BatchProcessor<br/>Concurrent Goroutines]
+            LoadBalancer[LoadBalancer<br/>Round-Robin / Random]
+            RESTClient[REST Client<br/>HTTP/2 + Connection Pool]
+        end
+
+        subgraph Storage[Local Storage]
+            DataFiles[/Data Files<br/>CSV / JSON/]
+            ResponseCSV[/Response CSV<br/>Timestamped Output/]
+        end
+    end
+
+    User -->|HTTP / Browser| GinServer
+    User -->|CLI flags| CobraCLI
+    GinServer --> WebUI
+    WebUI -->|REST API| GinServer
+    GinServer -->|POST /v1/bombardment| Driver
+    CobraCLI -->|Sync call| Driver
+
+    Driver --> JobStore
+    Driver --> Parser
+    Parser -->|Channel| Transformer
+    Transformer -->|Channel| BatchProc
+    BatchProc --> LoadBalancer
+    LoadBalancer --> RESTClient
+
+    Parser -.->|Reads| DataFiles
+    Driver -.->|Writes| ResponseCSV
+
+    RESTClient -->|HTTP / HTTPS| TargetAPIs

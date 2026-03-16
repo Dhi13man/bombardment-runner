@@ -1,0 +1,35 @@
+stateDiagram-v2
+    [*] --> PENDING: JobStore.Create()
+
+    PENDING --> RUNNING: SetRunning()<br/>executeBombardment starts
+
+    RUNNING --> COMPLETED: Complete()<br/>All batches processed
+    RUNNING --> FAILED: Fail(errMsg)<br/>Pipeline error or panic
+
+    COMPLETED --> [*]
+    FAILED --> [*]
+
+    state RUNNING {
+        [*] --> Processing
+        Processing --> Processing: IncrementProcessed() / IncrementFailed()<br/>atomic counters
+        Processing --> [*]: Channel closed
+    }
+
+    note right of PENDING
+        Created with UUID
+        CreatedAt = time.Now()
+    end note
+
+    note right of RUNNING
+        Progress = (processed + failed) / total * 100
+        Total sampled every 100 rows
+    end note
+
+    note right of COMPLETED
+        CompletedAt = time.Now()
+    end note
+
+    note right of FAILED
+        ErrorMessage stored
+        CompletedAt = time.Now()
+    end note
