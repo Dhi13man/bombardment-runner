@@ -179,6 +179,26 @@ func TestMakeRequest_FakeResponseReturnsNilStatus(t *testing.T) {
 	}
 }
 
+func TestMakeRequest_NilResponseFromLoadBalancer(t *testing.T) {
+	t.Parallel()
+
+	lb := &mockLoadBalancer{
+		executeFn: func(_ modelsDtoRequests.BaseChannelRequest) (modelsDtoResponses.BaseChannelResponse, error) {
+			return nil, nil
+		},
+	}
+
+	req := modelsDtoRequests.NewRestChannelRequest(nil, "http://example.com", nil, "GET")
+	statusPtr, err := makeRequest(req, lb)
+
+	if err == nil {
+		t.Fatal("expected error for nil response, got nil")
+	}
+	if statusPtr != nil {
+		t.Errorf("expected nil status pointer, got %d", *statusPtr)
+	}
+}
+
 // --- Counting channel tests (total rows tracking) ---
 
 // TestCountingChannel_TotalMatchesRecordCount verifies that after all rows are

@@ -38,8 +38,8 @@ func NewHTTPClient(context modelsDtoClients.ClientContext) *http.Client {
 		ForceAttemptHTTP2:  true,                                                        // Enable HTTP/2 for compatible servers
 		TLSClientConfig:    &tls.Config{InsecureSkipVerify: context.InsecureSkipVerify}, // Optional security setting
 
-		// DNS caching
-		DisableKeepAlives: false, // Enable keep-alive
+		// Connection persistence
+		DisableKeepAlives: false,
 	}
 
 	// Set default request timeout if not specified

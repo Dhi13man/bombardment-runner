@@ -291,6 +291,10 @@ func makeRequest(
 		return nil, err
 	}
 
+	if channelResponse == nil {
+		return nil, fmt.Errorf("load balancer returned nil response")
+	}
+
 	return channelResponse.GetStatus(), nil
 }
 

@@ -15,7 +15,10 @@ import (
 )
 
 // GrpcMetadataHeaderPrefix is prepended to gRPC metadata keys when they are
-// sent as HTTP headers in the JSON-over-HTTP transport.
+// sent as HTTP headers in the JSON-over-HTTP transport. Users should specify
+// metadata keys without this prefix; it is added automatically. For example,
+// a metadata entry {"authorization": "Bearer tok"} becomes the HTTP header
+// "grpc-metadata-authorization: Bearer tok".
 const GrpcMetadataHeaderPrefix = "grpc-metadata-"
 
 type GrpcChannelClient interface {

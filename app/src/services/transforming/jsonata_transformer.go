@@ -128,16 +128,19 @@ func (jt *jsonataTransformer) createChannelRequest(
 	case modelsEnums.REST:
 		return modelsDtoRequests.NewRestChannelRequest(body, endpoint, headers, method), nil
 	case modelsEnums.GRAPHQL:
-		// For GraphQL, body is the query string, endpoint maps to endpoint
+		// For GraphQL, body expression should evaluate to the query string
 		queryStr := ""
 		if body != nil {
-			if s, ok := body.(string); ok {
-				queryStr = s
+			s, ok := body.(string)
+			if !ok {
+				return nil, fmt.Errorf("GraphQL query must be a string, got %T", body)
 			}
+			queryStr = s
 		}
 		return modelsDtoRequests.NewGraphqlChannelRequest(queryStr, nil, endpoint, headers), nil
 	case modelsEnums.GRPC:
-		return modelsDtoRequests.NewGrpcChannelRequest("", method, body, headers), nil
+		// For gRPC, endpoint expression is used as the service name, method expression as the RPC method
+		return modelsDtoRequests.NewGrpcChannelRequest(endpoint, method, body, headers), nil
 	default:
 		return nil, errors.New("invalid client channel")
 	}
