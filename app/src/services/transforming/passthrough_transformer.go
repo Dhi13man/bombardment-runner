@@ -6,6 +6,7 @@ import (
 	modelsDtoRequests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
 	modelsDtoTransforming "github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
 	modelsEnums "github.dhi13man.com/bombardment-runner/src/models/enums"
+	"go.uber.org/zap"
 )
 
 type PassthroughTransformer interface {
@@ -13,10 +14,10 @@ type PassthroughTransformer interface {
 }
 
 type passthroughTransformer struct {
-	clientChannel  modelsEnums.ClientChannel
-	bodyColumns    []string          // column names to include, or ["*"] for all
-	endpointMapping string           // column name or literal value
-	methodMapping   string           // column name or literal value
+	clientChannel   modelsEnums.ClientChannel
+	bodyColumns     []string          // column names to include, or ["*"] for all
+	endpointMapping string            // column name or literal value
+	methodMapping   string            // column name or literal value
 	headerMappings  map[string]string // header-name -> column-name
 }
 
@@ -78,6 +79,10 @@ func (pt *passthroughTransformer) TransformRequest(data map[string]string) (
 			for _, col := range pt.bodyColumns {
 				if val, ok := data[col]; ok {
 					bodyMap[col] = val
+				} else {
+					zap.L().Warn("Passthrough body column not found in data",
+						zap.String("column", col),
+					)
 				}
 			}
 		}

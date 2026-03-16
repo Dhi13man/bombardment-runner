@@ -102,6 +102,7 @@ function getFieldPlaceholder(key: ExprField['key'], strategy: TransformerStrateg
     case 'endpointExpression': return '"/api/v1/users"';
     case 'headersExpression': return '{"Content-Type": "application/json", "Authorization": "Bearer " & token}';
     case 'bodyExpression': return '{"name": name, "email": email, "age": $number(age)}';
+    default: return '';
   }
 }
 

@@ -3,6 +3,8 @@ package transforming
 import (
 	"bytes"
 	"fmt"
+	"strings"
+	// text/template used intentionally: output is HTTP request payloads, not HTML.
 	"text/template"
 
 	modelsDtoRequests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
@@ -116,52 +118,18 @@ func executeTemplate(t *template.Template, data map[string]string) (string, erro
 }
 
 // parseHeaderString parses a simple "Key: Value\nKey2: Value2" format into a map.
+// Uses the first colon as separator, so header values may contain colons.
 func parseHeaderString(raw string) map[string]string {
 	headers := make(map[string]string)
-	lines := splitLines(raw)
-	for _, line := range lines {
-		if idx := findColon(line); idx > 0 {
-			key := trimSpace(line[:idx])
-			value := trimSpace(line[idx+1:])
+	for _, line := range strings.Split(raw, "\n") {
+		line = strings.TrimRight(line, "\r")
+		if idx := strings.Index(line, ":"); idx > 0 {
+			key := strings.TrimSpace(line[:idx])
+			value := strings.TrimSpace(line[idx+1:])
 			if key != "" {
 				headers[key] = value
 			}
 		}
 	}
 	return headers
-}
-
-func splitLines(s string) []string {
-	var lines []string
-	start := 0
-	for i := 0; i < len(s); i++ {
-		if s[i] == '\n' {
-			lines = append(lines, s[start:i])
-			start = i + 1
-		}
-	}
-	if start < len(s) {
-		lines = append(lines, s[start:])
-	}
-	return lines
-}
-
-func findColon(s string) int {
-	for i := 0; i < len(s); i++ {
-		if s[i] == ':' {
-			return i
-		}
-	}
-	return -1
-}
-
-func trimSpace(s string) string {
-	start, end := 0, len(s)
-	for start < end && (s[start] == ' ' || s[start] == '\t') {
-		start++
-	}
-	for end > start && (s[end-1] == ' ' || s[end-1] == '\t') {
-		end--
-	}
-	return s[start:end]
 }
