@@ -1,0 +1,60 @@
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant API as Gin Server
+    participant JS as JobStore
+    participant D as BombardmentDriver
+    participant P as FileParser
+    participant T as JSONata Transformer
+    participant BP as BatchProcessor
+    participant LB as LoadBalancer
+    participant RC as REST Client
+    participant TGT as Target API
+
+    U->>API: POST /v1/bombardment
+    API->>API: validateBombardmentRequest()
+    API->>JS: Create() new Job
+    JS-->>API: Job (PENDING)
+    API->>D: CreateBombardmentAsync(req, job)
+    API-->>U: 201 JobSnapshot
+
+    Note over D: Runs in goroutine with panic recovery
+
+    D->>D: SetRunning()
+    D->>P: CreateFileParser(parserContext)
+    D->>T: CreateTransformer(transformerContext)
+    D->>LB: CreateLoadBalancer(lbContext, client)
+
+    D->>P: CreateRawDataStream()
+    P-->>D: chan map[string]string
+
+    Note over D,P: Counter goroutine wraps channel<br/>Samples SetTotal every 100 rows
+
+    D->>BP: CreateProcessedBatchChannel(countedCh)
+
+    loop Per Batch (size N)
+        par Concurrent goroutines per item
+            BP->>T: TransformRequest(rawData)
+            T-->>BP: RestChannelRequest
+            BP->>LB: Execute(request)
+            LB->>RC: Execute(request, nextUrl)
+            RC->>TGT: HTTP Request
+            TGT-->>RC: HTTP Response
+            RC-->>LB: RestChannelResponse
+            LB-->>BP: ResponseSummary
+        end
+        Note over BP: wg.Wait() at batch boundary
+    end
+
+    BP-->>D: chan ResponseSummary
+
+    opt ShouldStoreResponses
+        D->>D: Write CSV rows (flush every 100)
+    end
+
+    D->>D: Complete() or Fail()
+
+    U->>API: GET /v1/bombardment/:id
+    API->>JS: Get(id)
+    JS-->>API: JobSnapshot
+    API-->>U: 200 JobSnapshot with progress

@@ -1,0 +1,62 @@
+flowchart TB
+    subgraph Input["Input Data"]
+        RawCSV["Raw CSV/JSON Row<br/>map[string]string<br/>e.g. name=Alice, id=42"]
+    end
+
+    subgraph Transform["JSONata Transformation"]
+        BodyExpr["Body Expression<br/>jsonata.Eval(bodyExpr, data)<br/>produces interface{}"]
+        EndpointExpr["Endpoint Expression<br/>jsonata.Eval(endpointExpr, data)<br/>produces string"]
+        HeadersExpr["Headers Expression<br/>jsonata.Eval(headersExpr, data)<br/>produces map"]
+        MethodExpr["Method Expression<br/>jsonata.Eval(methodExpr, data)<br/>produces string"]
+    end
+
+    subgraph Routing["Channel Routing"]
+        ChannelSwitch{"ClientChannel?"}
+        RestReq[RestChannelRequest<br/>Body + Endpoint + Headers + Method]
+    end
+
+    subgraph LBSelect["Load Balancer URL Selection"]
+        LBSwitch{"LB Strategy?"}
+        RoundRobin[Round-Robin<br/>index = index+1 mod N<br/>sync.Mutex protected]
+        RandomSelect[Random<br/>rand.IntN N]
+        URLResult[Selected Base URL]
+    end
+
+    subgraph Execute["HTTP Execution"]
+        BuildReq[Build http.Request<br/>JSON marshal body<br/>Set default headers<br/>Apply custom headers]
+        SendReq[httpClient.Do<br/>HTTP/2 + connection pool]
+    end
+
+    subgraph Output["Output Data"]
+        ResponseSummary["ResponseSummary<br/>Status, RequestID<br/>ResponseTime ms, Timestamp"]
+    end
+
+    RawCSV --> BodyExpr
+    RawCSV --> EndpointExpr
+    RawCSV --> HeadersExpr
+    RawCSV --> MethodExpr
+
+    BodyExpr --> ChannelSwitch
+    EndpointExpr --> ChannelSwitch
+    HeadersExpr --> ChannelSwitch
+    MethodExpr --> ChannelSwitch
+
+    ChannelSwitch -->|REST| RestReq
+
+    RestReq --> LBSwitch
+    LBSwitch -->|ROUND_ROBIN| RoundRobin
+    LBSwitch -->|RANDOM| RandomSelect
+    RoundRobin --> URLResult
+    RandomSelect --> URLResult
+
+    URLResult --> BuildReq
+    RestReq --> BuildReq
+    BuildReq --> SendReq
+    SendReq --> ResponseSummary
+
+    style BodyExpr fill:#ff9,stroke:#333
+    style EndpointExpr fill:#ff9,stroke:#333
+    style HeadersExpr fill:#ff9,stroke:#333
+    style MethodExpr fill:#ff9,stroke:#333
+    style RoundRobin fill:#9f9,stroke:#333
+    style RandomSelect fill:#9f9,stroke:#333

@@ -1,0 +1,62 @@
+flowchart TB
+    subgraph DockerBuild[Docker Multi-Stage Build]
+        subgraph Stage1[Stage 1: Frontend]
+            NodeAlpine[node:20-alpine]
+            NPM[npm ci + npm run build]
+            CSSBundle[app.min.css<br/>Tailwind CSS]
+            JSBundle[app.min.js<br/>Preact + esbuild]
+            NodeAlpine --> NPM
+            NPM --> CSSBundle
+            NPM --> JSBundle
+        end
+
+        subgraph Stage2[Stage 2: Go Builder]
+            GoAlpine[golang:1.23-alpine]
+            GoBuild["CGO_ENABLED=0<br/>go build -ldflags='-s -w'"]
+            Binary[bombardment binary]
+            GoAlpine --> GoBuild
+            CSSBundle -.->|COPY --from=frontend| GoBuild
+            JSBundle -.->|COPY --from=frontend| GoBuild
+            GoBuild --> Binary
+        end
+
+        subgraph Stage3[Stage 3: Runtime]
+            Alpine[alpine:3.20]
+            Security["Non-root: appuser:appgroup<br/>no-new-privileges"]
+            HealthCheck["HEALTHCHECK<br/>GET /v1/ping every 30s"]
+            Alpine --> Security
+            Binary -.->|COPY --from=builder| Security
+            Security --> HealthCheck
+        end
+    end
+
+    subgraph Compose[Docker Compose]
+        Service[bombardment service]
+        Port[Port 8080]
+        VolData[./data:/app/data]
+        VolResp[./responses:/app/responses]
+        Resources["Limits: 2 CPU, 1GB RAM<br/>Reserves: 0.5 CPU, 256MB"]
+        Logging["json-file driver<br/>10MB max, 3 files"]
+
+        Service --> Port
+        Service --> VolData
+        Service --> VolResp
+        Service --> Resources
+        Service --> Logging
+    end
+
+    subgraph CICD[GitHub Actions CI]
+        Lint[golangci-lint]
+        Test["go test -race<br/>Coverage report"]
+        UICheck["Bundle size check<br/>CSS 32KB, JS 55KB"]
+        Build["Frontend + Go build"]
+        DockerCI["docker build"]
+
+        Lint --> Build
+        Test --> Build
+        UICheck --> Build
+        Lint --> DockerCI
+        Test --> DockerCI
+    end
+
+    Stage3 -.-> Service
