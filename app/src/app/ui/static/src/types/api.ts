@@ -17,7 +17,7 @@ export type ParserStrategy = 'CSV' | 'JSON';
 
 export type TransformerStrategy = 'JSONATA' | 'GOTEMPLATE';
 
-export type ClientChannel = 'REST' | 'GRPC' | 'KAFKA';
+export type ClientChannel = 'REST' | 'GRAPHQL' | 'GRPC' | 'KAFKA';
 
 export type LoadBalancerStrategy = 'RANDOM' | 'ROUND_ROBIN' | 'LEAST_CONNECTION';
 

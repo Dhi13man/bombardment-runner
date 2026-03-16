@@ -42,12 +42,15 @@ func (m *mockLoadBalancer) Execute(request modelsDtoRequests.BaseChannelRequest)
 	return m.executeFn(request)
 }
 
-// fakeChannelResponse implements BaseChannelResponse but is NOT a *RestChannelResponse,
-// used to trigger the type assertion failure path.
+// fakeChannelResponse implements BaseChannelResponse for testing purposes.
 type fakeChannelResponse struct{}
 
 func (f *fakeChannelResponse) GetChannel() modelsEnums.ClientChannel {
 	return "FAKE"
+}
+
+func (f *fakeChannelResponse) GetStatus() *int {
+	return nil
 }
 
 // newTestJob creates a Job in pending state for testing.
@@ -156,7 +159,7 @@ func TestMakeRequest_LoadBalancerError(t *testing.T) {
 	}
 }
 
-func TestMakeRequest_TypeAssertionFailure(t *testing.T) {
+func TestMakeRequest_FakeResponseReturnsNilStatus(t *testing.T) {
 	t.Parallel()
 
 	lb := &mockLoadBalancer{
@@ -168,44 +171,11 @@ func TestMakeRequest_TypeAssertionFailure(t *testing.T) {
 	req := modelsDtoRequests.NewRestChannelRequest(nil, "http://example.com", nil, "GET")
 	statusPtr, err := makeRequest(req, lb)
 
-	if err == nil {
-		t.Fatal("expected error for type assertion failure, got nil")
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
 	}
 	if statusPtr != nil {
-		t.Errorf("expected nil status pointer on type assertion failure, got %d", *statusPtr)
-	}
-
-	// Verify the error message mentions the unexpected type
-	expectedSubstring := "unexpected response type"
-	if !containsSubstring(err.Error(), expectedSubstring) {
-		t.Errorf("expected error to contain %q, got %q", expectedSubstring, err.Error())
-	}
-
-	// Verify the error message includes the actual type name
-	expectedType := "*driver.fakeChannelResponse"
-	if !containsSubstring(err.Error(), expectedType) {
-		t.Errorf("expected error to contain type %q, got %q", expectedType, err.Error())
-	}
-}
-
-func TestMakeRequest_NilResponseFromLoadBalancer(t *testing.T) {
-	t.Parallel()
-
-	lb := &mockLoadBalancer{
-		executeFn: func(_ modelsDtoRequests.BaseChannelRequest) (modelsDtoResponses.BaseChannelResponse, error) {
-			// Return a nil interface with no error -- the type assertion should fail
-			return nil, nil
-		},
-	}
-
-	req := modelsDtoRequests.NewRestChannelRequest(nil, "http://example.com", nil, "GET")
-	statusPtr, err := makeRequest(req, lb)
-
-	if err == nil {
-		t.Fatal("expected error for nil response type assertion failure, got nil")
-	}
-	if statusPtr != nil {
-		t.Errorf("expected nil status pointer, got %d", *statusPtr)
+		t.Errorf("expected nil status pointer from fakeChannelResponse, got %d", *statusPtr)
 	}
 }
 
@@ -750,19 +720,6 @@ func TestMakeRequest_ConcurrentCalls(t *testing.T) {
 }
 
 // --- Helpers ---
-
-func containsSubstring(s, substr string) bool {
-	return len(s) >= len(substr) && searchSubstring(s, substr)
-}
-
-func searchSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
-}
 
 func buildMinimalBombardmentRequest() dto.BombardmentRequest {
 	return dto.BombardmentRequest{

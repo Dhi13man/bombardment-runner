@@ -10,7 +10,8 @@ import type { JSX } from 'preact';
 
 const CLIENT_CHANNEL_OPTIONS: { value: ClientChannel; label: string; disabled?: boolean; comingSoon?: boolean }[] = [
   { value: 'REST', label: 'REST' },
-  { value: 'GRPC', label: 'gRPC', disabled: true, comingSoon: true },
+  { value: 'GRAPHQL', label: 'GraphQL' },
+  { value: 'GRPC', label: 'gRPC' },
   { value: 'KAFKA', label: 'Kafka', disabled: true, comingSoon: true },
 ];
 

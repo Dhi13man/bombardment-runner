@@ -127,6 +127,17 @@ func (jt *jsonataTransformer) createChannelRequest(
 	switch clientChannel {
 	case modelsEnums.REST:
 		return modelsDtoRequests.NewRestChannelRequest(body, endpoint, headers, method), nil
+	case modelsEnums.GRAPHQL:
+		// For GraphQL, body is the query string, endpoint maps to endpoint
+		queryStr := ""
+		if body != nil {
+			if s, ok := body.(string); ok {
+				queryStr = s
+			}
+		}
+		return modelsDtoRequests.NewGraphqlChannelRequest(queryStr, nil, endpoint, headers), nil
+	case modelsEnums.GRPC:
+		return modelsDtoRequests.NewGrpcChannelRequest("", method, body, headers), nil
 	default:
 		return nil, errors.New("invalid client channel")
 	}

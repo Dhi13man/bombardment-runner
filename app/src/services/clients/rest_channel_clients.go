@@ -2,13 +2,10 @@ package clients
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"io"
-	"net"
 	"net/http"
-	"time"
 
 	modelsDtoClients "github.dhi13man.com/bombardment-runner/src/models/dto/clients"
 	modelsDtoRequests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
@@ -41,53 +38,13 @@ type restChannelClient struct {
 	httpClient *http.Client
 }
 
-// NewRestClient Creates a new REST client with optimized connection pooling and timeouts.
+// NewRestClient creates a new REST client with optimized connection pooling and timeouts.
 //
 // The returned HTTP client is optimized for high-performance load testing with
 // efficient connection reuse and is safe for concurrent use by multiple goroutines.
 func NewRestClient(context modelsDtoClients.ClientContext) RestChannelClient {
-	// Optimize dialer with configurable keepalive
-	dialer := &net.Dialer{
-		Timeout:   context.DialTimeout,
-		KeepAlive: context.DialKeepAlive,
-	}
-
-	// Optimize transport for connection pooling and reuse
-	transport := &http.Transport{
-		DialContext:           dialer.DialContext,
-		TLSHandshakeTimeout:   context.TlsHandshakeTimeout,
-		ResponseHeaderTimeout: context.ResponseHeaderTimeout,
-		ExpectContinueTimeout: context.ExpectContinueTimeout,
-
-		// Connection pooling optimizations
-		MaxIdleConns:        100,              // Increase pool size for connection reuse
-		MaxIdleConnsPerHost: 100,              // Match MaxIdleConnections for maximum connection reuse
-		MaxConnsPerHost:     0,                // No limit on max connections per host
-		IdleConnTimeout:     90 * time.Second, // Keep idle connections alive but not forever
-
-		// Performance optimizations
-		DisableCompression: false,                                                       // Enable compression
-		ForceAttemptHTTP2:  true,                                                        // Enable HTTP/2 for compatible servers
-		TLSClientConfig:    &tls.Config{InsecureSkipVerify: context.InsecureSkipVerify}, // Optional security setting
-
-		// DNS caching
-		DisableKeepAlives: false, // Enable keep-alive
-	}
-
-	// Set default request timeout if not specified
-	requestTimeout := context.RequestTimeout
-	if requestTimeout == 0 {
-		requestTimeout = 30 * time.Second // Default to 30 seconds if not specified
-	}
-
-	// Configure HTTP client with the optimized transport and timeout
-	httpClient := &http.Client{
-		Transport: transport,
-		Timeout:   requestTimeout, // Overall request timeout
-	}
-
 	return &restChannelClient{
-		httpClient: httpClient,
+		httpClient: NewHTTPClient(context),
 	}
 }
 

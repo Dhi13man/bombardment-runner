@@ -291,11 +291,7 @@ func makeRequest(
 		return nil, err
 	}
 
-	restChannelResponse, ok := channelResponse.(*modelsDtoResponses.RestChannelResponse)
-	if !ok {
-		return nil, fmt.Errorf("unexpected response type: %T", channelResponse)
-	}
-	return &restChannelResponse.Status, nil
+	return channelResponse.GetStatus(), nil
 }
 
 // closeAndLog closes the given resource and logs an error if it occurs.
