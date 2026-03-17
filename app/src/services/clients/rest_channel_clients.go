@@ -15,21 +15,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	HeaderKeyConnection     = "Connection"
-	HeaderKeyContentType    = "Content-Type"
-	HeaderKeyAccept         = "Accept"
-	HeaderKeyXClient        = "X-Client"
-	HeaderKeyCacheControl   = "Cache-Control"
-	HeaderKeyAcceptEncoding = "Accept-Encoding"
-
-	HeaderValueKeepAlive       = "keep-alive"
-	HeaderValueApplicationJSON = "application/json"
-	HeaderValueBombardmentUA   = "bombardment-load-tester"
-	HeaderValueNoCache         = "no-cache"
-	HeaderValueGzipDeflate     = "gzip, deflate"
-)
-
 type RestChannelClient interface {
 	BaseChannelClient
 }
@@ -49,6 +34,7 @@ func (c *restChannelClient) GetStrategy() modelsEnums.ClientChannel {
 }
 
 func (c *restChannelClient) Close() error {
+	c.httpClient.CloseIdleConnections()
 	return nil
 }
 

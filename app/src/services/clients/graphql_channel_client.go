@@ -34,6 +34,7 @@ func (c *graphqlChannelClient) GetStrategy() modelsEnums.ClientChannel {
 }
 
 func (c *graphqlChannelClient) Close() error {
+	c.httpClient.CloseIdleConnections()
 	return nil
 }
 

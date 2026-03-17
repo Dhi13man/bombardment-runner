@@ -50,14 +50,29 @@ func NewHTTPClient(clientCtx modelsDtoClients.ClientContext) *http.Client {
 
 const DefaultRequestTimeout = 30 * time.Second
 
+const (
+	HeaderKeyConnection     = "Connection"
+	HeaderKeyContentType    = "Content-Type"
+	HeaderKeyAccept         = "Accept"
+	HeaderKeyXClient        = "X-Client"
+	HeaderKeyCacheControl   = "Cache-Control"
+	HeaderKeyAcceptEncoding = "Accept-Encoding"
+
+	HeaderValueKeepAlive       = "keep-alive"
+	HeaderValueApplicationJSON = "application/json"
+	HeaderValueBombardmentUA   = "bombardment-load-tester"
+	HeaderValueNoCache         = "no-cache"
+	HeaderValueGzipDeflate     = "gzip, deflate"
+)
+
 // SetDefaultHTTPHeaders sets Connection, Content-Type, Accept, X-Client,
 // and Cache-Control for HTTP-based channel clients.
 func SetDefaultHTTPHeaders(req *http.Request) {
-	req.Header.Set("Connection", "keep-alive")
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("X-Client", "bombardment-load-tester")
-	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set(HeaderKeyConnection, HeaderValueKeepAlive)
+	req.Header.Set(HeaderKeyContentType, HeaderValueApplicationJSON)
+	req.Header.Set(HeaderKeyAccept, HeaderValueApplicationJSON)
+	req.Header.Set(HeaderKeyXClient, HeaderValueBombardmentUA)
+	req.Header.Set(HeaderKeyCacheControl, HeaderValueNoCache)
 }
 
 // ApplyCustomHeaders overrides or adds headers from the caller's map.
