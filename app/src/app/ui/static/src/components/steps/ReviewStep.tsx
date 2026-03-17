@@ -4,12 +4,20 @@ import { useWizard } from '../../context/WizardContext';
 import { ConfigCard } from '../composites/ConfigCard';
 import { StatusBadge } from '../composites/StatusBadge';
 import { Icon } from '../Icon';
+import type { ClientChannel } from '../../types/api';
 
 /* ---------- Helpers ---------- */
 
 function formatStrategy(s: string): string {
   return s.replace(/_/g, ' ');
 }
+
+const CHANNEL_DISPLAY: Record<ClientChannel, string> = {
+  REST: 'REST',
+  GRAPHQL: 'GraphQL',
+  GRPC: 'gRPC',
+  KAFKA: 'Kafka',
+};
 
 /* ---------- Component ---------- */
 
@@ -55,7 +63,7 @@ export function ReviewStep() {
   // Target summary
   const validUrls = form.urls.filter((u) => u.trim() !== '');
   const targetRows = [
-    { label: 'Channel', value: form.clientChannel },
+    { label: 'Channel', value: CHANNEL_DISPLAY[form.clientChannel] },
     { label: 'Load Balancer', value: formatStrategy(form.lbStrategy) },
     { label: 'URLs', value: `${validUrls.length} endpoint${validUrls.length !== 1 ? 's' : ''}` },
     ...validUrls.map((u, i) => ({ label: `URL ${i + 1}`, value: u, mono: true })),

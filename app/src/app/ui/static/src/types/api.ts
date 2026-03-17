@@ -1,5 +1,5 @@
 /**
- * API type definitions — mirrors Go backend types exactly.
+ * API type definitions. Mirrors Go backend types exactly.
  *
  * Source of truth:
  *   - app/src/models/dto/bombardment_request.go
@@ -17,7 +17,7 @@ export type ParserStrategy = 'CSV' | 'JSON';
 
 export type TransformerStrategy = 'JSONATA' | 'GOTEMPLATE' | 'PASSTHROUGH';
 
-export type ClientChannel = 'REST' | 'GRPC' | 'KAFKA';
+export type ClientChannel = 'REST' | 'GRAPHQL' | 'GRPC' | 'KAFKA';
 
 export type LoadBalancerStrategy = 'RANDOM' | 'ROUND_ROBIN' | 'LEAST_CONNECTION';
 

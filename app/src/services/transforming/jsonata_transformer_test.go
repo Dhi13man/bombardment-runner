@@ -188,6 +188,118 @@ func TestJsonataTransformer_HeadersExpression(t *testing.T) {
 	}
 }
 
+// --- GraphQL and gRPC tests (from client-channel-strategies branch) ---
+
+func TestJsonataTransformer_GraphqlStringBody(t *testing.T) {
+	t.Parallel()
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.JSONATA,
+		BodyExpression:     `"query { users { id name } }"`,
+		EndpointExpression: `"/graphql"`,
+		MethodExpression:   `"POST"`,
+	}
+	transformer, err := NewJsonataTransformer(modelsEnums.GRAPHQL, ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
+	data := map[string]string{}
+	result, err := transformer.TransformRequest(data)
+	if err != nil {
+		t.Fatalf("TransformRequest() error: %v", err)
+	}
+	gqlReq, ok := result.(*modelsDtoRequests.GraphqlChannelRequest)
+	if !ok {
+		t.Fatalf("expected *GraphqlChannelRequest, got %T", result)
+	}
+	if gqlReq.Query != "query { users { id name } }" {
+		t.Errorf("Query = %q, want %q", gqlReq.Query, "query { users { id name } }")
+	}
+	if gqlReq.Endpoint != "/graphql" {
+		t.Errorf("Endpoint = %q, want %q", gqlReq.Endpoint, "/graphql")
+	}
+}
+
+func TestJsonataTransformer_GraphqlMapBody(t *testing.T) {
+	t.Parallel()
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.JSONATA,
+		BodyExpression:     `{"query": "mutation { createUser(name: " & $string(name) & ") { id } }", "operationName": "CreateUser"}`,
+		EndpointExpression: `"/graphql"`,
+		MethodExpression:   `"POST"`,
+	}
+	transformer, err := NewJsonataTransformer(modelsEnums.GRAPHQL, ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
+	data := map[string]string{"name": "Alice"}
+	result, err := transformer.TransformRequest(data)
+	if err != nil {
+		t.Fatalf("TransformRequest() error: %v", err)
+	}
+	gqlReq, ok := result.(*modelsDtoRequests.GraphqlChannelRequest)
+	if !ok {
+		t.Fatalf("expected *GraphqlChannelRequest, got %T", result)
+	}
+	if gqlReq.OperationName != "CreateUser" {
+		t.Errorf("OperationName = %q, want %q", gqlReq.OperationName, "CreateUser")
+	}
+}
+
+func TestJsonataTransformer_GraphqlInvalidBodyType(t *testing.T) {
+	t.Parallel()
+	// Body expression evaluates to a number, which is neither string nor map
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.JSONATA,
+		BodyExpression:     `42`,
+		EndpointExpression: `"/graphql"`,
+		MethodExpression:   `"POST"`,
+	}
+	transformer, err := NewJsonataTransformer(modelsEnums.GRAPHQL, ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
+	data := map[string]string{}
+	_, err = transformer.TransformRequest(data)
+	if err == nil {
+		t.Fatal("expected error for non-string/non-map GraphQL body, got nil")
+	}
+}
+
+func TestJsonataTransformer_GrpcMapping(t *testing.T) {
+	t.Parallel()
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.JSONATA,
+		BodyExpression:     `{"name": name}`,
+		EndpointExpression: `"users.UserService"`,
+		HeadersExpression:  `{"authorization": "Bearer " & token}`,
+		MethodExpression:   `"GetUser"`,
+	}
+	transformer, err := NewJsonataTransformer(modelsEnums.GRPC, ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
+	data := map[string]string{"name": "Alice", "token": "abc123"}
+	result, err := transformer.TransformRequest(data)
+	if err != nil {
+		t.Fatalf("TransformRequest() error: %v", err)
+	}
+	grpcReq, ok := result.(*modelsDtoRequests.GrpcChannelRequest)
+	if !ok {
+		t.Fatalf("expected *GrpcChannelRequest, got %T", result)
+	}
+	if grpcReq.Service != "users.UserService" {
+		t.Errorf("Service = %q, want %q", grpcReq.Service, "users.UserService")
+	}
+	if grpcReq.Method != "GetUser" {
+		t.Errorf("Method = %q, want %q", grpcReq.Method, "GetUser")
+	}
+	if grpcReq.Metadata["authorization"] != "Bearer abc123" {
+		t.Errorf("Metadata[authorization] = %q, want %q", grpcReq.Metadata["authorization"], "Bearer abc123")
+	}
+}
+
+// --- Constructor error path tests (from main branch) ---
+
 func TestJsonataTransformer_ConstructorErrorPaths(t *testing.T) {
 	t.Parallel()
 

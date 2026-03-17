@@ -2,6 +2,7 @@ package clients
 
 import (
 	"errors"
+	"io"
 
 	"github.dhi13man.com/bombardment-runner/src/models/dto/clients"
 	"github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
@@ -12,8 +13,8 @@ import (
 
 type BaseChannelClient interface {
 	services.BaseStrategy[modelsEnums.ClientChannel]
+	io.Closer
 
-	// Execute executes the request and returns the response.
 	Execute(
 		request modelsDtoRequests.BaseChannelRequest,
 		baseUrl string,
@@ -26,6 +27,10 @@ func CreateChannelClient(
 	switch context.Channel {
 	case modelsEnums.REST:
 		return NewRestClient(context), nil
+	case modelsEnums.GRAPHQL:
+		return NewGraphqlClient(context), nil
+	case modelsEnums.GRPC:
+		return NewGrpcClient(context), nil
 	default:
 		return nil, errors.New("invalid strategy")
 	}

@@ -35,6 +35,52 @@ func TestCreateChannelClient_WhenRest_ThenReturnsClient(t *testing.T) {
 	}
 }
 
+func TestCreateChannelClient_WhenGraphql_ThenReturnsClient(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	ctx := modelsDtoClients.ClientContext{
+		Channel: modelsEnums.GRAPHQL,
+	}
+
+	// Act
+	client, err := CreateChannelClient(ctx)
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if client == nil {
+		t.Fatal("expected non-nil client")
+	}
+	if got := client.GetStrategy(); got != modelsEnums.GRAPHQL {
+		t.Errorf("GetStrategy(): got %q, want %q", got, modelsEnums.GRAPHQL)
+	}
+}
+
+func TestCreateChannelClient_WhenGrpc_ThenReturnsClient(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	ctx := modelsDtoClients.ClientContext{
+		Channel: modelsEnums.GRPC,
+	}
+
+	// Act
+	client, err := CreateChannelClient(ctx)
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if client == nil {
+		t.Fatal("expected non-nil client")
+	}
+	if got := client.GetStrategy(); got != modelsEnums.GRPC {
+		t.Errorf("GetStrategy(): got %q, want %q", got, modelsEnums.GRPC)
+	}
+}
+
 func TestCreateChannelClient_WhenInvalidChannel_ThenReturnsError(t *testing.T) {
 	t.Parallel()
 
@@ -42,7 +88,6 @@ func TestCreateChannelClient_WhenInvalidChannel_ThenReturnsError(t *testing.T) {
 		name    string
 		channel modelsEnums.ClientChannel
 	}{
-		{"GRPC unimplemented", modelsEnums.GRPC},
 		{"KAFKA unimplemented", modelsEnums.KAFKA},
 		{"unknown channel", modelsEnums.ClientChannel("UNKNOWN")},
 	}

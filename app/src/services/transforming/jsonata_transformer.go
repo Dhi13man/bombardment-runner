@@ -59,7 +59,7 @@ func (jt *jsonataTransformer) TransformRequest(data map[string]string) (
 	modelsDtoRequests.BaseChannelRequest,
 	error,
 ) {
-	var body interface{}
+	var body any
 	if bodyExpression := jt.bodyExpression; bodyExpression != nil {
 		result := evalGracefully(bodyExpression, data)
 		if result == nil {
@@ -87,7 +87,7 @@ func (jt *jsonataTransformer) TransformRequest(data map[string]string) (
 		if result == nil {
 			return nil, fmt.Errorf("headers expression evaluation failed for data: %v", data)
 		}
-		headersRaw, ok := result.(map[string]interface{})
+		headersRaw, ok := result.(map[string]any)
 		if !ok {
 			return nil, fmt.Errorf("headers expression must evaluate to map, got %T", result)
 		}
@@ -135,7 +135,7 @@ func compileExpression(expression string) (*jsonata.Expr, error) {
 	return compiled, nil
 }
 
-func evalGracefully(expression *jsonata.Expr, data map[string]string) interface{} {
+func evalGracefully(expression *jsonata.Expr, data map[string]string) any {
 	result, err := expression.Eval(data)
 	if err != nil {
 		zap.L().Error("Error evaluating jsonata expression: ", zap.Error(err))

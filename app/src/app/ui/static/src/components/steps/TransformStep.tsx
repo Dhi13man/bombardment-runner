@@ -3,7 +3,7 @@ import { useJobForm } from '../../context/JobFormContext';
 import { useWizard } from '../../context/WizardContext';
 import { Select, Input, Textarea } from '../primitives';
 import { Icon } from '../Icon';
-import type { TransformerStrategy } from '../../types/api';
+import type { TransformerStrategy, ClientChannel } from '../../types/api';
 import type { JSX } from 'preact';
 
 const STRATEGY_INFO: Record<TransformerStrategy, string> = {
@@ -101,6 +101,18 @@ const EXPR_FIELDS: ExprFieldKey[] = [
   'bodyExpression',
 ];
 
+/** Channel-specific label and placeholder overrides for expression fields. */
+const CHANNEL_FIELD_OVERRIDES: Partial<Record<ClientChannel, Partial<Record<ExprFieldKey, { label?: string; placeholder?: string }>>>> = {
+  GRPC: {
+    methodExpression: { label: 'RPC Method', placeholder: '"SayHello"' },
+    endpointExpression: { label: 'Service name', placeholder: '"helloworld.Greeter"' },
+    headersExpression: { label: 'Metadata expression', placeholder: '{"authorization": "Bearer " & token}' },
+  },
+  GRAPHQL: {
+    bodyExpression: { label: 'Query/Body expression', placeholder: '{"query": "mutation { createUser(input: $input) { id } }", "variables": {"input": $}}' },
+  },
+};
+
 function getFieldConfig(key: ExprFieldKey, strategy: TransformerStrategy): FieldConfig {
   return FIELD_CONFIG[strategy][key];
 }
@@ -111,6 +123,14 @@ function getFieldError(value: string, key: ExprFieldKey, strategy: TransformerSt
   if (!value.trim()) return 'This field is required';
   if (!config.skipBalanceCheck && !isBalanced(value)) return 'Unbalanced quotes or brackets';
   return '';
+}
+
+function getFieldLabel(key: ExprFieldKey, strategy: TransformerStrategy, channel: ClientChannel): string {
+  return CHANNEL_FIELD_OVERRIDES[channel]?.[key]?.label ?? getFieldConfig(key, strategy).label;
+}
+
+function getFieldPlaceholder(key: ExprFieldKey, strategy: TransformerStrategy, channel: ClientChannel): string {
+  return CHANNEL_FIELD_OVERRIDES[channel]?.[key]?.placeholder ?? getFieldConfig(key, strategy).placeholder;
 }
 
 export function TransformStep() {
@@ -130,6 +150,7 @@ export function TransformStep() {
   }, [validate]);
 
   const strategy = form.transformerStrategy;
+  const channel = form.clientChannel;
   const cfg = FIELD_CONFIG[strategy];
 
   const methodError = getFieldError(form.methodExpression, 'methodExpression', strategy);
@@ -180,7 +201,7 @@ export function TransformStep() {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <Input
           id="method-expr"
-          label={cfg.methodExpression.label}
+          label={getFieldLabel('methodExpression', strategy, channel)}
           icon="code"
           code
           required={!cfg.methodExpression.optional}
@@ -188,13 +209,13 @@ export function TransformStep() {
           onInput={(e: JSX.TargetedEvent<HTMLInputElement>) =>
             update('methodExpression', (e.currentTarget as HTMLInputElement).value)
           }
-          placeholder={cfg.methodExpression.placeholder}
+          placeholder={getFieldPlaceholder('methodExpression', strategy, channel)}
           onBlur={() => setTouched(p => ({ ...p, methodExpression: true }))}
           error={touched.methodExpression ? methodError : undefined}
         />
         <Input
           id="endpoint-expr"
-          label={cfg.endpointExpression.label}
+          label={getFieldLabel('endpointExpression', strategy, channel)}
           icon="link"
           code
           required={!cfg.endpointExpression.optional}
@@ -202,7 +223,7 @@ export function TransformStep() {
           onInput={(e: JSX.TargetedEvent<HTMLInputElement>) =>
             update('endpointExpression', (e.currentTarget as HTMLInputElement).value)
           }
-          placeholder={cfg.endpointExpression.placeholder}
+          placeholder={getFieldPlaceholder('endpointExpression', strategy, channel)}
           onBlur={() => setTouched(p => ({ ...p, endpointExpression: true }))}
           error={touched.endpointExpression ? endpointError : undefined}
         />
@@ -211,7 +232,7 @@ export function TransformStep() {
       <div class="mb-4">
         <Textarea
           id="headers-expr"
-          label={cfg.headersExpression.label}
+          label={getFieldLabel('headersExpression', strategy, channel)}
           code
           required={!cfg.headersExpression.optional}
           rows={3}
@@ -219,7 +240,7 @@ export function TransformStep() {
           onInput={(e: JSX.TargetedEvent<HTMLTextAreaElement>) =>
             update('headersExpression', (e.currentTarget as HTMLTextAreaElement).value)
           }
-          placeholder={cfg.headersExpression.placeholder}
+          placeholder={getFieldPlaceholder('headersExpression', strategy, channel)}
           onBlur={() => setTouched(p => ({ ...p, headersExpression: true }))}
           error={touched.headersExpression ? headersError : undefined}
         />
@@ -228,7 +249,7 @@ export function TransformStep() {
       <div class="mb-4">
         <Textarea
           id="body-expr"
-          label={cfg.bodyExpression.label}
+          label={getFieldLabel('bodyExpression', strategy, channel)}
           code
           required={!cfg.bodyExpression.optional}
           rows={strategy === 'PASSTHROUGH' ? 2 : 5}
@@ -236,7 +257,7 @@ export function TransformStep() {
           onInput={(e: JSX.TargetedEvent<HTMLTextAreaElement>) =>
             update('bodyExpression', (e.currentTarget as HTMLTextAreaElement).value)
           }
-          placeholder={cfg.bodyExpression.placeholder}
+          placeholder={getFieldPlaceholder('bodyExpression', strategy, channel)}
           onBlur={() => setTouched(p => ({ ...p, bodyExpression: true }))}
           error={touched.bodyExpression ? bodyError : undefined}
         />

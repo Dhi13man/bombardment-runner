@@ -11,6 +11,10 @@ func (res *RestChannelResponse) GetChannel() modelsEnums.ClientChannel {
 	return modelsEnums.REST
 }
 
+func (res *RestChannelResponse) GetStatus() *int {
+	return &res.Status
+}
+
 func NewRestChannelResponse(
 	status int,
 	body any,

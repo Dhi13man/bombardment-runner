@@ -66,7 +66,6 @@ func (b *bombardmentDriver) executeBombardment(
 	bombardmentRequest dto.BombardmentRequest,
 	job *services.Job,
 ) error {
-	// Helper to update job status safely
 	setRunning := func() {
 		if job != nil {
 			job.SetRunning()
@@ -95,7 +94,6 @@ func (b *bombardmentDriver) executeBombardment(
 
 	setRunning()
 
-	// Initialise and inject dependencies
 	parser, err := parsing.CreateFileParser[map[string]string](bombardmentRequest.Parser)
 	if err != nil {
 		failJob(err)
@@ -108,6 +106,7 @@ func (b *bombardmentDriver) executeBombardment(
 		failJob(err)
 		return err
 	}
+	defer closeAndLog(client, "channel client")
 
 	transformer, err := transforming.CreateTransformer(
 		bombardmentRequest.Client.Channel,
@@ -127,7 +126,6 @@ func (b *bombardmentDriver) executeBombardment(
 		return err
 	}
 
-	// Prepare a file for response storage if enabled
 	var responseFile *os.File
 	var responseWriter *csv.Writer
 
@@ -137,7 +135,6 @@ func (b *bombardmentDriver) executeBombardment(
 			storagePath = "./responses"
 		}
 
-		// Validate storage path to prevent directory traversal
 		if parsing.ContainsPathTraversal(storagePath) {
 			pathErr := fmt.Errorf("responses_storage_path must not contain directory traversal sequences")
 			failJob(pathErr)
@@ -163,7 +160,7 @@ func (b *bombardmentDriver) executeBombardment(
 		defer closeAndLog(responseFile, "response file")
 
 		responseWriter = csv.NewWriter(responseFile)
-		err = responseWriter.Write([]string{"Request ID", "Status Code", "Timestamp", "Response Time (ms)", "Error Message"})
+		err = responseWriter.Write([]string{"Request ID", "Channel", "Status Code", "Timestamp", "Response Time (ms)", "Error Message"})
 		if err != nil {
 			zap.L().Error("Failed to write CSV header", zap.Error(err))
 			failJob(err)
@@ -200,7 +197,6 @@ func (b *bombardmentDriver) executeBombardment(
 				}
 			}
 
-			// Measure end-to-end time including both transformation and HTTP request
 			elapsedMs := time.Since(startTime).Milliseconds()
 
 			return &modelsDtoResponses.ResponseSummary{
@@ -213,7 +209,6 @@ func (b *bombardmentDriver) executeBombardment(
 		},
 	)
 
-	// Read file and get data channel
 	insightChannel, err := parser.CreateRawDataStream()
 	if err != nil {
 		zap.L().Error("Failed to read data file", zap.Error(err))
@@ -221,7 +216,6 @@ func (b *bombardmentDriver) executeBombardment(
 		return err
 	}
 
-	// Wrap the data channel with a counter to track total rows for progress.
 	// Buffered to allow parser read-ahead while batch processor is working.
 	countedChannel := make(chan map[string]string, bombardmentRequest.Driver.BatchSize)
 	go func() {
@@ -230,21 +224,18 @@ func (b *bombardmentDriver) executeBombardment(
 		for row := range insightChannel {
 			totalCount++
 			countedChannel <- row
-			// Sample SetTotal updates to reduce atomic store overhead on the hot path
+			// Sample every 100 rows to reduce atomic store overhead on the hot path
 			if job != nil && totalCount%100 == 0 {
 				job.SetTotal(totalCount)
 			}
 		}
-		// Final update to ensure accurate total
 		if job != nil {
 			job.SetTotal(totalCount)
 		}
 	}()
 
-	// Process the data in batches
 	responseChannel := batchProcessor.CreateProcessedBatchChannel(countedChannel)
 
-	// Process the responses -- flush CSV in batches rather than per-row for performance
 	var csvRowCount int
 	for response := range responseChannel {
 		if response == nil {
@@ -258,6 +249,7 @@ func (b *bombardmentDriver) executeBombardment(
 			}
 			err := responseWriter.Write([]string{
 				response.RequestID,
+				string(bombardmentRequest.Client.Channel),
 				statusStr,
 				response.Timestamp.Format(time.RFC3339),
 				fmt.Sprintf("%d", response.ResponseTime),
@@ -291,14 +283,13 @@ func makeRequest(
 		return nil, err
 	}
 
-	restChannelResponse, ok := channelResponse.(*modelsDtoResponses.RestChannelResponse)
-	if !ok {
-		return nil, fmt.Errorf("unexpected response type: %T", channelResponse)
+	if channelResponse == nil {
+		return nil, fmt.Errorf("load balancer returned nil response")
 	}
-	return &restChannelResponse.Status, nil
+
+	return channelResponse.GetStatus(), nil
 }
 
-// closeAndLog closes the given resource and logs an error if it occurs.
 func closeAndLog(c io.Closer, resource string) {
 	if err := c.Close(); err != nil {
 		zap.L().Error("Failed to close "+resource, zap.Error(err))

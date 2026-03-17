@@ -153,7 +153,6 @@ func TestCreateChannelRequest_WhenInvalidChannel_ThenReturnsError(t *testing.T) 
 		name    string
 		channel modelsEnums.ClientChannel
 	}{
-		{"GRPC channel", modelsEnums.GRPC},
 		{"KAFKA channel", modelsEnums.KAFKA},
 		{"unknown channel", modelsEnums.ClientChannel("UNKNOWN")},
 	}
