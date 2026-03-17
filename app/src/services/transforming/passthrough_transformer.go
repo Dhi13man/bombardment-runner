@@ -68,8 +68,13 @@ func (pt *passthroughTransformer) TransformRequest(data map[string]string) (
 ) {
 	var body interface{}
 	if len(pt.bodyColumns) > 0 {
-		bodyMap := make(map[string]interface{})
-		if len(pt.bodyColumns) == 1 && pt.bodyColumns[0] == "*" {
+		isWildcard := len(pt.bodyColumns) == 1 && pt.bodyColumns[0] == "*"
+		size := len(pt.bodyColumns)
+		if isWildcard {
+			size = len(data)
+		}
+		bodyMap := make(map[string]interface{}, size)
+		if isWildcard {
 			for k, v := range data {
 				bodyMap[k] = v
 			}
@@ -92,7 +97,7 @@ func (pt *passthroughTransformer) TransformRequest(data map[string]string) (
 
 	var headers map[string]string
 	if len(pt.headerMappings) > 0 {
-		headers = make(map[string]string)
+		headers = make(map[string]string, len(pt.headerMappings))
 		for headerName, colName := range pt.headerMappings {
 			headers[headerName] = pt.resolveMapping(colName, data)
 		}

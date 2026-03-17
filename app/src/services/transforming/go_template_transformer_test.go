@@ -42,13 +42,16 @@ func TestGoTemplateTransformer_BasicTransform(t *testing.T) {
 		t.Errorf("Method = %q, want %q", restReq.Method, "POST")
 	}
 
-	bodyStr, ok := restReq.Body.(string)
+	// Body should be parsed as a map since the template produces valid JSON
+	bodyMap, ok := restReq.Body.(map[string]interface{})
 	if !ok {
-		t.Fatalf("Body is not string, got %T", restReq.Body)
+		t.Fatalf("Body is not map[string]interface{}, got %T", restReq.Body)
 	}
-	expected := `{"name": "Alice", "age": "30"}`
-	if bodyStr != expected {
-		t.Errorf("Body = %q, want %q", bodyStr, expected)
+	if bodyMap["name"] != "Alice" {
+		t.Errorf("Body[name] = %v, want Alice", bodyMap["name"])
+	}
+	if bodyMap["age"] != "30" {
+		t.Errorf("Body[age] = %v, want 30", bodyMap["age"])
 	}
 }
 

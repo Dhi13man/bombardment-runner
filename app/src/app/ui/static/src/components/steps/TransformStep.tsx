@@ -37,84 +37,52 @@ function isBalanced(expr: string): boolean {
   return stack.length === 0 && !inString;
 }
 
-interface ExprField {
-  key: 'methodExpression' | 'endpointExpression' | 'headersExpression' | 'bodyExpression';
+type ExprFieldKey = 'methodExpression' | 'endpointExpression' | 'headersExpression' | 'bodyExpression';
+
+interface FieldConfig {
   label: string;
+  placeholder: string;
+  optional?: boolean;
+  skipBalanceCheck?: boolean;
 }
 
-const EXPR_FIELDS: ExprField[] = [
-  { key: 'methodExpression', label: 'Method expression' },
-  { key: 'endpointExpression', label: 'Endpoint expression' },
-  { key: 'headersExpression', label: 'Headers expression' },
-  { key: 'bodyExpression', label: 'Body expression' },
+const FIELD_CONFIG: Record<TransformerStrategy, Record<ExprFieldKey, FieldConfig>> = {
+  JSONATA: {
+    methodExpression:   { label: 'Method expression',   placeholder: '"POST"' },
+    endpointExpression: { label: 'Endpoint expression',  placeholder: '"/api/v1/users"' },
+    headersExpression:  { label: 'Headers expression',   placeholder: '{"Content-Type": "application/json", "Authorization": "Bearer " & token}' },
+    bodyExpression:     { label: 'Body expression',      placeholder: '{"name": name, "email": email, "age": $number(age)}' },
+  },
+  GOTEMPLATE: {
+    methodExpression:   { label: 'Method template',      placeholder: 'POST' },
+    endpointExpression: { label: 'Endpoint template',    placeholder: '/api/v1/{{.resource}}' },
+    headersExpression:  { label: 'Headers template',     placeholder: 'Content-Type: application/json\nAuthorization: Bearer {{.token}}' },
+    bodyExpression:     { label: 'Body template',        placeholder: '{"name": "{{.name}}", "email": "{{.email}}"}' },
+  },
+  PASSTHROUGH: {
+    methodExpression:   { label: 'Method (column name or literal)',              placeholder: 'POST',                    skipBalanceCheck: true },
+    endpointExpression: { label: 'Endpoint (column name or literal)',            placeholder: '/api/endpoint',            skipBalanceCheck: true },
+    headersExpression:  { label: 'Headers (Name=column, comma-separated)',       placeholder: 'Content-Type=content_type', optional: true, skipBalanceCheck: true },
+    bodyExpression:     { label: 'Body columns (comma-separated, or * for all)', placeholder: 'name,email,age or *',      optional: true, skipBalanceCheck: true },
+  },
+};
+
+const EXPR_FIELDS: ExprFieldKey[] = [
+  'methodExpression',
+  'endpointExpression',
+  'headersExpression',
+  'bodyExpression',
 ];
 
-function getFieldLabel(key: ExprField['key'], strategy: TransformerStrategy): string {
-  if (strategy === 'PASSTHROUGH') {
-    switch (key) {
-      case 'methodExpression': return 'Method (column name or literal)';
-      case 'endpointExpression': return 'Endpoint (column name or literal)';
-      case 'headersExpression': return 'Headers (Name=column, comma-separated)';
-      case 'bodyExpression': return 'Body columns (comma-separated, or * for all)';
-    }
-  }
-  if (strategy === 'GOTEMPLATE') {
-    switch (key) {
-      case 'methodExpression': return 'Method template';
-      case 'endpointExpression': return 'Endpoint template';
-      case 'headersExpression': return 'Headers template';
-      case 'bodyExpression': return 'Body template';
-    }
-  }
-  // JSONATA default
-  const base: Record<ExprField['key'], string> = {
-    methodExpression: 'Method expression',
-    endpointExpression: 'Endpoint expression',
-    headersExpression: 'Headers expression',
-    bodyExpression: 'Body expression',
-  };
-  return base[key];
+function getFieldConfig(key: ExprFieldKey, strategy: TransformerStrategy): FieldConfig {
+  return FIELD_CONFIG[strategy][key];
 }
 
-function getFieldPlaceholder(key: ExprField['key'], strategy: TransformerStrategy): string {
-  if (strategy === 'PASSTHROUGH') {
-    switch (key) {
-      case 'methodExpression': return 'POST';
-      case 'endpointExpression': return '/api/endpoint';
-      case 'headersExpression': return 'Content-Type=content_type';
-      case 'bodyExpression': return 'name,email,age or *';
-    }
-  }
-  if (strategy === 'GOTEMPLATE') {
-    switch (key) {
-      case 'methodExpression': return 'POST';
-      case 'endpointExpression': return '/api/v1/{{.resource}}';
-      case 'headersExpression': return 'Content-Type: application/json\nAuthorization: Bearer {{.token}}';
-      case 'bodyExpression': return '{"name": "{{.name}}", "email": "{{.email}}"}';
-    }
-  }
-  // JSONATA default
-  switch (key) {
-    case 'methodExpression': return '"POST"';
-    case 'endpointExpression': return '"/api/v1/users"';
-    case 'headersExpression': return '{"Content-Type": "application/json", "Authorization": "Bearer " & token}';
-    case 'bodyExpression': return '{"name": name, "email": email, "age": $number(age)}';
-    default: return '';
-  }
-}
-
-function getFieldError(value: string, key: ExprField['key'], strategy: TransformerStrategy): string {
-  if (strategy === 'PASSTHROUGH') {
-    // Body and headers are optional for passthrough
-    if (key === 'bodyExpression' || key === 'headersExpression') {
-      return '';
-    }
-    // Method and endpoint are required even for passthrough
-    if (!value.trim()) return 'This field is required';
-    return '';
-  }
+function getFieldError(value: string, key: ExprFieldKey, strategy: TransformerStrategy): string {
+  const config = getFieldConfig(key, strategy);
+  if (config.optional) return '';
   if (!value.trim()) return 'This field is required';
-  if (!isBalanced(value)) return 'Unbalanced quotes or brackets';
+  if (!config.skipBalanceCheck && !isBalanced(value)) return 'Unbalanced quotes or brackets';
   return '';
 }
 
@@ -125,7 +93,7 @@ export function TransformStep() {
 
   const validate = useCallback(() => {
     const allValid = EXPR_FIELDS.every(
-      (f) => !getFieldError(form[f.key], f.key, form.transformerStrategy),
+      (f) => !getFieldError(form[f], f, form.transformerStrategy),
     );
     setValid(2, allValid);
   }, [form.methodExpression, form.endpointExpression, form.headersExpression, form.bodyExpression, form.transformerStrategy, setValid]);
@@ -135,11 +103,7 @@ export function TransformStep() {
   }, [validate]);
 
   const strategy = form.transformerStrategy;
-
-  const methodLabel = getFieldLabel('methodExpression', strategy);
-  const endpointLabel = getFieldLabel('endpointExpression', strategy);
-  const headersLabel = getFieldLabel('headersExpression', strategy);
-  const bodyLabel = getFieldLabel('bodyExpression', strategy);
+  const cfg = FIELD_CONFIG[strategy];
 
   const methodError = getFieldError(form.methodExpression, 'methodExpression', strategy);
   const endpointError = getFieldError(form.endpointExpression, 'endpointExpression', strategy);
@@ -182,27 +146,27 @@ export function TransformStep() {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <Input
           id="method-expr"
-          label={methodLabel}
+          label={cfg.methodExpression.label}
           icon="code"
           code
           value={form.methodExpression}
           onInput={(e: JSX.TargetedEvent<HTMLInputElement>) =>
             update('methodExpression', (e.currentTarget as HTMLInputElement).value)
           }
-          placeholder={getFieldPlaceholder('methodExpression', strategy)}
+          placeholder={cfg.methodExpression.placeholder}
           onBlur={() => setTouched(p => ({ ...p, methodExpression: true }))}
           error={touched.methodExpression ? methodError : undefined}
         />
         <Input
           id="endpoint-expr"
-          label={endpointLabel}
+          label={cfg.endpointExpression.label}
           icon="link"
           code
           value={form.endpointExpression}
           onInput={(e: JSX.TargetedEvent<HTMLInputElement>) =>
             update('endpointExpression', (e.currentTarget as HTMLInputElement).value)
           }
-          placeholder={getFieldPlaceholder('endpointExpression', strategy)}
+          placeholder={cfg.endpointExpression.placeholder}
           onBlur={() => setTouched(p => ({ ...p, endpointExpression: true }))}
           error={touched.endpointExpression ? endpointError : undefined}
         />
@@ -211,14 +175,14 @@ export function TransformStep() {
       <div class="mb-4">
         <Textarea
           id="headers-expr"
-          label={headersLabel}
+          label={cfg.headersExpression.label}
           code
           rows={3}
           value={form.headersExpression}
           onInput={(e: JSX.TargetedEvent<HTMLTextAreaElement>) =>
             update('headersExpression', (e.currentTarget as HTMLTextAreaElement).value)
           }
-          placeholder={getFieldPlaceholder('headersExpression', strategy)}
+          placeholder={cfg.headersExpression.placeholder}
           onBlur={() => setTouched(p => ({ ...p, headersExpression: true }))}
           error={touched.headersExpression ? headersError : undefined}
         />
@@ -227,14 +191,14 @@ export function TransformStep() {
       <div class="mb-4">
         <Textarea
           id="body-expr"
-          label={bodyLabel}
+          label={cfg.bodyExpression.label}
           code
           rows={5}
           value={form.bodyExpression}
           onInput={(e: JSX.TargetedEvent<HTMLTextAreaElement>) =>
             update('bodyExpression', (e.currentTarget as HTMLTextAreaElement).value)
           }
-          placeholder={getFieldPlaceholder('bodyExpression', strategy)}
+          placeholder={cfg.bodyExpression.placeholder}
           onBlur={() => setTouched(p => ({ ...p, bodyExpression: true }))}
           error={touched.bodyExpression ? bodyError : undefined}
         />

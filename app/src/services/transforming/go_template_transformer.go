@@ -2,6 +2,7 @@ package transforming
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -68,7 +69,14 @@ func (gt *goTemplateTransformer) TransformRequest(data map[string]string) (
 		if err != nil {
 			return nil, fmt.Errorf("body template execution failed: %w", err)
 		}
-		body = result
+		// Parse as JSON so downstream json.Marshal round-trips correctly.
+		// If the template output isn't valid JSON, use the raw string.
+		var parsed interface{}
+		if json.Unmarshal([]byte(result), &parsed) == nil {
+			body = parsed
+		} else {
+			body = result
+		}
 	}
 
 	var endpoint string
@@ -105,7 +113,8 @@ func parseTemplateGracefully(name, text string) *template.Template {
 	if text == "" {
 		return nil
 	}
-	// Empty FuncMap shadows built-ins, restricting templates to field interpolation only.
+	// No custom functions registered. Built-in template functions (printf, len, etc.)
+	// remain available but are safe since data values are plain strings.
 	t, err := template.New(name).Funcs(template.FuncMap{}).Option("missingkey=error").Parse(text)
 	if err != nil {
 		zap.L().Error("Error parsing Go template",
