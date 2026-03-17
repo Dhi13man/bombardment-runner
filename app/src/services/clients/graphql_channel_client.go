@@ -66,21 +66,14 @@ func (c *graphqlChannelClient) Execute(
 	}
 
 	url := baseUrl + graphqlRequest.Endpoint
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, bytes.NewBuffer(payloadBytes))
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, bytes.NewReader(payloadBytes))
 	if err != nil {
 		zap.L().Error("Request creation failed", zap.Error(err))
 		return nil, err
 	}
 
-	req.Header.Set(HeaderKeyConnection, HeaderValueKeepAlive)
-	req.Header.Set(HeaderKeyContentType, HeaderValueApplicationJSON)
-	req.Header.Set(HeaderKeyAccept, HeaderValueApplicationJSON)
-	req.Header.Set(HeaderKeyXClient, HeaderValueBombardmentUA)
-	req.Header.Set(HeaderKeyCacheControl, HeaderValueNoCache)
-
-	for key, value := range graphqlRequest.Headers {
-		req.Header.Set(key, value)
-	}
+	SetDefaultHTTPHeaders(req)
+	ApplyCustomHeaders(req, graphqlRequest.Headers)
 
 	zap.S().Debugf("GraphQL request: %s %s", req.Method, req.URL)
 	response, err := c.httpClient.Do(req)
@@ -94,8 +87,7 @@ func (c *graphqlChannelClient) Execute(
 		}
 	}(response.Body)
 
-	const maxResponseBodySize = 10 << 20 // 10 MB; prevents OOM from oversized responses
-	body, err := io.ReadAll(io.LimitReader(response.Body, maxResponseBodySize))
+	body, err := io.ReadAll(io.LimitReader(response.Body, MaxResponseBodySize))
 	if err != nil {
 		zap.L().Error("Response reading failed", zap.Error(err))
 		return nil, err

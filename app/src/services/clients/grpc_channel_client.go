@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
-	"time"
 
 	modelsDtoClients "github.dhi13man.com/bombardment-runner/src/models/dto/clients"
 	modelsDtoRequests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
@@ -38,6 +37,9 @@ func init() {
 	encoding.RegisterCodec(jsonCodec{})
 }
 
+// jsonForceCodec is hoisted to avoid per-call allocation in Execute.
+var jsonForceCodec = grpc.ForceCodec(jsonCodec{})
+
 // GrpcDialer abstracts dial so tests can inject bufconn.
 type GrpcDialer func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error)
 
@@ -67,10 +69,6 @@ func (c *grpcChannelClient) GetStrategy() modelsEnums.ClientChannel {
 }
 
 func (c *grpcChannelClient) getOrDial(target string) (*grpc.ClientConn, error) {
-	if conn, ok := c.connections.Load(target); ok {
-		return conn.(*grpc.ClientConn), nil
-	}
-
 	var opts []grpc.DialOption
 	if c.context.InsecureSkipVerify {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -110,7 +108,7 @@ func (c *grpcChannelClient) Execute(
 
 	timeout := c.context.RequestTimeout
 	if timeout == 0 {
-		timeout = 30 * time.Second
+		timeout = DefaultRequestTimeout
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -121,7 +119,7 @@ func (c *grpcChannelClient) Execute(
 	}
 
 	var response json.RawMessage
-	err = conn.Invoke(ctx, fullMethod, grpcRequest.Body, &response, grpc.ForceCodec(jsonCodec{}))
+	err = conn.Invoke(ctx, fullMethod, grpcRequest.Body, &response, jsonForceCodec)
 
 	if err != nil {
 		st, ok := status.FromError(err)

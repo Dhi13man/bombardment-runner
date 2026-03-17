@@ -10,13 +10,7 @@ import (
 	modelsDtoClients "github.dhi13man.com/bombardment-runner/src/models/dto/clients"
 	modelsDtoRequests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
 	modelsEnums "github.dhi13man.com/bombardment-runner/src/models/enums"
-	"go.uber.org/zap"
 )
-
-func init() {
-	logger := zap.NewNop()
-	zap.ReplaceGlobals(logger)
-}
 
 func newTestClient(timeout time.Duration) RestChannelClient {
 	ctx := modelsDtoClients.ClientContext{

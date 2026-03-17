@@ -7,6 +7,7 @@ type BaseChannelResponse interface {
 	// GetChannel returns the channel of the request.
 	GetChannel() modelsEnums.ClientChannel
 
-	// GetStatus returns a pointer to the HTTP status code of the response.
+	// GetStatus returns a pointer to the protocol-specific status code
+	// (HTTP status for REST/GraphQL, gRPC status code for gRPC).
 	GetStatus() *int
 }

@@ -40,7 +40,7 @@ func NewHTTPClient(clientCtx modelsDtoClients.ClientContext) *http.Client {
 
 	requestTimeout := clientCtx.RequestTimeout
 	if requestTimeout == 0 {
-		requestTimeout = 30 * time.Second
+		requestTimeout = DefaultRequestTimeout
 	}
 
 	return &http.Client{
@@ -48,3 +48,25 @@ func NewHTTPClient(clientCtx modelsDtoClients.ClientContext) *http.Client {
 		Timeout:   requestTimeout,
 	}
 }
+
+const DefaultRequestTimeout = 30 * time.Second
+
+// SetDefaultHTTPHeaders applies the standard set of headers shared across
+// all HTTP-based channel clients (REST, GraphQL).
+func SetDefaultHTTPHeaders(req *http.Request) {
+	req.Header.Set("Connection", "keep-alive")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("X-Client", "bombardment-load-tester")
+	req.Header.Set("Cache-Control", "no-cache")
+}
+
+// ApplyCustomHeaders sets caller-provided headers, overriding defaults if needed.
+func ApplyCustomHeaders(req *http.Request, headers map[string]string) {
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+}
+
+// MaxResponseBodySize limits response body reads to prevent OOM from oversized responses.
+const MaxResponseBodySize = 10 << 20 // 10 MB

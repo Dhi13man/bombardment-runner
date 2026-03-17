@@ -2,6 +2,7 @@ package clients
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -76,7 +77,7 @@ func (c *restChannelClient) Execute(
 		}
 	}(response.Body)
 
-	body, err := io.ReadAll(response.Body)
+	body, err := io.ReadAll(io.LimitReader(response.Body, MaxResponseBodySize))
 	if err != nil {
 		zap.L().Error("Response reading failed: ", zap.Error(err))
 		return nil, err
@@ -100,25 +101,18 @@ func (*restChannelClient) generateHttpRequest(
 	}
 
 	url := baseUrl + restRequest.Endpoint
-	req, err := http.NewRequest(
+	req, err := http.NewRequestWithContext(context.Background(),
 		restRequest.Method,
 		url,
-		bytes.NewBuffer(payloadBytes),
+		bytes.NewReader(payloadBytes),
 	)
 	if err != nil {
 		zap.L().Error("Request creation failed: ", zap.Error(err))
 		return nil, err
 	}
 
-	req.Header.Set(HeaderKeyConnection, HeaderValueKeepAlive)
-	req.Header.Set(HeaderKeyContentType, HeaderValueApplicationJSON)
-	req.Header.Set(HeaderKeyAccept, HeaderValueApplicationJSON)
-	req.Header.Set(HeaderKeyXClient, HeaderValueBombardmentUA) // helps servers identify load test traffic
-	req.Header.Set(HeaderKeyCacheControl, HeaderValueNoCache)
-
-	for key, value := range restRequest.Headers {
-		req.Header.Set(key, value)
-	}
+	SetDefaultHTTPHeaders(req)
+	ApplyCustomHeaders(req, restRequest.Headers)
 
 	// Go's transport handles Accept-Encoding and decompression automatically
 	// when DisableCompression is false. Explicitly setting Accept-Encoding
