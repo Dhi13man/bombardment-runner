@@ -12,6 +12,7 @@ import (
 	modelsEnums "github.dhi13man.com/bombardment-runner/src/models/enums"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding"
 	"google.golang.org/grpc/metadata"
@@ -85,9 +86,17 @@ func (c *grpcChannelClient) Close() error {
 }
 
 func (c *grpcChannelClient) getOrDial(target string) (*grpc.ClientConn, error) {
+	// Fast path: return cached connection.
+	if existing, ok := c.connections.Load(target); ok {
+		return existing.(*grpc.ClientConn), nil
+	}
+
+	// Slow path: dial and cache.
 	var opts []grpc.DialOption
 	if c.context.InsecureSkipVerify {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	} else {
+		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(nil)))
 	}
 
 	conn, err := c.dialer(target, opts...)
