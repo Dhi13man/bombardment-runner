@@ -57,9 +57,7 @@ func TestOpenFileFromPathOrContent_WhenValidFilePath_ThenOpensExistingFile(t *te
 	if _, wErr := tmpFile.WriteString(expected); wErr != nil {
 		t.Fatalf("failed to write test data: %v", wErr)
 	}
-	if err := tmpFile.Close(); err != nil {
-		t.Fatalf("failed to close temp file: %v", err)
-	}
+	_ = tmpFile.Close()
 
 	// Act
 	file, absPath, err := OpenFileFromPathOrContent(tmpFile.Name(), "")
@@ -68,11 +66,7 @@ func TestOpenFileFromPathOrContent_WhenValidFilePath_ThenOpensExistingFile(t *te
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			t.Logf("warning: failed to close file: %v", err)
-		}
-	}()
+	defer func() { _ = file.Close() }()
 
 	if absPath == "" {
 		t.Error("expected non-empty absolute path")

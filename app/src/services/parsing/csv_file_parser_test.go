@@ -50,11 +50,7 @@ func TestCsvParser_ValidFile(t *testing.T) {
 	if pErr != nil {
 		t.Fatalf("NewCsvParser() error: %v", pErr)
 	}
-	defer func() {
-		if err := parser.Close(); err != nil {
-			t.Logf("warning: failed to close parser: %v", err)
-		}
-	}()
+	defer func() { _ = parser.Close() }()
 
 	rawChannel, err := parser.CreateRawDataStream()
 	if err != nil {
@@ -101,11 +97,7 @@ func TestCsvParser_EmptyFile(t *testing.T) {
 	if pErr != nil {
 		t.Fatalf("NewCsvParser() error: %v", pErr)
 	}
-	defer func() {
-		if err := parser.Close(); err != nil {
-			t.Logf("warning: failed to close parser: %v", err)
-		}
-	}()
+	defer func() { _ = parser.Close() }()
 
 	rawChannel, err := parser.CreateRawDataStream()
 	if err != nil {
@@ -137,11 +129,7 @@ func TestCsvParser_SpecialCharacters(t *testing.T) {
 	if pErr != nil {
 		t.Fatalf("NewCsvParser() error: %v", pErr)
 	}
-	defer func() {
-		if err := parser.Close(); err != nil {
-			t.Logf("warning: failed to close parser: %v", err)
-		}
-	}()
+	defer func() { _ = parser.Close() }()
 
 	rawChannel, err := parser.CreateRawDataStream()
 	if err != nil {
@@ -192,11 +180,7 @@ func TestCsvParser_StreamCompleteness(t *testing.T) {
 	if pErr != nil {
 		t.Fatalf("NewCsvParser() error: %v", pErr)
 	}
-	defer func() {
-		if err := parser.Close(); err != nil {
-			t.Logf("warning: failed to close parser: %v", err)
-		}
-	}()
+	defer func() { _ = parser.Close() }()
 
 	rawChannel, err := parser.CreateRawDataStream()
 	if err != nil {
@@ -227,11 +211,7 @@ func TestCsvParser_CreateParsedDataStream(t *testing.T) {
 	if pErr != nil {
 		t.Fatalf("NewCsvParser() error: %v", pErr)
 	}
-	defer func() {
-		if err := parser.Close(); err != nil {
-			t.Logf("warning: failed to close parser: %v", err)
-		}
-	}()
+	defer func() { _ = parser.Close() }()
 
 	ch, err := parser.CreateParsedDataStream(func(row map[string]string) string {
 		return row["name"] + ":" + row["score"]
@@ -272,11 +252,7 @@ func TestCsvParser_GetStrategy(t *testing.T) {
 	if pErr != nil {
 		t.Fatalf("NewCsvParser() error: %v", pErr)
 	}
-	defer func() {
-		if err := parser.Close(); err != nil {
-			t.Logf("warning: failed to close parser: %v", err)
-		}
-	}()
+	defer func() { _ = parser.Close() }()
 
 	if got := parser.GetStrategy(); got != modelsEnums.CSV {
 		t.Errorf("GetStrategy() = %v, want %v", got, modelsEnums.CSV)
