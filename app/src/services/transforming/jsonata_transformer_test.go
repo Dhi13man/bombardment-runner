@@ -18,7 +18,10 @@ func TestJsonataTransformer_BasicTransform(t *testing.T) {
 		MethodExpression:   `"POST"`,
 	}
 
-	transformer := NewJsonataTransformer(modelsEnums.REST, ctx)
+	transformer, err := NewJsonataTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
 
 	data := map[string]string{
 		"name": "Alice",
@@ -64,13 +67,16 @@ func TestJsonataTransformer_NilExpressionResult(t *testing.T) {
 		MethodExpression:   `"GET"`,
 	}
 
-	transformer := NewJsonataTransformer(modelsEnums.REST, ctx)
+	transformer, err := NewJsonataTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
 
 	data := map[string]string{
 		"name": "Alice",
 	}
 
-	_, err := transformer.TransformRequest(data)
+	_, err = transformer.TransformRequest(data)
 	if err == nil {
 		t.Fatal("expected error when body expression evaluates to nil, got nil")
 	}
@@ -86,23 +92,9 @@ func TestJsonataTransformer_InvalidExpression(t *testing.T) {
 		MethodExpression:   `"GET"`,
 	}
 
-	transformer := NewJsonataTransformer(modelsEnums.REST, ctx)
-
-	data := map[string]string{
-		"name": "Alice",
-	}
-
-	result, err := transformer.TransformRequest(data)
-	if err != nil {
-		t.Fatalf("TransformRequest() unexpected error: %v", err)
-	}
-
-	restReq, ok := result.(*modelsDtoRequests.RestChannelRequest)
-	if !ok {
-		t.Fatalf("expected *RestChannelRequest, got %T", result)
-	}
-	if restReq.Endpoint != "/api/test" {
-		t.Errorf("Endpoint = %q, want %q", restReq.Endpoint, "/api/test")
+	_, err := NewJsonataTransformer(modelsEnums.REST, ctx)
+	if err == nil {
+		t.Fatal("expected error for invalid expression, got nil")
 	}
 }
 
@@ -115,7 +107,10 @@ func TestJsonataTransformer_EmptyData(t *testing.T) {
 		MethodExpression:   `"DELETE"`,
 	}
 
-	transformer := NewJsonataTransformer(modelsEnums.REST, ctx)
+	transformer, err := NewJsonataTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
 
 	data := map[string]string{}
 
@@ -142,7 +137,10 @@ func TestJsonataTransformer_GetStrategy(t *testing.T) {
 	ctx := modelsDtoTransforming.TransformerContext{
 		Strategy: modelsEnums.JSONATA,
 	}
-	transformer := NewJsonataTransformer(modelsEnums.REST, ctx)
+	transformer, err := NewJsonataTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
 
 	if got := transformer.GetStrategy(); got != modelsEnums.JSONATA {
 		t.Errorf("GetStrategy() = %v, want %v", got, modelsEnums.JSONATA)
@@ -159,7 +157,10 @@ func TestJsonataTransformer_HeadersExpression(t *testing.T) {
 		HeadersExpression:  `{"Content-Type": "application/json", "X-Custom": custom_header}`,
 	}
 
-	transformer := NewJsonataTransformer(modelsEnums.REST, ctx)
+	transformer, err := NewJsonataTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
 
 	data := map[string]string{
 		"custom_header": "my-value",

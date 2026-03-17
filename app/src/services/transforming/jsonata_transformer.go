@@ -29,22 +29,30 @@ func (jt *jsonataTransformer) GetStrategy() modelsEnums.TransformerStrategy {
 func NewJsonataTransformer(
 	clientChannel modelsEnums.ClientChannel,
 	transformerContext modelsDtoTransforming.TransformerContext,
-) JsonataTransformer {
+) (JsonataTransformer, error) {
 	transformer := jsonataTransformer{clientChannel: clientChannel}
-	if compiled := compileGracefully(transformerContext.BodyExpression); compiled != nil {
+	if compiled, err := compileExpression(transformerContext.BodyExpression); err != nil {
+		return nil, fmt.Errorf("invalid body expression: %w", err)
+	} else {
 		transformer.bodyExpression = compiled
 	}
-	if compiled := compileGracefully(transformerContext.EndpointExpression); compiled != nil {
+	if compiled, err := compileExpression(transformerContext.EndpointExpression); err != nil {
+		return nil, fmt.Errorf("invalid endpoint expression: %w", err)
+	} else {
 		transformer.endpointExpression = compiled
 	}
-	if compiled := compileGracefully(transformerContext.HeadersExpression); compiled != nil {
+	if compiled, err := compileExpression(transformerContext.HeadersExpression); err != nil {
+		return nil, fmt.Errorf("invalid headers expression: %w", err)
+	} else {
 		transformer.headersExpression = compiled
 	}
-	if compiled := compileGracefully(transformerContext.MethodExpression); compiled != nil {
+	if compiled, err := compileExpression(transformerContext.MethodExpression); err != nil {
+		return nil, fmt.Errorf("invalid method expression: %w", err)
+	} else {
 		transformer.methodExpression = compiled
 	}
 
-	return &transformer
+	return &transformer, nil
 }
 
 func (jt *jsonataTransformer) TransformRequest(data map[string]string) (
@@ -116,14 +124,15 @@ func (jt *jsonataTransformer) TransformRequest(data map[string]string) (
 	)
 }
 
-func compileGracefully(expression string) *jsonata.Expr {
+func compileExpression(expression string) (*jsonata.Expr, error) {
+	if expression == "" {
+		return nil, nil
+	}
 	compiled, err := jsonata.Compile(expression)
 	if err != nil {
-		zap.L().Error("Error compiling jsonata expression: ", zap.Error(err))
-		return nil
+		return nil, err
 	}
-
-	return compiled
+	return compiled, nil
 }
 
 func evalGracefully(expression *jsonata.Expr, data map[string]string) interface{} {

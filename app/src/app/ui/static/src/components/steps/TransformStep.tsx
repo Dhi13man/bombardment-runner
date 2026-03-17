@@ -12,6 +12,35 @@ const STRATEGY_INFO: Record<TransformerStrategy, string> = {
   PASSTHROUGH: 'Map CSV/JSON columns directly to request fields without transformation',
 };
 
+type ExprFieldKey = 'methodExpression' | 'endpointExpression' | 'headersExpression' | 'bodyExpression';
+
+const STRATEGY_DEFAULTS: Record<TransformerStrategy, Record<ExprFieldKey, string>> = {
+  JSONATA: {
+    methodExpression: '"POST"',
+    endpointExpression: '"/api/v1/" & resource',
+    headersExpression: '',
+    bodyExpression: '{"name": name}',
+  },
+  GOTEMPLATE: {
+    methodExpression: 'POST',
+    endpointExpression: '/api/v1/{{.resource}}',
+    headersExpression: '',
+    bodyExpression: '{"name": "{{.name}}"}',
+  },
+  PASSTHROUGH: {
+    methodExpression: 'POST',
+    endpointExpression: '/api/endpoint',
+    headersExpression: '',
+    bodyExpression: '*',
+  },
+};
+
+const STRATEGY_HELP: Record<TransformerStrategy, string> = {
+  JSONATA: 'Expressions are evaluated per record from your data file',
+  GOTEMPLATE: 'Templates are rendered per record from your data file',
+  PASSTHROUGH: 'Columns are mapped directly from your data file',
+};
+
 function isBalanced(expr: string): boolean {
   const stack: string[] = [];
   const pairs: Record<string, string> = { '(': ')', '[': ']', '{': '}' };
@@ -37,8 +66,6 @@ function isBalanced(expr: string): boolean {
   return stack.length === 0 && !inString;
 }
 
-type ExprFieldKey = 'methodExpression' | 'endpointExpression' | 'headersExpression' | 'bodyExpression';
-
 interface FieldConfig {
   label: string;
   placeholder: string;
@@ -54,16 +81,16 @@ const FIELD_CONFIG: Record<TransformerStrategy, Record<ExprFieldKey, FieldConfig
     bodyExpression:     { label: 'Body expression',      placeholder: '{"name": name, "email": email, "age": $number(age)}' },
   },
   GOTEMPLATE: {
-    methodExpression:   { label: 'Method template',      placeholder: 'POST' },
-    endpointExpression: { label: 'Endpoint template',    placeholder: '/api/v1/{{.resource}}' },
-    headersExpression:  { label: 'Headers template',     placeholder: 'Content-Type: application/json\nAuthorization: Bearer {{.token}}' },
-    bodyExpression:     { label: 'Body template',        placeholder: '{"name": "{{.name}}", "email": "{{.email}}"}' },
+    methodExpression:   { label: 'Method template',      placeholder: 'POST',                                        skipBalanceCheck: true },
+    endpointExpression: { label: 'Endpoint template',    placeholder: '/api/v1/{{.resource}}',                       skipBalanceCheck: true },
+    headersExpression:  { label: 'Headers template',     placeholder: 'Content-Type: application/json\nAuthorization: Bearer {{.token}}', skipBalanceCheck: true },
+    bodyExpression:     { label: 'Body template',        placeholder: '{"name": "{{.name}}", "email": "{{.email}}"}', skipBalanceCheck: true },
   },
   PASSTHROUGH: {
-    methodExpression:   { label: 'Method (column name or literal)',              placeholder: 'POST',                    skipBalanceCheck: true },
-    endpointExpression: { label: 'Endpoint (column name or literal)',            placeholder: '/api/endpoint',            skipBalanceCheck: true },
-    headersExpression:  { label: 'Headers (Name=column, comma-separated)',       placeholder: 'Content-Type=content_type', optional: true, skipBalanceCheck: true },
-    bodyExpression:     { label: 'Body columns (comma-separated, or * for all)', placeholder: 'name,email,age or *',      optional: true, skipBalanceCheck: true },
+    methodExpression:   { label: 'Method (column name or literal)',                        placeholder: 'POST',                                     skipBalanceCheck: true },
+    endpointExpression: { label: 'Endpoint (column name or literal)',                      placeholder: '/api/endpoint',                             skipBalanceCheck: true },
+    headersExpression:  { label: 'Headers (Name=column, comma-separated) (optional)',      placeholder: 'Content-Type=content_type_col, Accept=accept_col', optional: true, skipBalanceCheck: true },
+    bodyExpression:     { label: 'Body columns (comma-separated, or * for all) (optional)', placeholder: 'name, email, age',                         optional: true, skipBalanceCheck: true },
   },
 };
 
@@ -129,9 +156,16 @@ export function TransformStep() {
           id="trans-strategy"
           label="Transformer Strategy"
           value={form.transformerStrategy}
-          onChange={(e: JSX.TargetedEvent<HTMLSelectElement>) =>
-            update('transformerStrategy', (e.currentTarget as HTMLSelectElement).value as TransformerStrategy)
-          }
+          onChange={(e: JSX.TargetedEvent<HTMLSelectElement>) => {
+            const newStrategy = (e.currentTarget as HTMLSelectElement).value as TransformerStrategy;
+            update('transformerStrategy', newStrategy);
+            const defaults = STRATEGY_DEFAULTS[newStrategy];
+            update('methodExpression', defaults.methodExpression);
+            update('endpointExpression', defaults.endpointExpression);
+            update('headersExpression', defaults.headersExpression);
+            update('bodyExpression', defaults.bodyExpression);
+            setTouched({});
+          }}
         >
           <option value="JSONATA">JSONata</option>
           <option value="GOTEMPLATE">Go Template</option>
@@ -139,7 +173,7 @@ export function TransformStep() {
         </Select>
         <p class="field-help">
           <Icon name="info" class="w-3 h-3" />
-          Expressions are evaluated per record from your data file
+          {STRATEGY_HELP[strategy]}
         </p>
       </div>
 
@@ -149,6 +183,7 @@ export function TransformStep() {
           label={cfg.methodExpression.label}
           icon="code"
           code
+          required={!cfg.methodExpression.optional}
           value={form.methodExpression}
           onInput={(e: JSX.TargetedEvent<HTMLInputElement>) =>
             update('methodExpression', (e.currentTarget as HTMLInputElement).value)
@@ -162,6 +197,7 @@ export function TransformStep() {
           label={cfg.endpointExpression.label}
           icon="link"
           code
+          required={!cfg.endpointExpression.optional}
           value={form.endpointExpression}
           onInput={(e: JSX.TargetedEvent<HTMLInputElement>) =>
             update('endpointExpression', (e.currentTarget as HTMLInputElement).value)
@@ -177,6 +213,7 @@ export function TransformStep() {
           id="headers-expr"
           label={cfg.headersExpression.label}
           code
+          required={!cfg.headersExpression.optional}
           rows={3}
           value={form.headersExpression}
           onInput={(e: JSX.TargetedEvent<HTMLTextAreaElement>) =>
@@ -193,7 +230,8 @@ export function TransformStep() {
           id="body-expr"
           label={cfg.bodyExpression.label}
           code
-          rows={5}
+          required={!cfg.bodyExpression.optional}
+          rows={strategy === 'PASSTHROUGH' ? 2 : 5}
           value={form.bodyExpression}
           onInput={(e: JSX.TargetedEvent<HTMLTextAreaElement>) =>
             update('bodyExpression', (e.currentTarget as HTMLTextAreaElement).value)

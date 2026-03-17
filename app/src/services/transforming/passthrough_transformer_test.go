@@ -250,3 +250,48 @@ func TestPassthroughTransformer_GetStrategy(t *testing.T) {
 		t.Errorf("GetStrategy() = %v, want %v", got, modelsEnums.PASSTHROUGH)
 	}
 }
+
+// TestPassthroughTransformer_ColumnNameCollision verifies that when a column
+// name matches a literal value (e.g., column named "POST"), the column value
+// takes precedence. This is the expected behavior of resolveMapping: column
+// lookup happens first, so column values always win over literal strings.
+func TestPassthroughTransformer_ColumnNameCollision(t *testing.T) {
+	t.Parallel()
+
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.PASSTHROUGH,
+		EndpointExpression: "/api/users",
+		MethodExpression:   "POST",
+		BodyExpression:     "*",
+	}
+
+	transformer := NewPassthroughTransformer(modelsEnums.REST, ctx)
+
+	// Data has a column named "POST" which collides with the method literal
+	data := map[string]string{
+		"POST": "column-value-for-POST",
+		"name": "Alice",
+	}
+
+	result, err := transformer.TransformRequest(data)
+	if err != nil {
+		t.Fatalf("TransformRequest() error: %v", err)
+	}
+
+	restReq, ok := result.(*modelsDtoRequests.RestChannelRequest)
+	if !ok {
+		t.Fatalf("expected *RestChannelRequest, got %T", result)
+	}
+
+	// resolveMapping looks up "POST" as a column name first; since it exists,
+	// the method resolves to the column value, not the literal "POST".
+	if restReq.Method != "column-value-for-POST" {
+		t.Errorf("Method = %q, want %q (column value should take precedence over literal)",
+			restReq.Method, "column-value-for-POST")
+	}
+
+	// Endpoint "/api/users" has no matching column, so it stays as literal
+	if restReq.Endpoint != "/api/users" {
+		t.Errorf("Endpoint = %q, want %q", restReq.Endpoint, "/api/users")
+	}
+}

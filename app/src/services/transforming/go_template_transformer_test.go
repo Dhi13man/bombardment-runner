@@ -18,7 +18,10 @@ func TestGoTemplateTransformer_BasicTransform(t *testing.T) {
 		MethodExpression:   `POST`,
 	}
 
-	transformer := NewGoTemplateTransformer(modelsEnums.REST, ctx)
+	transformer, err := NewGoTemplateTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewGoTemplateTransformer() error: %v", err)
+	}
 
 	data := map[string]string{
 		"name": "Alice",
@@ -65,13 +68,16 @@ func TestGoTemplateTransformer_MissingKey(t *testing.T) {
 		MethodExpression:   `GET`,
 	}
 
-	transformer := NewGoTemplateTransformer(modelsEnums.REST, ctx)
+	transformer, err := NewGoTemplateTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewGoTemplateTransformer() error: %v", err)
+	}
 
 	data := map[string]string{
 		"name": "Alice",
 	}
 
-	_, err := transformer.TransformRequest(data)
+	_, err = transformer.TransformRequest(data)
 	if err == nil {
 		t.Fatal("expected error when template references missing key, got nil")
 	}
@@ -87,23 +93,9 @@ func TestGoTemplateTransformer_InvalidTemplateSyntax(t *testing.T) {
 		MethodExpression:   `GET`,
 	}
 
-	transformer := NewGoTemplateTransformer(modelsEnums.REST, ctx)
-
-	data := map[string]string{
-		"name": "Alice",
-	}
-
-	result, err := transformer.TransformRequest(data)
-	if err != nil {
-		t.Fatalf("TransformRequest() unexpected error: %v", err)
-	}
-
-	restReq, ok := result.(*modelsDtoRequests.RestChannelRequest)
-	if !ok {
-		t.Fatalf("expected *RestChannelRequest, got %T", result)
-	}
-	if restReq.Endpoint != "/api/test" {
-		t.Errorf("Endpoint = %q, want %q", restReq.Endpoint, "/api/test")
+	_, err := NewGoTemplateTransformer(modelsEnums.REST, ctx)
+	if err == nil {
+		t.Fatal("expected error for invalid template syntax, got nil")
 	}
 }
 
@@ -116,7 +108,10 @@ func TestGoTemplateTransformer_EmptyData(t *testing.T) {
 		MethodExpression:   `DELETE`,
 	}
 
-	transformer := NewGoTemplateTransformer(modelsEnums.REST, ctx)
+	transformer, err := NewGoTemplateTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewGoTemplateTransformer() error: %v", err)
+	}
 
 	data := map[string]string{}
 
@@ -143,7 +138,10 @@ func TestGoTemplateTransformer_GetStrategy(t *testing.T) {
 	ctx := modelsDtoTransforming.TransformerContext{
 		Strategy: modelsEnums.GO_TEMPLATE,
 	}
-	transformer := NewGoTemplateTransformer(modelsEnums.REST, ctx)
+	transformer, err := NewGoTemplateTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewGoTemplateTransformer() error: %v", err)
+	}
 
 	if got := transformer.GetStrategy(); got != modelsEnums.GO_TEMPLATE {
 		t.Errorf("GetStrategy() = %v, want %v", got, modelsEnums.GO_TEMPLATE)
@@ -160,7 +158,10 @@ func TestGoTemplateTransformer_HeadersExpression(t *testing.T) {
 		HeadersExpression:  "Content-Type: application/json\nX-Custom: {{.custom_header}}",
 	}
 
-	transformer := NewGoTemplateTransformer(modelsEnums.REST, ctx)
+	transformer, err := NewGoTemplateTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewGoTemplateTransformer() error: %v", err)
+	}
 
 	data := map[string]string{
 		"custom_header": "my-value",
@@ -250,5 +251,44 @@ func TestParseHeaderString(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestGoTemplateTransformer_NonJSONBody(t *testing.T) {
+	t.Parallel()
+
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.GO_TEMPLATE,
+		BodyExpression:     `Hello {{.name}}`,
+		EndpointExpression: `/api/greet`,
+		MethodExpression:   `POST`,
+	}
+
+	transformer, err := NewGoTemplateTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewGoTemplateTransformer() error: %v", err)
+	}
+
+	data := map[string]string{
+		"name": "Alice",
+	}
+
+	result, err := transformer.TransformRequest(data)
+	if err != nil {
+		t.Fatalf("TransformRequest() error: %v", err)
+	}
+
+	restReq, ok := result.(*modelsDtoRequests.RestChannelRequest)
+	if !ok {
+		t.Fatalf("expected *RestChannelRequest, got %T", result)
+	}
+
+	// Body should be a raw string since "Hello Alice" is not valid JSON
+	bodyStr, ok := restReq.Body.(string)
+	if !ok {
+		t.Fatalf("Body should be a string for non-JSON template output, got %T", restReq.Body)
+	}
+	if bodyStr != "Hello Alice" {
+		t.Errorf("Body = %q, want %q", bodyStr, "Hello Alice")
 	}
 }

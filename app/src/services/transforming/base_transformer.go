@@ -21,9 +21,9 @@ func CreateTransformer(
 ) (BaseTransformer, error) {
 	switch context.Strategy {
 	case modelsEnums.JSONATA:
-		return NewJsonataTransformer(clientChannel, context), nil
+		return NewJsonataTransformer(clientChannel, context)
 	case modelsEnums.GO_TEMPLATE:
-		return NewGoTemplateTransformer(clientChannel, context), nil
+		return NewGoTemplateTransformer(clientChannel, context)
 	case modelsEnums.PASSTHROUGH:
 		return NewPassthroughTransformer(clientChannel, context), nil
 	default:

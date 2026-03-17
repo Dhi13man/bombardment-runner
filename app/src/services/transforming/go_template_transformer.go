@@ -12,7 +12,6 @@ import (
 	modelsDtoRequests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
 	modelsDtoTransforming "github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
 	modelsEnums "github.dhi13man.com/bombardment-runner/src/models/enums"
-	"go.uber.org/zap"
 )
 
 var bufPool = sync.Pool{
@@ -40,23 +39,31 @@ func (gt *goTemplateTransformer) GetStrategy() modelsEnums.TransformerStrategy {
 func NewGoTemplateTransformer(
 	clientChannel modelsEnums.ClientChannel,
 	transformerContext modelsDtoTransforming.TransformerContext,
-) GoTemplateTransformer {
+) (GoTemplateTransformer, error) {
 	transformer := goTemplateTransformer{clientChannel: clientChannel}
 
-	if t := parseTemplateGracefully("body", transformerContext.BodyExpression); t != nil {
+	if t, err := parseTemplate("body", transformerContext.BodyExpression); err != nil {
+		return nil, err
+	} else {
 		transformer.bodyTemplate = t
 	}
-	if t := parseTemplateGracefully("endpoint", transformerContext.EndpointExpression); t != nil {
+	if t, err := parseTemplate("endpoint", transformerContext.EndpointExpression); err != nil {
+		return nil, err
+	} else {
 		transformer.endpointTemplate = t
 	}
-	if t := parseTemplateGracefully("headers", transformerContext.HeadersExpression); t != nil {
+	if t, err := parseTemplate("headers", transformerContext.HeadersExpression); err != nil {
+		return nil, err
+	} else {
 		transformer.headersTemplate = t
 	}
-	if t := parseTemplateGracefully("method", transformerContext.MethodExpression); t != nil {
+	if t, err := parseTemplate("method", transformerContext.MethodExpression); err != nil {
+		return nil, err
+	} else {
 		transformer.methodTemplate = t
 	}
 
-	return &transformer
+	return &transformer, nil
 }
 
 func (gt *goTemplateTransformer) TransformRequest(data map[string]string) (
@@ -109,21 +116,17 @@ func (gt *goTemplateTransformer) TransformRequest(data map[string]string) (
 	return createChannelRequest(gt.clientChannel, endpoint, body, headers, method)
 }
 
-func parseTemplateGracefully(name, text string) *template.Template {
+func parseTemplate(name, text string) (*template.Template, error) {
 	if text == "" {
-		return nil
+		return nil, nil
 	}
 	// No custom functions registered. Built-in template functions (printf, len, etc.)
 	// remain available but are safe since data values are plain strings.
 	t, err := template.New(name).Funcs(template.FuncMap{}).Option("missingkey=error").Parse(text)
 	if err != nil {
-		zap.L().Error("Error parsing Go template",
-			zap.String("name", name),
-			zap.Error(err),
-		)
-		return nil
+		return nil, fmt.Errorf("invalid Go template %q: %w", name, err)
 	}
-	return t
+	return t, nil
 }
 
 func executeTemplate(t *template.Template, data map[string]string) (string, error) {
