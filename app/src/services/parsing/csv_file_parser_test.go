@@ -16,7 +16,6 @@ func init() {
 	zap.ReplaceGlobals(logger)
 }
 
-// writeTempCSV is a test helper that creates a temporary CSV file with the given content.
 func writeTempCSV(t *testing.T, content string) string {
 	t.Helper()
 

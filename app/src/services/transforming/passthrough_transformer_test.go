@@ -53,7 +53,6 @@ func TestPassthroughTransformer_SpecificColumns(t *testing.T) {
 	if bodyMap["age"] != "30" {
 		t.Errorf("Body[age] = %v, want 30", bodyMap["age"])
 	}
-	// email should not be included
 	if _, exists := bodyMap["email"]; exists {
 		t.Error("Body should not contain email column")
 	}
@@ -288,7 +287,6 @@ func TestPassthroughTransformer_MissingBodyColumn(t *testing.T) {
 	if bodyMap["name"] != "Alice" {
 		t.Errorf("Body[name] = %v, want Alice", bodyMap["name"])
 	}
-	// nonexistent_col should not be present
 	if _, exists := bodyMap["nonexistent_col"]; exists {
 		t.Error("Body should not contain nonexistent_col")
 	}
@@ -321,18 +319,15 @@ func TestPassthroughTransformer_EmptyMappings(t *testing.T) {
 		t.Fatalf("expected *RestChannelRequest, got %T", result)
 	}
 
-	// Empty endpoint and method mapping should produce empty strings
 	if restReq.Endpoint != "" {
 		t.Errorf("Endpoint = %q, want empty string", restReq.Endpoint)
 	}
 	if restReq.Method != "" {
 		t.Errorf("Method = %q, want empty string", restReq.Method)
 	}
-	// No body columns means body is nil
 	if restReq.Body != nil {
 		t.Errorf("Body = %v, want nil", restReq.Body)
 	}
-	// No headers
 	if restReq.Headers != nil {
 		t.Errorf("Headers = %v, want nil", restReq.Headers)
 	}
