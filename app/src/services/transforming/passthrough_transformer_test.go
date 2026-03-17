@@ -251,6 +251,218 @@ func TestPassthroughTransformer_GetStrategy(t *testing.T) {
 	}
 }
 
+func TestPassthroughTransformer_MissingBodyColumn(t *testing.T) {
+	t.Parallel()
+
+	// Arrange - body references columns that do not exist in data
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.PASSTHROUGH,
+		BodyExpression:     "name, nonexistent_col",
+		EndpointExpression: "/api/test",
+		MethodExpression:   "POST",
+	}
+
+	transformer := NewPassthroughTransformer(modelsEnums.REST, ctx)
+
+	data := map[string]string{
+		"name": "Alice",
+	}
+
+	// Act
+	result, err := transformer.TransformRequest(data)
+
+	// Assert - should succeed but missing column is just omitted (with warning log)
+	if err != nil {
+		t.Fatalf("TransformRequest() error: %v", err)
+	}
+
+	restReq, ok := result.(*modelsDtoRequests.RestChannelRequest)
+	if !ok {
+		t.Fatalf("expected *RestChannelRequest, got %T", result)
+	}
+
+	bodyMap, ok := restReq.Body.(map[string]interface{})
+	if !ok {
+		t.Fatalf("Body is not map[string]interface{}, got %T", restReq.Body)
+	}
+	if bodyMap["name"] != "Alice" {
+		t.Errorf("Body[name] = %v, want Alice", bodyMap["name"])
+	}
+	// nonexistent_col should not be present
+	if _, exists := bodyMap["nonexistent_col"]; exists {
+		t.Error("Body should not contain nonexistent_col")
+	}
+}
+
+func TestPassthroughTransformer_EmptyMappings(t *testing.T) {
+	t.Parallel()
+
+	// Arrange - all expressions empty: resolveMapping with empty string should return ""
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy: modelsEnums.PASSTHROUGH,
+	}
+
+	transformer := NewPassthroughTransformer(modelsEnums.REST, ctx)
+
+	data := map[string]string{
+		"name": "Alice",
+	}
+
+	// Act
+	result, err := transformer.TransformRequest(data)
+
+	// Assert
+	if err != nil {
+		t.Fatalf("TransformRequest() error: %v", err)
+	}
+
+	restReq, ok := result.(*modelsDtoRequests.RestChannelRequest)
+	if !ok {
+		t.Fatalf("expected *RestChannelRequest, got %T", result)
+	}
+
+	// Empty endpoint and method mapping should produce empty strings
+	if restReq.Endpoint != "" {
+		t.Errorf("Endpoint = %q, want empty string", restReq.Endpoint)
+	}
+	if restReq.Method != "" {
+		t.Errorf("Method = %q, want empty string", restReq.Method)
+	}
+	// No body columns means body is nil
+	if restReq.Body != nil {
+		t.Errorf("Body = %v, want nil", restReq.Body)
+	}
+	// No headers
+	if restReq.Headers != nil {
+		t.Errorf("Headers = %v, want nil", restReq.Headers)
+	}
+}
+
+func TestPassthroughTransformer_HeaderMappingWithMissingColumn(t *testing.T) {
+	t.Parallel()
+
+	// Arrange - header maps to a column that does not exist; resolveMapping
+	// falls through to returning the mapping string as a literal
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.PASSTHROUGH,
+		EndpointExpression: "/api/test",
+		MethodExpression:   "POST",
+		HeadersExpression:  "Content-Type=application/json",
+	}
+
+	transformer := NewPassthroughTransformer(modelsEnums.REST, ctx)
+
+	// data does not contain "application/json" as a column name
+	data := map[string]string{
+		"name": "Alice",
+	}
+
+	// Act
+	result, err := transformer.TransformRequest(data)
+
+	// Assert
+	if err != nil {
+		t.Fatalf("TransformRequest() error: %v", err)
+	}
+
+	restReq, ok := result.(*modelsDtoRequests.RestChannelRequest)
+	if !ok {
+		t.Fatalf("expected *RestChannelRequest, got %T", result)
+	}
+
+	// "application/json" is not a column name, so it falls through as a literal
+	if restReq.Headers["Content-Type"] != "application/json" {
+		t.Errorf("Headers[Content-Type] = %q, want %q", restReq.Headers["Content-Type"], "application/json")
+	}
+}
+
+func TestPassthroughTransformer_BodyExpressionWithWhitespaceOnly(t *testing.T) {
+	t.Parallel()
+
+	// Arrange - body expression is " , , " which after trimming yields no columns
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.PASSTHROUGH,
+		BodyExpression:     " , , ",
+		EndpointExpression: "/api/test",
+		MethodExpression:   "POST",
+	}
+
+	transformer := NewPassthroughTransformer(modelsEnums.REST, ctx)
+
+	data := map[string]string{"name": "Alice"}
+
+	// Act
+	result, err := transformer.TransformRequest(data)
+
+	// Assert
+	if err != nil {
+		t.Fatalf("TransformRequest() error: %v", err)
+	}
+
+	restReq, ok := result.(*modelsDtoRequests.RestChannelRequest)
+	if !ok {
+		t.Fatalf("expected *RestChannelRequest, got %T", result)
+	}
+
+	// Empty column list means body should be nil (no columns after trimming)
+	if restReq.Body != nil {
+		t.Errorf("Body = %v, want nil (whitespace-only body expression)", restReq.Body)
+	}
+}
+
+func TestPassthroughTransformer_InvalidClientChannel(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.PASSTHROUGH,
+		EndpointExpression: "/api/test",
+		MethodExpression:   "POST",
+	}
+
+	transformer := NewPassthroughTransformer(modelsEnums.ClientChannel("INVALID"), ctx)
+
+	// Act
+	_, err := transformer.TransformRequest(map[string]string{})
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error for invalid client channel, got nil")
+	}
+}
+
+func TestPassthroughTransformer_HeaderExpressionWithSinglePairNoEquals(t *testing.T) {
+	t.Parallel()
+
+	// Arrange - header expression that has no "=" sign should be skipped
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.PASSTHROUGH,
+		EndpointExpression: "/api/test",
+		MethodExpression:   "POST",
+		HeadersExpression:  "no-equals-sign",
+	}
+
+	transformer := NewPassthroughTransformer(modelsEnums.REST, ctx)
+
+	// Act
+	result, err := transformer.TransformRequest(map[string]string{})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("TransformRequest() error: %v", err)
+	}
+
+	restReq, ok := result.(*modelsDtoRequests.RestChannelRequest)
+	if !ok {
+		t.Fatalf("expected *RestChannelRequest, got %T", result)
+	}
+
+	// No valid header pairs parsed, so headers should be nil
+	if restReq.Headers != nil {
+		t.Errorf("Headers = %v, want nil (no valid key=value pairs)", restReq.Headers)
+	}
+}
+
 // TestPassthroughTransformer_ColumnNameCollision verifies that when a column
 // name matches a literal value (e.g., column named "POST"), the column value
 // takes precedence. This is the expected behavior of resolveMapping: column

@@ -98,6 +98,7 @@ func TestCreateTransformer_WhenInvalidStrategy_ThenReturnsError(t *testing.T) {
 		strategy modelsEnums.TransformerStrategy
 	}{
 		{"unknown strategy", modelsEnums.TransformerStrategy("UNKNOWN")},
+		{"empty strategy", modelsEnums.TransformerStrategy("")},
 	}
 
 	for _, tt := range tests {
@@ -118,6 +119,58 @@ func TestCreateTransformer_WhenInvalidStrategy_ThenReturnsError(t *testing.T) {
 			}
 			if transformer != nil {
 				t.Errorf("expected nil transformer for invalid strategy, got %v", transformer)
+			}
+		})
+	}
+}
+
+func TestCreateChannelRequest_WhenREST_ThenReturnsRestChannelRequest(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	body := map[string]string{"key": "value"}
+	headers := map[string]string{"Content-Type": "application/json"}
+
+	// Act
+	req, err := createChannelRequest(modelsEnums.REST, "/api/test", body, headers, "POST")
+
+	// Assert
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if req == nil {
+		t.Fatal("expected non-nil request")
+	}
+	if req.GetChannel() != modelsEnums.REST {
+		t.Errorf("GetChannel() = %v, want %v", req.GetChannel(), modelsEnums.REST)
+	}
+}
+
+func TestCreateChannelRequest_WhenInvalidChannel_ThenReturnsError(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		channel modelsEnums.ClientChannel
+	}{
+		{"GRPC channel", modelsEnums.GRPC},
+		{"KAFKA channel", modelsEnums.KAFKA},
+		{"unknown channel", modelsEnums.ClientChannel("UNKNOWN")},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Act
+			req, err := createChannelRequest(tt.channel, "/api/test", nil, nil, "GET")
+
+			// Assert
+			if err == nil {
+				t.Fatalf("expected error for channel %q, got nil", tt.channel)
+			}
+			if req != nil {
+				t.Errorf("expected nil request for invalid channel, got %v", req)
 			}
 		})
 	}

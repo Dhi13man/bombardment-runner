@@ -1,6 +1,7 @@
 package transforming
 
 import (
+	"strings"
 	"testing"
 
 	modelsDtoRequests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
@@ -184,5 +185,295 @@ func TestJsonataTransformer_HeadersExpression(t *testing.T) {
 	}
 	if restReq.Headers["X-Custom"] != "my-value" {
 		t.Errorf("Headers[X-Custom] = %q, want %q", restReq.Headers["X-Custom"], "my-value")
+	}
+}
+
+func TestJsonataTransformer_ConstructorErrorPaths(t *testing.T) {
+	t.Parallel()
+
+	invalidExpr := `!!!invalid!!!`
+
+	tests := []struct {
+		name    string
+		ctx     modelsDtoTransforming.TransformerContext
+		wantSub string
+	}{
+		{
+			name: "invalid endpoint expression",
+			ctx: modelsDtoTransforming.TransformerContext{
+				Strategy:           modelsEnums.JSONATA,
+				BodyExpression:     `$`,
+				EndpointExpression: invalidExpr,
+				MethodExpression:   `"GET"`,
+			},
+			wantSub: "endpoint",
+		},
+		{
+			name: "invalid headers expression",
+			ctx: modelsDtoTransforming.TransformerContext{
+				Strategy:          modelsEnums.JSONATA,
+				BodyExpression:    `$`,
+				EndpointExpression: `"/api"`,
+				HeadersExpression: invalidExpr,
+				MethodExpression:  `"GET"`,
+			},
+			wantSub: "headers",
+		},
+		{
+			name: "invalid method expression",
+			ctx: modelsDtoTransforming.TransformerContext{
+				Strategy:           modelsEnums.JSONATA,
+				BodyExpression:     `$`,
+				EndpointExpression: `"/api"`,
+				MethodExpression:   invalidExpr,
+			},
+			wantSub: "method",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Act
+			transformer, err := NewJsonataTransformer(modelsEnums.REST, tt.ctx)
+
+			// Assert
+			if err == nil {
+				t.Fatal("expected error for invalid expression, got nil")
+			}
+			if transformer != nil {
+				t.Errorf("expected nil transformer on error, got %v", transformer)
+			}
+			if !strings.Contains(err.Error(), tt.wantSub) {
+				t.Errorf("error %q should contain %q", err.Error(), tt.wantSub)
+			}
+		})
+	}
+}
+
+func TestJsonataTransformer_EndpointNilResult(t *testing.T) {
+	t.Parallel()
+
+	// Arrange - endpoint expression evaluates to nil on given data
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.JSONATA,
+		EndpointExpression: `nonexistent_field`,
+		MethodExpression:   `"GET"`,
+	}
+
+	transformer, err := NewJsonataTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
+
+	// Act
+	_, err = transformer.TransformRequest(map[string]string{"other": "value"})
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error when endpoint evaluates to nil, got nil")
+	}
+	if !strings.Contains(err.Error(), "endpoint") {
+		t.Errorf("error %q should reference endpoint", err.Error())
+	}
+}
+
+func TestJsonataTransformer_EndpointNonStringResult(t *testing.T) {
+	t.Parallel()
+
+	// Arrange - endpoint evaluates to a number, not a string
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.JSONATA,
+		EndpointExpression: `42`,
+		MethodExpression:   `"GET"`,
+	}
+
+	transformer, err := NewJsonataTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
+
+	// Act
+	_, err = transformer.TransformRequest(map[string]string{"key": "value"})
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error when endpoint is non-string, got nil")
+	}
+	if !strings.Contains(err.Error(), "endpoint expression must evaluate to string") {
+		t.Errorf("error %q should indicate endpoint type mismatch", err.Error())
+	}
+}
+
+func TestJsonataTransformer_MethodNilResult(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.JSONATA,
+		EndpointExpression: `"/api/test"`,
+		MethodExpression:   `nonexistent_field`,
+	}
+
+	transformer, err := NewJsonataTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
+
+	// Act
+	_, err = transformer.TransformRequest(map[string]string{"other": "value"})
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error when method evaluates to nil, got nil")
+	}
+	if !strings.Contains(err.Error(), "method") {
+		t.Errorf("error %q should reference method", err.Error())
+	}
+}
+
+func TestJsonataTransformer_MethodNonStringResult(t *testing.T) {
+	t.Parallel()
+
+	// Arrange - method evaluates to a number
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.JSONATA,
+		EndpointExpression: `"/api/test"`,
+		MethodExpression:   `99`,
+	}
+
+	transformer, err := NewJsonataTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
+
+	// Act
+	_, err = transformer.TransformRequest(map[string]string{"key": "value"})
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error when method is non-string, got nil")
+	}
+	if !strings.Contains(err.Error(), "method expression must evaluate to string") {
+		t.Errorf("error %q should indicate method type mismatch", err.Error())
+	}
+}
+
+func TestJsonataTransformer_HeadersNilResult(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.JSONATA,
+		EndpointExpression: `"/api/test"`,
+		MethodExpression:   `"GET"`,
+		HeadersExpression:  `nonexistent_field`,
+	}
+
+	transformer, err := NewJsonataTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
+
+	// Act
+	_, err = transformer.TransformRequest(map[string]string{"other": "value"})
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error when headers evaluates to nil, got nil")
+	}
+	if !strings.Contains(err.Error(), "headers") {
+		t.Errorf("error %q should reference headers", err.Error())
+	}
+}
+
+func TestJsonataTransformer_HeadersNonMapResult(t *testing.T) {
+	t.Parallel()
+
+	// Arrange - headers expression evaluates to a string, not a map
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.JSONATA,
+		EndpointExpression: `"/api/test"`,
+		MethodExpression:   `"GET"`,
+		HeadersExpression:  `"not-a-map"`,
+	}
+
+	transformer, err := NewJsonataTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
+
+	// Act
+	_, err = transformer.TransformRequest(map[string]string{"key": "value"})
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error when headers is non-map, got nil")
+	}
+	if !strings.Contains(err.Error(), "headers expression must evaluate to map") {
+		t.Errorf("error %q should indicate headers type mismatch", err.Error())
+	}
+}
+
+func TestJsonataTransformer_HeadersNonStringValues(t *testing.T) {
+	t.Parallel()
+
+	// Arrange - headers map with a non-string value (numeric)
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.JSONATA,
+		EndpointExpression: `"/api/test"`,
+		MethodExpression:   `"GET"`,
+		HeadersExpression:  `{"X-Count": 42, "Content-Type": "text/plain"}`,
+	}
+
+	transformer, err := NewJsonataTransformer(modelsEnums.REST, ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
+
+	// Act
+	result, err := transformer.TransformRequest(map[string]string{"key": "value"})
+
+	// Assert
+	if err != nil {
+		t.Fatalf("TransformRequest() unexpected error: %v", err)
+	}
+
+	restReq, ok := result.(*modelsDtoRequests.RestChannelRequest)
+	if !ok {
+		t.Fatalf("expected *RestChannelRequest, got %T", result)
+	}
+
+	// Non-string value should be converted via Sprintf
+	if restReq.Headers["X-Count"] == "" {
+		t.Error("expected X-Count header to be set from non-string value")
+	}
+	if restReq.Headers["Content-Type"] != "text/plain" {
+		t.Errorf("Headers[Content-Type] = %q, want %q", restReq.Headers["Content-Type"], "text/plain")
+	}
+}
+
+func TestJsonataTransformer_InvalidClientChannel(t *testing.T) {
+	t.Parallel()
+
+	// Arrange - valid expressions, but unsupported client channel
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.JSONATA,
+		EndpointExpression: `"/api/test"`,
+		MethodExpression:   `"POST"`,
+	}
+
+	transformer, err := NewJsonataTransformer(modelsEnums.ClientChannel("INVALID"), ctx)
+	if err != nil {
+		t.Fatalf("NewJsonataTransformer() error: %v", err)
+	}
+
+	// Act
+	_, err = transformer.TransformRequest(map[string]string{})
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error for invalid client channel, got nil")
 	}
 }

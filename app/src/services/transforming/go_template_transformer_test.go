@@ -1,6 +1,7 @@
 package transforming
 
 import (
+	"strings"
 	"testing"
 
 	modelsDtoRequests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
@@ -251,6 +252,155 @@ func TestParseHeaderString(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestGoTemplateTransformer_ConstructorErrorPaths(t *testing.T) {
+	t.Parallel()
+
+	invalidTemplate := `{{.unclosed`
+
+	tests := []struct {
+		name    string
+		ctx     modelsDtoTransforming.TransformerContext
+		wantSub string // substring expected in the error message
+	}{
+		{
+			name: "invalid endpoint template",
+			ctx: modelsDtoTransforming.TransformerContext{
+				Strategy:           modelsEnums.GO_TEMPLATE,
+				BodyExpression:     `valid body`,
+				EndpointExpression: invalidTemplate,
+				MethodExpression:   `GET`,
+			},
+			wantSub: "endpoint",
+		},
+		{
+			name: "invalid headers template",
+			ctx: modelsDtoTransforming.TransformerContext{
+				Strategy:           modelsEnums.GO_TEMPLATE,
+				BodyExpression:     `valid body`,
+				EndpointExpression: `/api/test`,
+				HeadersExpression:  invalidTemplate,
+				MethodExpression:   `GET`,
+			},
+			wantSub: "headers",
+		},
+		{
+			name: "invalid method template",
+			ctx: modelsDtoTransforming.TransformerContext{
+				Strategy:           modelsEnums.GO_TEMPLATE,
+				BodyExpression:     `valid body`,
+				EndpointExpression: `/api/test`,
+				MethodExpression:   invalidTemplate,
+			},
+			wantSub: "method",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Act
+			transformer, err := NewGoTemplateTransformer(modelsEnums.REST, tt.ctx)
+
+			// Assert
+			if err == nil {
+				t.Fatal("expected error for invalid template, got nil")
+			}
+			if transformer != nil {
+				t.Errorf("expected nil transformer on error, got %v", transformer)
+			}
+			if !strings.Contains(err.Error(), tt.wantSub) {
+				t.Errorf("error %q should contain %q", err.Error(), tt.wantSub)
+			}
+		})
+	}
+}
+
+func TestGoTemplateTransformer_ExecutionErrorPaths(t *testing.T) {
+	t.Parallel()
+
+	// Each test sets a template that references a missing key for a specific
+	// field, while leaving other fields empty (nil template) to isolate the
+	// error to exactly one branch.
+	tests := []struct {
+		name    string
+		ctx     modelsDtoTransforming.TransformerContext
+		wantSub string
+	}{
+		{
+			name: "endpoint execution error on missing key",
+			ctx: modelsDtoTransforming.TransformerContext{
+				Strategy:           modelsEnums.GO_TEMPLATE,
+				EndpointExpression: `{{.missing_key}}`,
+			},
+			wantSub: "endpoint template execution failed",
+		},
+		{
+			name: "headers execution error on missing key",
+			ctx: modelsDtoTransforming.TransformerContext{
+				Strategy:          modelsEnums.GO_TEMPLATE,
+				HeadersExpression: `X-Key: {{.missing_key}}`,
+			},
+			wantSub: "headers template execution failed",
+		},
+		{
+			name: "method execution error on missing key",
+			ctx: modelsDtoTransforming.TransformerContext{
+				Strategy:         modelsEnums.GO_TEMPLATE,
+				MethodExpression: `{{.missing_key}}`,
+			},
+			wantSub: "method template execution failed",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Arrange
+			transformer, err := NewGoTemplateTransformer(modelsEnums.REST, tt.ctx)
+			if err != nil {
+				t.Fatalf("NewGoTemplateTransformer() unexpected error: %v", err)
+			}
+
+			// Act - data does not contain "missing_key" so missingkey=error fires
+			_, err = transformer.TransformRequest(map[string]string{"other": "value"})
+
+			// Assert
+			if err == nil {
+				t.Fatal("expected error for missing key during template execution, got nil")
+			}
+			if !strings.Contains(err.Error(), tt.wantSub) {
+				t.Errorf("error %q should contain %q", err.Error(), tt.wantSub)
+			}
+		})
+	}
+}
+
+func TestGoTemplateTransformer_InvalidClientChannel(t *testing.T) {
+	t.Parallel()
+
+	// Arrange - valid templates, but invalid client channel
+	ctx := modelsDtoTransforming.TransformerContext{
+		Strategy:           modelsEnums.GO_TEMPLATE,
+		EndpointExpression: `/api/test`,
+		MethodExpression:   `POST`,
+	}
+
+	transformer, err := NewGoTemplateTransformer(modelsEnums.ClientChannel("INVALID"), ctx)
+	if err != nil {
+		t.Fatalf("NewGoTemplateTransformer() error: %v", err)
+	}
+
+	// Act
+	_, err = transformer.TransformRequest(map[string]string{})
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error for invalid client channel, got nil")
 	}
 }
 
