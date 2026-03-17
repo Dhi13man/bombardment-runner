@@ -35,9 +35,12 @@ func NewPassthroughTransformer(
 
 	// Parse body columns
 	if transformerContext.BodyExpression != "" {
-		cols := strings.Split(transformerContext.BodyExpression, ",")
-		for i := range cols {
-			cols[i] = strings.TrimSpace(cols[i])
+		raw := strings.Split(transformerContext.BodyExpression, ",")
+		cols := make([]string, 0, len(raw))
+		for _, c := range raw {
+			if trimmed := strings.TrimSpace(c); trimmed != "" {
+				cols = append(cols, trimmed)
+			}
 		}
 		transformer.bodyColumns = cols
 	}

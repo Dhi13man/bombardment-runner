@@ -98,7 +98,9 @@ func parseTemplateGracefully(name, text string) *template.Template {
 	if text == "" {
 		return nil
 	}
-	t, err := template.New(name).Option("missingkey=error").Parse(text)
+	// Empty FuncMap shadows all built-in template functions (len, print, call, etc.),
+	// restricting templates to pure field interpolation as a defense-in-depth measure.
+	t, err := template.New(name).Funcs(template.FuncMap{}).Option("missingkey=error").Parse(text)
 	if err != nil {
 		zap.L().Error("Error parsing Go template",
 			zap.String("name", name),
