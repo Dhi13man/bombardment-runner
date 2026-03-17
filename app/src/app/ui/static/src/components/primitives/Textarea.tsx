@@ -5,6 +5,7 @@ interface TextareaProps extends JSX.TextareaHTMLAttributes<HTMLTextAreaElement> 
   error?: string;
   help?: string;
   code?: boolean;
+  required?: boolean;
 }
 
 export function Textarea({
@@ -12,6 +13,7 @@ export function Textarea({
   error,
   help,
   code,
+  required,
   id,
   class: className,
   ...rest
@@ -30,6 +32,7 @@ export function Textarea({
         class={classes}
         aria-invalid={error ? 'true' : undefined}
         aria-describedby={error && id ? `${id}-error` : undefined}
+        aria-required={required ? 'true' : undefined}
         {...rest}
       />
       {error && <p id={id ? `${id}-error` : undefined} class="field-error" role="alert">{error}</p>}

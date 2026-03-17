@@ -7,6 +7,7 @@ interface InputProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, 'ic
   help?: string;
   icon?: IconName;
   code?: boolean;
+  required?: boolean;
 }
 
 export function Input({
@@ -15,6 +16,7 @@ export function Input({
   help,
   icon,
   code,
+  required,
   id,
   class: className,
   ...rest
@@ -32,6 +34,7 @@ export function Input({
       class={inputClasses}
       aria-invalid={error ? 'true' : undefined}
       aria-describedby={error && id ? `${id}-error` : undefined}
+      aria-required={required ? 'true' : undefined}
       {...rest}
     />
   );
