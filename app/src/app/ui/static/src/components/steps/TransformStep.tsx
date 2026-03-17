@@ -12,9 +12,6 @@ const STRATEGY_INFO: Record<TransformerStrategy, string> = {
   PASSTHROUGH: 'Map CSV/JSON columns directly to request fields without transformation',
 };
 
-/**
- * Checks for balanced quotes and brackets in an expression.
- */
 function isBalanced(expr: string): boolean {
   const stack: string[] = [];
   const pairs: Record<string, string> = { '(': ')', '[': ']', '{': '}' };
@@ -151,7 +148,6 @@ export function TransformStep() {
 
   return (
     <div>
-      {/* Section Header */}
       <div class="flex items-center gap-3 mb-6">
         <div class="config-card-icon transform">
           <Icon name="sliders-horizontal" size="md" />
@@ -164,7 +160,6 @@ export function TransformStep() {
         </div>
       </div>
 
-      {/* Transformer Strategy */}
       <div class="mb-6">
         <Select
           id="trans-strategy"
@@ -184,7 +179,6 @@ export function TransformStep() {
         </p>
       </div>
 
-      {/* Expression Fields — 2-column grid */}
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <Input
           id="method-expr"
@@ -214,7 +208,6 @@ export function TransformStep() {
         />
       </div>
 
-      {/* Headers Expression (full width) */}
       <div class="mb-4">
         <Textarea
           id="headers-expr"
@@ -231,7 +224,6 @@ export function TransformStep() {
         />
       </div>
 
-      {/* Body Expression (full width) */}
       <div class="mb-4">
         <Textarea
           id="body-expr"

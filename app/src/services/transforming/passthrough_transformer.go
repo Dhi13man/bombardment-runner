@@ -33,7 +33,6 @@ func NewPassthroughTransformer(
 		clientChannel: clientChannel,
 	}
 
-	// Parse body columns
 	if transformerContext.BodyExpression != "" {
 		raw := strings.Split(transformerContext.BodyExpression, ",")
 		cols := make([]string, 0, len(raw))
@@ -45,13 +44,10 @@ func NewPassthroughTransformer(
 		transformer.bodyColumns = cols
 	}
 
-	// Endpoint mapping
 	transformer.endpointMapping = strings.TrimSpace(transformerContext.EndpointExpression)
-
-	// Method mapping
 	transformer.methodMapping = strings.TrimSpace(transformerContext.MethodExpression)
 
-	// Parse header mappings (format: "Header-Name=column_name,Another=col2")
+	// Format: "Header-Name=column_name,Another=col2"
 	if transformerContext.HeadersExpression != "" {
 		transformer.headerMappings = make(map[string]string)
 		pairs := strings.Split(transformerContext.HeadersExpression, ",")
@@ -70,7 +66,6 @@ func (pt *passthroughTransformer) TransformRequest(data map[string]string) (
 	modelsDtoRequests.BaseChannelRequest,
 	error,
 ) {
-	// Build body
 	var body interface{}
 	if len(pt.bodyColumns) > 0 {
 		bodyMap := make(map[string]interface{})
@@ -92,13 +87,9 @@ func (pt *passthroughTransformer) TransformRequest(data map[string]string) (
 		body = bodyMap
 	}
 
-	// Resolve endpoint: if column exists in data, use its value; otherwise treat as literal
 	endpoint := pt.resolveMapping(pt.endpointMapping, data)
-
-	// Resolve method
 	method := pt.resolveMapping(pt.methodMapping, data)
 
-	// Resolve headers
 	var headers map[string]string
 	if len(pt.headerMappings) > 0 {
 		headers = make(map[string]string)

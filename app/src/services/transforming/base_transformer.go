@@ -12,7 +12,6 @@ import (
 type BaseTransformer interface {
 	services.BaseStrategy[modelsEnums.TransformerStrategy]
 
-	// TransformRequest transforms the request data based on the strategy.
 	TransformRequest(data map[string]string) (modelsDtoRequests.BaseChannelRequest, error)
 }
 
@@ -32,7 +31,6 @@ func CreateTransformer(
 	}
 }
 
-// createChannelRequest builds the appropriate channel request based on the client channel type.
 func createChannelRequest(
 	clientChannel modelsEnums.ClientChannel,
 	endpoint string,

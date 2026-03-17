@@ -68,7 +68,6 @@ func TestGoTemplateTransformer_MissingKey(t *testing.T) {
 		"name": "Alice",
 	}
 
-	// With missingkey=error, accessing a missing key should fail.
 	_, err := transformer.TransformRequest(data)
 	if err == nil {
 		t.Fatal("expected error when template references missing key, got nil")
@@ -78,8 +77,6 @@ func TestGoTemplateTransformer_MissingKey(t *testing.T) {
 func TestGoTemplateTransformer_InvalidTemplateSyntax(t *testing.T) {
 	t.Parallel()
 
-	// An invalid template should fail to parse gracefully (nil template),
-	// so the field is skipped during execution.
 	ctx := modelsDtoTransforming.TransformerContext{
 		Strategy:           modelsEnums.GO_TEMPLATE,
 		BodyExpression:     `{{.unclosed`,

@@ -57,8 +57,6 @@ func TestJsonataTransformer_BasicTransform(t *testing.T) {
 func TestJsonataTransformer_NilExpressionResult(t *testing.T) {
 	t.Parallel()
 
-	// Use an expression that references a field not in data, causing eval to
-	// return nil via evalGracefully.
 	ctx := modelsDtoTransforming.TransformerContext{
 		Strategy:           modelsEnums.JSONATA,
 		BodyExpression:     `nonexistent_field`,
@@ -81,9 +79,6 @@ func TestJsonataTransformer_NilExpressionResult(t *testing.T) {
 func TestJsonataTransformer_InvalidExpression(t *testing.T) {
 	t.Parallel()
 
-	// An expression that cannot be compiled should result in a nil expression
-	// stored in the transformer. When the transformer runs, the nil expression
-	// is simply skipped (not evaluated).
 	ctx := modelsDtoTransforming.TransformerContext{
 		Strategy:           modelsEnums.JSONATA,
 		BodyExpression:     `!!!invalid!!!`,
@@ -97,8 +92,6 @@ func TestJsonataTransformer_InvalidExpression(t *testing.T) {
 		"name": "Alice",
 	}
 
-	// With body expression failed to compile, bodyExpression is nil,
-	// so the body field is skipped. The transformer should still succeed.
 	result, err := transformer.TransformRequest(data)
 	if err != nil {
 		t.Fatalf("TransformRequest() unexpected error: %v", err)
@@ -116,7 +109,6 @@ func TestJsonataTransformer_InvalidExpression(t *testing.T) {
 func TestJsonataTransformer_EmptyData(t *testing.T) {
 	t.Parallel()
 
-	// Only a constant endpoint and method, no body/headers expressions.
 	ctx := modelsDtoTransforming.TransformerContext{
 		Strategy:           modelsEnums.JSONATA,
 		EndpointExpression: `"/api/empty"`,
