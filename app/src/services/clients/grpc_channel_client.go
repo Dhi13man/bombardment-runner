@@ -23,11 +23,11 @@ import (
 // JSON payloads over native gRPC without compiled protobuf files.
 type jsonCodec struct{}
 
-func (jsonCodec) Marshal(v interface{}) ([]byte, error) {
+func (jsonCodec) Marshal(v any) ([]byte, error) {
 	return json.Marshal(v)
 }
 
-func (jsonCodec) Unmarshal(data []byte, v interface{}) error {
+func (jsonCodec) Unmarshal(data []byte, v any) error {
 	return json.Unmarshal(data, v)
 }
 

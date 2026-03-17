@@ -24,7 +24,7 @@ const bufSize = 1024 * 1024
 // echoHandler is a generic gRPC handler that echoes the request body back. It
 // also copies incoming metadata into the response trailer so tests can verify
 // metadata propagation.
-func echoHandler(srv interface{}, ctx context.Context, dec func(interface{}) error, _ grpc.UnaryServerInterceptor) (interface{}, error) {
+func echoHandler(srv any, ctx context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
 	var req json.RawMessage
 	if err := dec(&req); err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func echoHandler(srv interface{}, ctx context.Context, dec func(interface{}) err
 }
 
 // errorHandler returns a gRPC error with a specific status code and message.
-func errorHandler(srv interface{}, ctx context.Context, dec func(interface{}) error, _ grpc.UnaryServerInterceptor) (interface{}, error) {
+func errorHandler(srv any, ctx context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
 	var req json.RawMessage
 	if err := dec(&req); err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func errorHandler(srv interface{}, ctx context.Context, dec func(interface{}) er
 }
 
 // slowHandler sleeps for longer than the test timeout before responding.
-func slowHandler(srv interface{}, ctx context.Context, dec func(interface{}) error, _ grpc.UnaryServerInterceptor) (interface{}, error) {
+func slowHandler(srv any, ctx context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
 	var req json.RawMessage
 	if err := dec(&req); err != nil {
 		return nil, err

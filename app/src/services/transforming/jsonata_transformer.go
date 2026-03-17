@@ -52,7 +52,7 @@ func (jt *jsonataTransformer) TransformRequest(data map[string]string) (
 	modelsDtoRequests.BaseChannelRequest,
 	error,
 ) {
-	var body interface{}
+	var body any
 	if bodyExpression := jt.bodyExpression; bodyExpression != nil {
 		result := evalGracefully(bodyExpression, data)
 		if result == nil {
@@ -80,7 +80,7 @@ func (jt *jsonataTransformer) TransformRequest(data map[string]string) (
 		if result == nil {
 			return nil, fmt.Errorf("headers expression evaluation failed for data: %v", data)
 		}
-		headersRaw, ok := result.(map[string]interface{})
+		headersRaw, ok := result.(map[string]any)
 		if !ok {
 			return nil, fmt.Errorf("headers expression must evaluate to map, got %T", result)
 		}
@@ -120,7 +120,7 @@ func (jt *jsonataTransformer) TransformRequest(data map[string]string) (
 func (jt *jsonataTransformer) createChannelRequest(
 	clientChannel modelsEnums.ClientChannel,
 	endpoint string,
-	body interface{},
+	body any,
 	headers map[string]string,
 	method string,
 ) (modelsDtoRequests.BaseChannelRequest, error) {
@@ -138,11 +138,11 @@ func (jt *jsonataTransformer) createChannelRequest(
 			switch v := body.(type) {
 			case string:
 				queryStr = v
-			case map[string]interface{}:
+			case map[string]any:
 				if q, ok := v["query"].(string); ok {
 					queryStr = q
 				}
-				if vars, ok := v["variables"].(map[string]interface{}); ok {
+				if vars, ok := v["variables"].(map[string]any); ok {
 					variables = vars
 				}
 				if op, ok := v["operationName"].(string); ok {
@@ -173,7 +173,7 @@ func compileGracefully(expression string) *jsonata.Expr {
 	return compiled
 }
 
-func evalGracefully(expression *jsonata.Expr, data map[string]string) interface{} {
+func evalGracefully(expression *jsonata.Expr, data map[string]string) any {
 	result, err := expression.Eval(data)
 	if err != nil {
 		zap.L().Error("Error evaluating jsonata expression: ", zap.Error(err))
