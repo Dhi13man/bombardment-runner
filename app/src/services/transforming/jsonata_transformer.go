@@ -128,18 +128,35 @@ func (jt *jsonataTransformer) createChannelRequest(
 	case modelsEnums.REST:
 		return modelsDtoRequests.NewRestChannelRequest(body, endpoint, headers, method), nil
 	case modelsEnums.GRAPHQL:
-		// For GraphQL, body expression should evaluate to the query string
-		queryStr := ""
+		// For GraphQL, body expression can evaluate to either:
+		//   1. A string: treated as a raw query (no variables or operation name)
+		//   2. A map: expected to contain "query" and optionally "variables" and "operationName"
+		var queryStr string
+		var variables map[string]any
+		var operationName string
 		if body != nil {
-			s, ok := body.(string)
-			if !ok {
-				return nil, fmt.Errorf("GraphQL query must be a string, got %T", body)
+			switch v := body.(type) {
+			case string:
+				queryStr = v
+			case map[string]interface{}:
+				if q, ok := v["query"].(string); ok {
+					queryStr = q
+				}
+				if vars, ok := v["variables"].(map[string]interface{}); ok {
+					variables = vars
+				}
+				if op, ok := v["operationName"].(string); ok {
+					operationName = op
+				}
+			default:
+				return nil, fmt.Errorf("GraphQL body must be a string or map, got %T", body)
 			}
-			queryStr = s
 		}
-		return modelsDtoRequests.NewGraphqlChannelRequest(queryStr, nil, endpoint, headers), nil
+		return modelsDtoRequests.NewGraphqlChannelRequest(queryStr, variables, operationName, endpoint, headers), nil
 	case modelsEnums.GRPC:
-		// For gRPC, endpoint expression is used as the service name, method expression as the RPC method
+		// For gRPC: endpoint expression maps to Service, method expression maps
+		// to Method, body expression maps to Body (JSON payload), and headers
+		// expression maps to Metadata (native gRPC metadata).
 		return modelsDtoRequests.NewGrpcChannelRequest(endpoint, method, body, headers), nil
 	default:
 		return nil, errors.New("invalid client channel")

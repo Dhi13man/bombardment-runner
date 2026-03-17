@@ -36,10 +36,18 @@ func (c *graphqlChannelClient) GetStrategy() modelsEnums.ClientChannel {
 	return modelsEnums.GRAPHQL
 }
 
-// graphqlPayload is the JSON body sent to a GraphQL endpoint.
+// graphqlPayload is the standard GraphQL request body format sent to the server.
 type graphqlPayload struct {
-	Query     string         `json:"query"`
-	Variables map[string]any `json:"variables,omitempty"`
+	Query         string         `json:"query"`
+	Variables     map[string]any `json:"variables,omitempty"`
+	OperationName string         `json:"operationName,omitempty"`
+}
+
+// graphqlResponseBody represents the standard GraphQL response format with
+// data and errors fields.
+type graphqlResponseBody struct {
+	Data   json.RawMessage                  `json:"data"`
+	Errors []modelsDtoResponses.GraphqlError `json:"errors"`
 }
 
 func (c *graphqlChannelClient) Execute(
@@ -52,10 +60,11 @@ func (c *graphqlChannelClient) Execute(
 		return nil, errors.New("invalid request type")
 	}
 
-	// Build the GraphQL JSON payload
+	// Build the GraphQL JSON payload with query, variables, and operationName
 	payload := graphqlPayload{
-		Query:     graphqlRequest.Query,
-		Variables: graphqlRequest.Variables,
+		Query:         graphqlRequest.Query,
+		Variables:     graphqlRequest.Variables,
+		OperationName: graphqlRequest.OperationName,
 	}
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
@@ -101,5 +110,27 @@ func (c *graphqlChannelClient) Execute(
 		return nil, err
 	}
 
-	return modelsDtoResponses.NewGraphqlChannelResponse(response.StatusCode, body), nil
+	// Parse the response body to extract GraphQL data and errors
+	var gqlResp graphqlResponseBody
+	var parsedBody any
+	var gqlErrors []modelsDtoResponses.GraphqlError
+
+	if err := json.Unmarshal(body, &gqlResp); err == nil {
+		// Successfully parsed as GraphQL response
+		if gqlResp.Data != nil {
+			// Decode the data field into a generic structure
+			var data any
+			if jsonErr := json.Unmarshal(gqlResp.Data, &data); jsonErr == nil {
+				parsedBody = data
+			} else {
+				parsedBody = gqlResp.Data
+			}
+		}
+		gqlErrors = gqlResp.Errors
+	} else {
+		// Could not parse as GraphQL response; store the raw body
+		parsedBody = body
+	}
+
+	return modelsDtoResponses.NewGraphqlChannelResponse(response.StatusCode, parsedBody, gqlErrors), nil
 }

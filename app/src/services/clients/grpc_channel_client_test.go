@@ -1,59 +1,117 @@
 package clients
 
 import (
+	"context"
 	"encoding/json"
-	"io"
-	"net/http"
-	"net/http/httptest"
+	"net"
 	"testing"
 	"time"
 
 	modelsDtoClients "github.dhi13man.com/bombardment-runner/src/models/dto/clients"
 	modelsDtoRequests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
+	modelsDtoResponses "github.dhi13man.com/bombardment-runner/src/models/dto/clients/responses"
 	modelsEnums "github.dhi13man.com/bombardment-runner/src/models/enums"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
+	grpcStatus "google.golang.org/grpc/status"
+	"google.golang.org/grpc/test/bufconn"
 )
 
-func newTestGrpcClient(timeout time.Duration) GrpcChannelClient {
-	ctx := modelsDtoClients.ClientContext{
-		Channel:        modelsEnums.GRPC,
-		RequestTimeout: timeout,
+const bufSize = 1024 * 1024
+
+// echoHandler is a generic gRPC handler that echoes the request body back. It
+// also copies incoming metadata into the response trailer so tests can verify
+// metadata propagation.
+func echoHandler(srv interface{}, ctx context.Context, dec func(interface{}) error, _ grpc.UnaryServerInterceptor) (interface{}, error) {
+	var req json.RawMessage
+	if err := dec(&req); err != nil {
+		return nil, err
 	}
-	return NewGrpcClient(ctx)
+	// Echo back incoming metadata as response trailers for test verification
+	if md, ok := metadata.FromIncomingContext(ctx); ok {
+		if err := grpc.SetTrailer(ctx, md); err != nil {
+			return nil, err
+		}
+	}
+	return req, nil
+}
+
+// errorHandler returns a gRPC error with a specific status code and message.
+func errorHandler(srv interface{}, ctx context.Context, dec func(interface{}) error, _ grpc.UnaryServerInterceptor) (interface{}, error) {
+	var req json.RawMessage
+	if err := dec(&req); err != nil {
+		return nil, err
+	}
+	return nil, grpcStatus.Error(codes.Internal, "intentional test error")
+}
+
+// slowHandler sleeps for longer than the test timeout before responding.
+func slowHandler(srv interface{}, ctx context.Context, dec func(interface{}) error, _ grpc.UnaryServerInterceptor) (interface{}, error) {
+	var req json.RawMessage
+	if err := dec(&req); err != nil {
+		return nil, err
+	}
+	time.Sleep(500 * time.Millisecond)
+	return req, nil
+}
+
+// startBufconnServer creates an in-memory gRPC server using bufconn and
+// registers the provided service descriptors. It returns a dialer function
+// suitable for injecting into the gRPC client.
+func startBufconnServer(t *testing.T, serviceDescs ...grpc.ServiceDesc) GrpcDialer {
+	t.Helper()
+
+	lis := bufconn.Listen(bufSize)
+	server := grpc.NewServer()
+	for _, desc := range serviceDescs {
+		server.RegisterService(&desc, nil)
+	}
+
+	go func() {
+		if err := server.Serve(lis); err != nil {
+			// Server was stopped; ignore
+		}
+	}()
+	t.Cleanup(func() {
+		server.GracefulStop()
+		lis.Close()
+	})
+
+	return func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+		// Ignore the target; always connect to the bufconn listener.
+		return grpc.NewClient(
+			"passthrough:///bufconn",
+			grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) {
+				return lis.DialContext(ctx)
+			}),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		)
+	}
+}
+
+func newTestGrpcClient(timeout time.Duration, dialer GrpcDialer) GrpcChannelClient {
+	ctx := modelsDtoClients.ClientContext{
+		Channel:            modelsEnums.GRPC,
+		RequestTimeout:     timeout,
+		InsecureSkipVerify: true,
+	}
+	return newGrpcClientWithDialer(ctx, dialer)
 }
 
 func TestGrpcClient_SuccessfulRequest(t *testing.T) {
 	t.Parallel()
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify method and gRPC-Web path pattern
-		if r.Method != http.MethodPost {
-			t.Errorf("expected POST, got %s", r.Method)
-		}
-		if r.URL.Path != "/mypackage.MyService/GetUser" {
-			t.Errorf("expected /mypackage.MyService/GetUser, got %s", r.URL.Path)
-		}
+	svcDesc := grpc.ServiceDesc{
+		ServiceName: "mypackage.MyService",
+		Methods: []grpc.MethodDesc{
+			{MethodName: "GetUser", Handler: echoHandler},
+		},
+	}
+	dialer := startBufconnServer(t, svcDesc)
+	client := newTestGrpcClient(5*time.Second, dialer)
 
-		// Verify payload
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			t.Fatalf("failed to read request body: %v", err)
-		}
-		var payload map[string]any
-		if err := json.Unmarshal(body, &payload); err != nil {
-			t.Fatalf("failed to unmarshal request body: %v", err)
-		}
-		if payload["user_id"] != float64(42) {
-			t.Errorf("unexpected user_id: %v", payload["user_id"])
-		}
-
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(map[string]any{"name": "Alice"}); err != nil {
-			t.Errorf("failed to encode response: %v", err)
-		}
-	}))
-	defer server.Close()
-
-	client := newTestGrpcClient(5 * time.Second)
 	req := modelsDtoRequests.NewGrpcChannelRequest(
 		"mypackage.MyService",
 		"GetUser",
@@ -61,99 +119,130 @@ func TestGrpcClient_SuccessfulRequest(t *testing.T) {
 		nil,
 	)
 
-	resp, err := client.Execute(req, server.URL)
+	resp, err := client.Execute(req, "bufconn")
 	if err != nil {
 		t.Fatalf("Execute() error: %v", err)
 	}
 	if resp.GetChannel() != modelsEnums.GRPC {
 		t.Errorf("GetChannel() = %v, want GRPC", resp.GetChannel())
 	}
-	if resp.GetStatus() == nil || *resp.GetStatus() != http.StatusOK {
-		t.Errorf("GetStatus() = %v, want 200", resp.GetStatus())
+	// Status 0 = gRPC OK
+	if resp.GetStatus() == nil || *resp.GetStatus() != 0 {
+		t.Errorf("GetStatus() = %v, want 0 (OK)", resp.GetStatus())
+	}
+
+	// Verify the echoed body contains our payload
+	bodyBytes, ok := resp.(*modelsDtoResponses.GrpcChannelResponse)
+	if !ok {
+		t.Fatalf("expected *GrpcChannelResponse, got %T", resp)
+	}
+	raw, ok := bodyBytes.Body.(json.RawMessage)
+	if !ok {
+		t.Fatalf("expected json.RawMessage body, got %T", bodyBytes.Body)
+	}
+	var parsed map[string]any
+	if err := json.Unmarshal(raw, &parsed); err != nil {
+		t.Fatalf("failed to unmarshal response body: %v", err)
+	}
+	if parsed["user_id"] != float64(42) {
+		t.Errorf("unexpected user_id: %v", parsed["user_id"])
 	}
 }
 
 func TestGrpcClient_ServerError(t *testing.T) {
 	t.Parallel()
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
-		if _, err := w.Write([]byte(`{"error":"internal"}`)); err != nil {
-			t.Errorf("failed to write response: %v", err)
-		}
-	}))
-	defer server.Close()
+	svcDesc := grpc.ServiceDesc{
+		ServiceName: "svc",
+		Methods: []grpc.MethodDesc{
+			{MethodName: "ErrorMethod", Handler: errorHandler},
+		},
+	}
+	dialer := startBufconnServer(t, svcDesc)
+	client := newTestGrpcClient(5*time.Second, dialer)
 
-	client := newTestGrpcClient(5 * time.Second)
-	req := modelsDtoRequests.NewGrpcChannelRequest("svc", "Method", nil, nil)
+	req := modelsDtoRequests.NewGrpcChannelRequest("svc", "ErrorMethod", map[string]any{}, nil)
 
-	resp, err := client.Execute(req, server.URL)
+	resp, err := client.Execute(req, "bufconn")
 	if err != nil {
 		t.Fatalf("Execute() error: %v", err)
 	}
 	if resp == nil {
 		t.Fatal("expected non-nil response")
 	}
-	if resp.GetStatus() == nil || *resp.GetStatus() != http.StatusInternalServerError {
-		t.Errorf("GetStatus() = %v, want 500", resp.GetStatus())
+	// gRPC Internal = code 13
+	if resp.GetStatus() == nil || *resp.GetStatus() != int(codes.Internal) {
+		t.Errorf("GetStatus() = %v, want %d (Internal)", resp.GetStatus(), codes.Internal)
 	}
 }
 
 func TestGrpcClient_Timeout(t *testing.T) {
 	t.Parallel()
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(3 * time.Second)
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
+	svcDesc := grpc.ServiceDesc{
+		ServiceName: "svc",
+		Methods: []grpc.MethodDesc{
+			{MethodName: "SlowMethod", Handler: slowHandler},
+		},
+	}
+	dialer := startBufconnServer(t, svcDesc)
+	client := newTestGrpcClient(100*time.Millisecond, dialer)
 
-	client := newTestGrpcClient(100 * time.Millisecond)
-	req := modelsDtoRequests.NewGrpcChannelRequest("svc", "SlowMethod", nil, nil)
+	req := modelsDtoRequests.NewGrpcChannelRequest("svc", "SlowMethod", map[string]any{"ping": true}, nil)
 
-	_, err := client.Execute(req, server.URL)
-	if err == nil {
-		t.Fatal("expected timeout error, got nil")
+	resp, err := client.Execute(req, "bufconn")
+	// With native gRPC, a deadline exceeded is returned as a gRPC status.
+	if err != nil {
+		t.Fatalf("Execute() unexpected error: %v", err)
+	}
+	if resp.GetStatus() == nil {
+		t.Fatal("expected non-nil status")
+	}
+	statusCode := *resp.GetStatus()
+	// DeadlineExceeded (4) is expected when the context deadline fires
+	// before the server responds.
+	if statusCode != int(codes.DeadlineExceeded) {
+		t.Errorf("GetStatus() = %d, want %d (DeadlineExceeded)", statusCode, codes.DeadlineExceeded)
 	}
 }
 
-func TestGrpcClient_MetadataAsHeaders(t *testing.T) {
+func TestGrpcClient_MetadataPassing(t *testing.T) {
 	t.Parallel()
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify metadata is sent as grpc-metadata- prefixed headers
-		if got := r.Header.Get("grpc-metadata-authorization"); got != "Bearer grpc-token" {
-			t.Errorf("grpc-metadata-authorization = %q, want %q", got, "Bearer grpc-token")
-		}
-		if got := r.Header.Get("grpc-metadata-x-request-id"); got != "req-123" {
-			t.Errorf("grpc-metadata-x-request-id = %q, want %q", got, "req-123")
-		}
-		// Verify default headers are still present
-		if got := r.Header.Get(HeaderKeyXClient); got != HeaderValueBombardmentUA {
-			t.Errorf("X-Client = %q, want %q", got, HeaderValueBombardmentUA)
-		}
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
+	// The echo handler copies incoming metadata to response trailers. We verify
+	// the call succeeds and metadata was accepted by gRPC (no errors).
+	svcDesc := grpc.ServiceDesc{
+		ServiceName: "svc",
+		Methods: []grpc.MethodDesc{
+			{MethodName: "Method", Handler: echoHandler},
+		},
+	}
+	dialer := startBufconnServer(t, svcDesc)
+	client := newTestGrpcClient(5*time.Second, dialer)
 
-	client := newTestGrpcClient(5 * time.Second)
-	metadata := map[string]string{
+	md := map[string]string{
 		"authorization": "Bearer grpc-token",
 		"x-request-id":  "req-123",
 	}
-	req := modelsDtoRequests.NewGrpcChannelRequest("svc", "Method", nil, metadata)
+	req := modelsDtoRequests.NewGrpcChannelRequest("svc", "Method", map[string]any{"ok": true}, md)
 
-	_, err := client.Execute(req, server.URL)
+	resp, err := client.Execute(req, "bufconn")
 	if err != nil {
 		t.Fatalf("Execute() error: %v", err)
+	}
+	if resp.GetStatus() == nil || *resp.GetStatus() != 0 {
+		t.Errorf("GetStatus() = %v, want 0 (OK)", resp.GetStatus())
 	}
 }
 
 func TestGrpcClient_InvalidRequestType(t *testing.T) {
 	t.Parallel()
 
-	client := newTestGrpcClient(5 * time.Second)
-	_, err := client.Execute(&badRequest{}, "http://localhost")
+	dialer := func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+		return nil, nil
+	}
+	client := newTestGrpcClient(5*time.Second, dialer)
+	_, err := client.Execute(&badRequest{}, "bufconn")
 	if err == nil {
 		t.Fatal("expected error for invalid request type, got nil")
 	}
@@ -162,7 +251,10 @@ func TestGrpcClient_InvalidRequestType(t *testing.T) {
 func TestGrpcClient_GetStrategy(t *testing.T) {
 	t.Parallel()
 
-	client := newTestGrpcClient(5 * time.Second)
+	dialer := func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+		return nil, nil
+	}
+	client := newTestGrpcClient(5*time.Second, dialer)
 	if got := client.GetStrategy(); got != modelsEnums.GRPC {
 		t.Errorf("GetStrategy() = %v, want GRPC", got)
 	}

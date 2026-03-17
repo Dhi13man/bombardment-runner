@@ -1,48 +1,98 @@
 package clients
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
-	"errors"
-	"io"
-	"net/http"
+	"fmt"
+	"sync"
+	"time"
 
 	modelsDtoClients "github.dhi13man.com/bombardment-runner/src/models/dto/clients"
 	modelsDtoRequests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
 	modelsDtoResponses "github.dhi13man.com/bombardment-runner/src/models/dto/clients/responses"
 	modelsEnums "github.dhi13man.com/bombardment-runner/src/models/enums"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/encoding"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
-// GrpcMetadataHeaderPrefix is prepended to gRPC metadata keys when they are
-// sent as HTTP headers in the JSON-over-HTTP transport. Users should specify
-// metadata keys without this prefix; it is added automatically. For example,
-// a metadata entry {"authorization": "Bearer tok"} becomes the HTTP header
-// "grpc-metadata-authorization: Bearer tok".
-const GrpcMetadataHeaderPrefix = "grpc-metadata-"
+// jsonCodec is a gRPC codec that uses JSON marshaling, allowing users to send
+// JSON payloads over native gRPC without compiled protobuf files.
+type jsonCodec struct{}
+
+func (jsonCodec) Marshal(v interface{}) ([]byte, error) {
+	return json.Marshal(v)
+}
+
+func (jsonCodec) Unmarshal(data []byte, v interface{}) error {
+	return json.Unmarshal(data, v)
+}
+
+func (jsonCodec) Name() string {
+	return "json"
+}
+
+func init() {
+	encoding.RegisterCodec(jsonCodec{})
+}
+
+// GrpcDialer abstracts the gRPC dial/connect step so tests can inject an
+// in-memory transport (bufconn) without touching the network.
+type GrpcDialer func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error)
 
 type GrpcChannelClient interface {
 	BaseChannelClient
 }
 
 type grpcChannelClient struct {
-	httpClient *http.Client
+	context     modelsDtoClients.ClientContext
+	connections sync.Map // target -> *grpc.ClientConn
+	dialer      GrpcDialer
 }
 
-// NewGrpcClient creates a new gRPC client that uses a JSON-over-HTTP approach
-// (gRPC-Web compatible endpoint pattern). Requests are POSTed to
-// baseUrl/service/method with the body as JSON.
-//
-// The client reuses the shared HTTP transport for connection pooling and is safe
-// for concurrent use by multiple goroutines.
-func NewGrpcClient(context modelsDtoClients.ClientContext) GrpcChannelClient {
+// NewGrpcClient creates a gRPC client that uses native gRPC with a JSON codec.
+// Connections are cached per target for reuse across concurrent calls.
+func NewGrpcClient(clientCtx modelsDtoClients.ClientContext) GrpcChannelClient {
+	return newGrpcClientWithDialer(clientCtx, grpc.NewClient)
+}
+
+// newGrpcClientWithDialer is an internal constructor that accepts a custom
+// dialer, used by tests to inject bufconn-based connections.
+func newGrpcClientWithDialer(clientCtx modelsDtoClients.ClientContext, dialer GrpcDialer) GrpcChannelClient {
 	return &grpcChannelClient{
-		httpClient: NewHTTPClient(context),
+		context: clientCtx,
+		dialer:  dialer,
 	}
 }
 
 func (c *grpcChannelClient) GetStrategy() modelsEnums.ClientChannel {
 	return modelsEnums.GRPC
+}
+
+func (c *grpcChannelClient) getOrDial(target string) (*grpc.ClientConn, error) {
+	if conn, ok := c.connections.Load(target); ok {
+		return conn.(*grpc.ClientConn), nil
+	}
+
+	var opts []grpc.DialOption
+	if c.context.InsecureSkipVerify {
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	}
+
+	conn, err := c.dialer(target, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("gRPC dial failed for %s: %w", target, err)
+	}
+
+	actual, loaded := c.connections.LoadOrStore(target, conn)
+	if loaded {
+		// Another goroutine dialed first; close the duplicate.
+		conn.Close()
+	}
+	return actual.(*grpc.ClientConn), nil
 }
 
 func (c *grpcChannelClient) Execute(
@@ -51,54 +101,49 @@ func (c *grpcChannelClient) Execute(
 ) (modelsDtoResponses.BaseChannelResponse, error) {
 	grpcRequest, ok := request.(*modelsDtoRequests.GrpcChannelRequest)
 	if !ok {
-		zap.L().Error("Invalid request type: expected *modelsDtoRequests.GrpcChannelRequest")
-		return nil, errors.New("invalid request type")
+		zap.L().Error("Invalid request type: expected *GrpcChannelRequest")
+		return nil, fmt.Errorf("invalid request type: expected *GrpcChannelRequest, got %T", request)
 	}
 
-	// Marshal the body payload
-	payloadBytes, err := json.Marshal(grpcRequest.Body)
+	conn, err := c.getOrDial(baseUrl)
 	if err != nil {
-		zap.L().Error("Payload marshalling failed", zap.Error(err))
 		return nil, err
 	}
 
-	// Build the gRPC-Web compatible URL: baseUrl/service/method
-	url := baseUrl + "/" + grpcRequest.Service + "/" + grpcRequest.Method
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payloadBytes))
+	// Build the full method path: /Service/Method
+	fullMethod := "/" + grpcRequest.Service + "/" + grpcRequest.Method
+
+	// Set up context with timeout
+	timeout := c.context.RequestTimeout
+	if timeout == 0 {
+		timeout = 30 * time.Second
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	// Attach metadata
+	if len(grpcRequest.Metadata) > 0 {
+		md := metadata.New(grpcRequest.Metadata)
+		ctx = metadata.NewOutgoingContext(ctx, md)
+	}
+
+	// Invoke the RPC with JSON codec
+	var response json.RawMessage
+	err = conn.Invoke(ctx, fullMethod, grpcRequest.Body, &response, grpc.ForceCodec(jsonCodec{}))
+
 	if err != nil {
-		zap.L().Error("Request creation failed", zap.Error(err))
-		return nil, err
-	}
-
-	// Set default headers
-	req.Header.Set(HeaderKeyConnection, HeaderValueKeepAlive)
-	req.Header.Set(HeaderKeyContentType, HeaderValueApplicationJSON)
-	req.Header.Set(HeaderKeyAccept, HeaderValueApplicationJSON)
-	req.Header.Set(HeaderKeyXClient, HeaderValueBombardmentUA)
-	req.Header.Set(HeaderKeyCacheControl, HeaderValueNoCache)
-
-	// Apply gRPC metadata as headers with the grpc-metadata- prefix
-	for key, value := range grpcRequest.Metadata {
-		req.Header.Set(GrpcMetadataHeaderPrefix+key, value)
-	}
-
-	zap.S().Debugf("gRPC request created: %v", req)
-	response, err := c.httpClient.Do(req)
-	if err != nil {
-		zap.L().Error("gRPC request failed", zap.Error(err))
-		return nil, err
-	}
-	defer func(Body io.ReadCloser) {
-		if closeErr := Body.Close(); closeErr != nil {
-			zap.L().Error("Response body closing failed", zap.Error(closeErr))
+		st, ok := status.FromError(err)
+		if ok {
+			statusCode := int(st.Code())
+			zap.L().Debug("gRPC call returned status",
+				zap.Int("code", statusCode),
+				zap.String("message", st.Message()),
+			)
+			return modelsDtoResponses.NewGrpcChannelResponse(statusCode, st.Message()), nil
 		}
-	}(response.Body)
-
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		zap.L().Error("Response reading failed", zap.Error(err))
-		return nil, err
+		return nil, fmt.Errorf("gRPC invocation failed: %w", err)
 	}
 
-	return modelsDtoResponses.NewGrpcChannelResponse(response.StatusCode, body), nil
+	// Code 0 = OK
+	return modelsDtoResponses.NewGrpcChannelResponse(0, response), nil
 }

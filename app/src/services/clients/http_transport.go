@@ -11,8 +11,8 @@ import (
 
 // NewHTTPClient creates a shared HTTP client with optimized connection pooling
 // and timeouts derived from the given ClientContext. It is safe for concurrent
-// use by multiple goroutines and is shared across REST, GraphQL, and gRPC-Web
-// channel clients.
+// use by multiple goroutines and is shared across REST and GraphQL channel
+// clients.
 func NewHTTPClient(context modelsDtoClients.ClientContext) *http.Client {
 	// Optimize dialer with configurable keepalive
 	dialer := &net.Dialer{
