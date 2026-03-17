@@ -106,13 +106,18 @@ function getFieldPlaceholder(key: ExprField['key'], strategy: TransformerStrateg
   }
 }
 
-function getFieldError(value: string, label: string, strategy: TransformerStrategy): string {
+function getFieldError(value: string, key: ExprField['key'], strategy: TransformerStrategy): string {
   if (strategy === 'PASSTHROUGH') {
-    // Passthrough fields are not required
+    // Body and headers are optional for passthrough
+    if (key === 'bodyExpression' || key === 'headersExpression') {
+      return '';
+    }
+    // Method and endpoint are required even for passthrough
+    if (!value.trim()) return 'This field is required';
     return '';
   }
-  if (!value.trim()) return `${label} is required`;
-  if (!isBalanced(value)) return `${label} has unbalanced quotes or brackets`;
+  if (!value.trim()) return 'This field is required';
+  if (!isBalanced(value)) return 'Unbalanced quotes or brackets';
   return '';
 }
 
@@ -123,7 +128,7 @@ export function TransformStep() {
 
   const validate = useCallback(() => {
     const allValid = EXPR_FIELDS.every(
-      (f) => !getFieldError(form[f.key], getFieldLabel(f.key, form.transformerStrategy), form.transformerStrategy),
+      (f) => !getFieldError(form[f.key], f.key, form.transformerStrategy),
     );
     setValid(2, allValid);
   }, [form.methodExpression, form.endpointExpression, form.headersExpression, form.bodyExpression, form.transformerStrategy, setValid]);
@@ -139,10 +144,10 @@ export function TransformStep() {
   const headersLabel = getFieldLabel('headersExpression', strategy);
   const bodyLabel = getFieldLabel('bodyExpression', strategy);
 
-  const methodError = getFieldError(form.methodExpression, methodLabel, strategy);
-  const endpointError = getFieldError(form.endpointExpression, endpointLabel, strategy);
-  const headersError = getFieldError(form.headersExpression, headersLabel, strategy);
-  const bodyError = getFieldError(form.bodyExpression, bodyLabel, strategy);
+  const methodError = getFieldError(form.methodExpression, 'methodExpression', strategy);
+  const endpointError = getFieldError(form.endpointExpression, 'endpointExpression', strategy);
+  const headersError = getFieldError(form.headersExpression, 'headersExpression', strategy);
+  const bodyError = getFieldError(form.bodyExpression, 'bodyExpression', strategy);
 
   return (
     <div>

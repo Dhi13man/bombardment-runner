@@ -1,6 +1,7 @@
 package transforming
 
 import (
+	"os"
 	"testing"
 
 	modelsDtoTransforming "github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
@@ -8,8 +9,9 @@ import (
 	"go.uber.org/zap"
 )
 
-func init() {
+func TestMain(m *testing.M) {
 	zap.ReplaceGlobals(zap.NewNop())
+	os.Exit(m.Run())
 }
 
 func TestCreateTransformer_WhenJsonata_ThenReturnsTransformer(t *testing.T) {

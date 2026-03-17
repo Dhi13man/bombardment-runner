@@ -186,3 +186,69 @@ func TestGoTemplateTransformer_HeadersExpression(t *testing.T) {
 		t.Errorf("Headers[X-Custom] = %q, want %q", restReq.Headers["X-Custom"], "my-value")
 	}
 }
+
+func TestParseHeaderString(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		input    string
+		expected map[string]string
+	}{
+		{
+			name:     "basic key-value",
+			input:    "Content-Type: application/json",
+			expected: map[string]string{"Content-Type": "application/json"},
+		},
+		{
+			name:     "multiple headers",
+			input:    "Content-Type: application/json\nAuthorization: Bearer token",
+			expected: map[string]string{"Content-Type": "application/json", "Authorization": "Bearer token"},
+		},
+		{
+			name:     "value with colons",
+			input:    "Authorization: Bearer abc:def:ghi",
+			expected: map[string]string{"Authorization": "Bearer abc:def:ghi"},
+		},
+		{
+			name:     "windows line endings",
+			input:    "Content-Type: text/plain\r\nAccept: */*",
+			expected: map[string]string{"Content-Type": "text/plain", "Accept": "*/*"},
+		},
+		{
+			name:     "empty input",
+			input:    "",
+			expected: map[string]string{},
+		},
+		{
+			name:     "whitespace only lines",
+			input:    "  \n\n  ",
+			expected: map[string]string{},
+		},
+		{
+			name:     "line without colon skipped",
+			input:    "not-a-header\nContent-Type: text/html",
+			expected: map[string]string{"Content-Type": "text/html"},
+		},
+		{
+			name:     "extra whitespace around key and value",
+			input:    "  Content-Type  :  application/json  ",
+			expected: map[string]string{"Content-Type": "application/json"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			result := parseHeaderString(tc.input)
+			if len(result) != len(tc.expected) {
+				t.Fatalf("got %d headers, want %d: %v", len(result), len(tc.expected), result)
+			}
+			for k, want := range tc.expected {
+				if got := result[k]; got != want {
+					t.Errorf("header %q = %q, want %q", k, got, want)
+				}
+			}
+		})
+	}
+}

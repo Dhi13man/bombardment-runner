@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"sync"
 	// text/template used intentionally: output is HTTP request payloads, not HTML.
 	"text/template"
 
@@ -12,6 +13,12 @@ import (
 	modelsEnums "github.dhi13man.com/bombardment-runner/src/models/enums"
 	"go.uber.org/zap"
 )
+
+var bufPool = sync.Pool{
+	New: func() any {
+		return new(bytes.Buffer)
+	},
+}
 
 type GoTemplateTransformer interface {
 	BaseTransformer
@@ -112,8 +119,10 @@ func parseTemplateGracefully(name, text string) *template.Template {
 }
 
 func executeTemplate(t *template.Template, data map[string]string) (string, error) {
-	var buf bytes.Buffer
-	if err := t.Execute(&buf, data); err != nil {
+	buf := bufPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer bufPool.Put(buf)
+	if err := t.Execute(buf, data); err != nil {
 		return "", err
 	}
 	return buf.String(), nil

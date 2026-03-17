@@ -6,13 +6,7 @@ import (
 	modelsDtoRequests "github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
 	modelsDtoTransforming "github.dhi13man.com/bombardment-runner/src/models/dto/transforming"
 	modelsEnums "github.dhi13man.com/bombardment-runner/src/models/enums"
-	"go.uber.org/zap"
 )
-
-func init() {
-	logger := zap.NewNop()
-	zap.ReplaceGlobals(logger)
-}
 
 func TestJsonataTransformer_BasicTransform(t *testing.T) {
 	t.Parallel()
