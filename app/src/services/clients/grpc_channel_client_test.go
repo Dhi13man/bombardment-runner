@@ -70,9 +70,7 @@ func startBufconnServer(t *testing.T, serviceDescs ...grpc.ServiceDesc) GrpcDial
 	}
 
 	go func() {
-		if err := server.Serve(lis); err != nil {
-			// Server was stopped; ignore
-		}
+		_ = server.Serve(lis)
 	}()
 	t.Cleanup(func() {
 		server.GracefulStop()
