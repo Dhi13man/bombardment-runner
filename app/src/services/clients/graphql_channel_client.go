@@ -33,6 +33,10 @@ func (c *graphqlChannelClient) GetStrategy() modelsEnums.ClientChannel {
 	return modelsEnums.GRAPHQL
 }
 
+func (c *graphqlChannelClient) Close() error {
+	return nil
+}
+
 type graphqlPayload struct {
 	Query         string         `json:"query"`
 	Variables     map[string]any `json:"variables,omitempty"`

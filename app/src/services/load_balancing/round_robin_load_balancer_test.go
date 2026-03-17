@@ -22,6 +22,10 @@ func (m *mockClient) GetStrategy() modelsEnums.ClientChannel {
 	return modelsEnums.REST
 }
 
+func (m *mockClient) Close() error {
+	return nil
+}
+
 func (m *mockClient) Execute(
 	_ modelsDtoRequests.BaseChannelRequest,
 	baseUrl string,

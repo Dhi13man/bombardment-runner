@@ -3,7 +3,7 @@ import { useJobForm } from '../../context/JobFormContext';
 import { useWizard } from '../../context/WizardContext';
 import { Select, Input, Textarea } from '../primitives';
 import { Icon } from '../Icon';
-import type { TransformerStrategy } from '../../types/api';
+import type { TransformerStrategy, ClientChannel } from '../../types/api';
 import type { JSX } from 'preact';
 
 const STRATEGY_INFO: Record<TransformerStrategy, string> = {
@@ -42,6 +42,7 @@ function isBalanced(expr: string): boolean {
 interface ExprField {
   key: 'methodExpression' | 'endpointExpression' | 'headersExpression' | 'bodyExpression';
   label: string;
+  placeholder?: string;
 }
 
 const EXPR_FIELDS: ExprField[] = [
@@ -51,10 +52,30 @@ const EXPR_FIELDS: ExprField[] = [
   { key: 'bodyExpression', label: 'Body expression' },
 ];
 
+/** Channel-specific label and placeholder overrides for expression fields. */
+const CHANNEL_FIELD_OVERRIDES: Partial<Record<ClientChannel, Partial<Record<ExprField['key'], { label?: string; placeholder?: string }>>>> = {
+  GRPC: {
+    methodExpression: { label: 'RPC Method', placeholder: '"SayHello"' },
+    endpointExpression: { label: 'Service name', placeholder: '"helloworld.Greeter"' },
+    headersExpression: { label: 'Metadata expression', placeholder: '{"authorization": "Bearer " & token}' },
+  },
+  GRAPHQL: {
+    bodyExpression: { label: 'Query/Body expression', placeholder: '{"query": "mutation { createUser(input: $input) { id } }", "variables": {"input": $}}' },
+  },
+};
+
 function getFieldError(value: string, label: string): string {
   if (!value.trim()) return `${label} is required`;
   if (!isBalanced(value)) return `${label} has unbalanced quotes or brackets`;
   return '';
+}
+
+function getFieldLabel(field: ExprField, channel: ClientChannel): string {
+  return CHANNEL_FIELD_OVERRIDES[channel]?.[field.key]?.label ?? field.label;
+}
+
+function getFieldPlaceholder(field: ExprField, channel: ClientChannel): string | undefined {
+  return CHANNEL_FIELD_OVERRIDES[channel]?.[field.key]?.placeholder ?? field.placeholder;
 }
 
 export function TransformStep() {
@@ -64,19 +85,29 @@ export function TransformStep() {
 
   const validate = useCallback(() => {
     const allValid = EXPR_FIELDS.every(
-      (f) => !getFieldError(form[f.key], f.label),
+      (f) => !getFieldError(form[f.key], getFieldLabel(f, form.clientChannel)),
     );
     setValid(2, allValid);
-  }, [form.methodExpression, form.endpointExpression, form.headersExpression, form.bodyExpression, setValid]);
+  }, [form.methodExpression, form.endpointExpression, form.headersExpression, form.bodyExpression, form.clientChannel, setValid]);
 
   useEffect(() => {
     validate();
   }, [validate]);
 
-  const methodError = getFieldError(form.methodExpression, 'Method expression');
-  const endpointError = getFieldError(form.endpointExpression, 'Endpoint expression');
-  const headersError = getFieldError(form.headersExpression, 'Headers expression');
-  const bodyError = getFieldError(form.bodyExpression, 'Body expression');
+  const methodField = EXPR_FIELDS[0];
+  const endpointField = EXPR_FIELDS[1];
+  const headersField = EXPR_FIELDS[2];
+  const bodyField = EXPR_FIELDS[3];
+
+  const methodLabel = getFieldLabel(methodField, form.clientChannel);
+  const endpointLabel = getFieldLabel(endpointField, form.clientChannel);
+  const headersLabel = getFieldLabel(headersField, form.clientChannel);
+  const bodyLabel = getFieldLabel(bodyField, form.clientChannel);
+
+  const methodError = getFieldError(form.methodExpression, methodLabel);
+  const endpointError = getFieldError(form.endpointExpression, endpointLabel);
+  const headersError = getFieldError(form.headersExpression, headersLabel);
+  const bodyError = getFieldError(form.bodyExpression, bodyLabel);
 
   return (
     <div>
@@ -116,27 +147,27 @@ export function TransformStep() {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <Input
           id="method-expr"
-          label="Method Expression"
+          label={methodLabel}
           icon="code"
           code
           value={form.methodExpression}
           onInput={(e: JSX.TargetedEvent<HTMLInputElement>) =>
             update('methodExpression', (e.currentTarget as HTMLInputElement).value)
           }
-          placeholder='"POST"'
+          placeholder={getFieldPlaceholder(methodField, form.clientChannel) ?? '"POST"'}
           onBlur={() => setTouched(p => ({ ...p, methodExpression: true }))}
           error={touched.methodExpression ? methodError : undefined}
         />
         <Input
           id="endpoint-expr"
-          label="Endpoint Expression"
+          label={endpointLabel}
           icon="link"
           code
           value={form.endpointExpression}
           onInput={(e: JSX.TargetedEvent<HTMLInputElement>) =>
             update('endpointExpression', (e.currentTarget as HTMLInputElement).value)
           }
-          placeholder='"/api/v1/users"'
+          placeholder={getFieldPlaceholder(endpointField, form.clientChannel) ?? '"/api/v1/users"'}
           onBlur={() => setTouched(p => ({ ...p, endpointExpression: true }))}
           error={touched.endpointExpression ? endpointError : undefined}
         />
@@ -146,14 +177,14 @@ export function TransformStep() {
       <div class="mb-4">
         <Textarea
           id="headers-expr"
-          label="Headers Expression"
+          label={headersLabel}
           code
           rows={3}
           value={form.headersExpression}
           onInput={(e: JSX.TargetedEvent<HTMLTextAreaElement>) =>
             update('headersExpression', (e.currentTarget as HTMLTextAreaElement).value)
           }
-          placeholder='{"Content-Type": "application/json", "Authorization": "Bearer " & token}'
+          placeholder={getFieldPlaceholder(headersField, form.clientChannel) ?? '{"Content-Type": "application/json", "Authorization": "Bearer " & token}'}
           onBlur={() => setTouched(p => ({ ...p, headersExpression: true }))}
           error={touched.headersExpression ? headersError : undefined}
         />
@@ -163,14 +194,14 @@ export function TransformStep() {
       <div class="mb-4">
         <Textarea
           id="body-expr"
-          label="Body Expression"
+          label={bodyLabel}
           code
           rows={5}
           value={form.bodyExpression}
           onInput={(e: JSX.TargetedEvent<HTMLTextAreaElement>) =>
             update('bodyExpression', (e.currentTarget as HTMLTextAreaElement).value)
           }
-          placeholder='{"name": name, "email": email, "age": $number(age)}'
+          placeholder={getFieldPlaceholder(bodyField, form.clientChannel) ?? '{"name": name, "email": email, "age": $number(age)}'}
           onBlur={() => setTouched(p => ({ ...p, bodyExpression: true }))}
           error={touched.bodyExpression ? bodyError : undefined}
         />

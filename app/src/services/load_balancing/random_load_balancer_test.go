@@ -25,6 +25,10 @@ func (m *errorMockClient) GetStrategy() modelsEnums.ClientChannel {
 	return modelsEnums.REST
 }
 
+func (m *errorMockClient) Close() error {
+	return nil
+}
+
 // randomMockClient records which URL was passed to each Execute call.
 type randomMockClient struct {
 	mu   sync.Mutex
@@ -43,6 +47,10 @@ func (m *randomMockClient) Execute(
 
 func (m *randomMockClient) GetStrategy() modelsEnums.ClientChannel {
 	return modelsEnums.REST
+}
+
+func (m *randomMockClient) Close() error {
+	return nil
 }
 
 // recordedURLs returns a copy of the captured URLs (safe for concurrent reads).

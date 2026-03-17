@@ -21,12 +21,27 @@ const LB_STRATEGY_OPTIONS: { value: LoadBalancerStrategy; label: string; disable
   { value: 'LEAST_CONNECTION', label: 'Least Connection', disabled: true, comingSoon: true },
 ];
 
+const CHANNEL_INFO: Record<ClientChannel, string> = {
+  REST: 'Send HTTP requests with configurable method, headers, and body',
+  GRAPHQL: 'Execute GraphQL queries and mutations over HTTP POST',
+  GRPC: 'Call gRPC services using JSON payloads (no proto files required)',
+  KAFKA: 'Publish messages to Kafka topics',
+};
+
+const URL_PLACEHOLDER: Record<ClientChannel, string> = {
+  REST: 'https://api.example.com',
+  GRAPHQL: 'https://api.example.com/graphql',
+  GRPC: 'grpc-server:50051',
+  KAFKA: 'broker:9092',
+};
+
 const MIN_TIMEOUT = 100;
 const MAX_TIMEOUT = 60000;
 const MIN_BATCH_SIZE = 1;
 const MAX_BATCH_SIZE = 10000;
 
 const URL_REGEX = /^https?:\/\/([a-zA-Z0-9][-a-zA-Z0-9]*(\.[a-zA-Z0-9][-a-zA-Z0-9]*)*)(:(6553[0-5]|655[0-2]\d|65[0-4]\d{2}|6[0-4]\d{3}|[1-5]?\d{1,4}))?(\/[-a-zA-Z0-9()@:%_+.~#?&/=]*)?$/;
+const GRPC_TARGET_REGEX = /^[a-zA-Z0-9][-a-zA-Z0-9.]*:\d{1,5}$/;
 
 interface TimeoutField {
   key: 'dialTimeoutMs' | 'keepAliveMs' | 'tlsHandshakeMs' | 'responseHeaderMs' | 'expectContinueMs' | 'requestTimeoutMs';
@@ -52,8 +67,12 @@ function getTimeoutError(value: number): string {
   return '';
 }
 
-function getUrlError(url: string): string {
+function getUrlError(url: string, clientChannel: ClientChannel = 'REST'): string {
   if (!url.trim()) return '';
+  if (clientChannel === 'GRPC') {
+    if (!GRPC_TARGET_REGEX.test(url.trim())) return 'Invalid gRPC target (expected host:port)';
+    return '';
+  }
   if (!URL_REGEX.test(url.trim())) return 'Invalid URL format';
   return '';
 }
@@ -89,7 +108,7 @@ export function TargetStep() {
 
     // Validate URLs: at least one non-empty valid URL
     const nonEmptyUrls = form.urls.filter((u) => u.trim() !== '');
-    const urlsValid = nonEmptyUrls.length > 0 && nonEmptyUrls.every((u) => !getUrlError(u));
+    const urlsValid = nonEmptyUrls.length > 0 && nonEmptyUrls.every((u) => !getUrlError(u, form.clientChannel));
 
     // Validate batch size
     const batchValid = !getBatchSizeError(form.batchSize);
@@ -102,7 +121,7 @@ export function TargetStep() {
     form.dialTimeoutMs, form.keepAliveMs, form.tlsHandshakeMs,
     form.responseHeaderMs, form.expectContinueMs, form.requestTimeoutMs,
     form.urls, form.batchSize, form.shouldStoreResponses, form.responsesPath,
-    setValid,
+    form.clientChannel, setValid,
   ]);
 
   useEffect(() => {
@@ -163,7 +182,7 @@ export function TargetStep() {
         <div>
           <h2 class="text-lg font-semibold">Target Configuration</h2>
           <p class="text-sm text-text-secondary">
-            Configure HTTP client, load balancing, and batch processing
+            Configure {form.clientChannel === 'GRPC' ? 'gRPC' : 'HTTP'} client, load balancing, and batch processing
           </p>
         </div>
       </div>
@@ -184,11 +203,19 @@ export function TargetStep() {
             value={form.clientChannel}
             onChange={(v) => update('clientChannel', v as ClientChannel)}
           />
+          <p class="field-help">
+            <Icon name="info" class="w-3 h-3" />
+            {CHANNEL_INFO[form.clientChannel]}
+          </p>
         </div>
 
         {/* Timeout Fields — 2-column grid */}
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {TIMEOUT_FIELDS.map((field) => {
+            // Hide HTTP-specific timeout fields for gRPC
+            if (form.clientChannel === 'GRPC' && (field.key === 'responseHeaderMs' || field.key === 'expectContinueMs')) {
+              return null;
+            }
             const value = form[field.key];
             const error = getTimeoutError(value);
             return (
@@ -238,11 +265,11 @@ export function TargetStep() {
         </div>
 
         {/* Target URLs */}
-        <div>
-          <label class="label">Target URLs</label>
+        <fieldset class="border-0 m-0 p-0">
+          <legend class="label">Target URLs</legend>
           <div>
             {form.urls.map((url, i) => {
-              const urlError = url.trim() ? getUrlError(url) : '';
+              const urlError = url.trim() ? getUrlError(url, form.clientChannel) : '';
               const isLast = i === form.urls.length - 1;
               return (
                 <div key={urlKeys.current[i] ?? i} class="url-row">
@@ -253,14 +280,14 @@ export function TargetStep() {
                     type="text"
                     value={url}
                     onInput={(e: JSX.TargetedEvent<HTMLInputElement>) => handleUrlChange(i, e)}
-                    placeholder="https://api.example.com"
+                    placeholder={URL_PLACEHOLDER[form.clientChannel]}
                     error={urlError || undefined}
                     class="flex-1"
                   />
                   <button
                     type="button"
                     class="btn btn-ghost btn-sm url-remove-btn"
-                    aria-label="Remove URL"
+                    aria-label={`Remove URL ${i + 1}`}
                     onClick={() => removeUrl(i)}
                   >
                     <Icon name="trash-2" size="sm" />
@@ -280,7 +307,7 @@ export function TargetStep() {
           {noUrlsError && (
             <p class="field-error" role="alert">{noUrlsError}</p>
           )}
-        </div>
+        </fieldset>
       </div>
 
       {/* === Driver Settings Section === */}

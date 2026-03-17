@@ -106,6 +106,7 @@ func (b *bombardmentDriver) executeBombardment(
 		failJob(err)
 		return err
 	}
+	defer closeAndLog(client, "channel client")
 
 	transformer, err := transforming.CreateTransformer(
 		bombardmentRequest.Client.Channel,
@@ -159,7 +160,7 @@ func (b *bombardmentDriver) executeBombardment(
 		defer closeAndLog(responseFile, "response file")
 
 		responseWriter = csv.NewWriter(responseFile)
-		err = responseWriter.Write([]string{"Request ID", "Status Code", "Timestamp", "Response Time (ms)", "Error Message"})
+		err = responseWriter.Write([]string{"Request ID", "Channel", "Status Code", "Timestamp", "Response Time (ms)", "Error Message"})
 		if err != nil {
 			zap.L().Error("Failed to write CSV header", zap.Error(err))
 			failJob(err)
@@ -248,6 +249,7 @@ func (b *bombardmentDriver) executeBombardment(
 			}
 			err := responseWriter.Write([]string{
 				response.RequestID,
+				string(bombardmentRequest.Client.Channel),
 				statusStr,
 				response.Timestamp.Format(time.RFC3339),
 				fmt.Sprintf("%d", response.ResponseTime),

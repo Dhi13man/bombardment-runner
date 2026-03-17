@@ -68,6 +68,22 @@ func (c *grpcChannelClient) GetStrategy() modelsEnums.ClientChannel {
 	return modelsEnums.GRPC
 }
 
+// Close closes all cached gRPC connections.
+func (c *grpcChannelClient) Close() error {
+	var firstErr error
+	c.connections.Range(func(key, value any) bool {
+		conn, ok := value.(*grpc.ClientConn)
+		if ok {
+			if err := conn.Close(); err != nil && firstErr == nil {
+				firstErr = err
+			}
+		}
+		c.connections.Delete(key)
+		return true
+	})
+	return firstErr
+}
+
 func (c *grpcChannelClient) getOrDial(target string) (*grpc.ClientConn, error) {
 	var opts []grpc.DialOption
 	if c.context.InsecureSkipVerify {

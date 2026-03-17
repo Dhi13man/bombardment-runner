@@ -49,6 +49,10 @@ func (c *restChannelClient) GetStrategy() modelsEnums.ClientChannel {
 	return modelsEnums.REST
 }
 
+func (c *restChannelClient) Close() error {
+	return nil
+}
+
 func (c *restChannelClient) Execute(
 	request modelsDtoRequests.BaseChannelRequest,
 	baseUrl string,

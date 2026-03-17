@@ -2,6 +2,7 @@ package clients
 
 import (
 	"errors"
+	"io"
 
 	"github.dhi13man.com/bombardment-runner/src/models/dto/clients"
 	"github.dhi13man.com/bombardment-runner/src/models/dto/clients/requests"
@@ -12,6 +13,7 @@ import (
 
 type BaseChannelClient interface {
 	services.BaseStrategy[modelsEnums.ClientChannel]
+	io.Closer
 
 	// Execute executes the request and returns the response.
 	Execute(
