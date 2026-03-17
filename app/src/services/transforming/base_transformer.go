@@ -34,7 +34,7 @@ func CreateTransformer(
 func createChannelRequest(
 	clientChannel modelsEnums.ClientChannel,
 	endpoint string,
-	body interface{},
+	body any,
 	headers map[string]string,
 	method string,
 ) (modelsDtoRequests.BaseChannelRequest, error) {
