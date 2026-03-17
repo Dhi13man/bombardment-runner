@@ -21,15 +21,11 @@ import (
 
 const bufSize = 1024 * 1024
 
-// echoHandler is a generic gRPC handler that echoes the request body back. It
-// also copies incoming metadata into the response trailer so tests can verify
-// metadata propagation.
 func echoHandler(srv any, ctx context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
 	var req json.RawMessage
 	if err := dec(&req); err != nil {
 		return nil, err
 	}
-	// Echo back incoming metadata as response trailers for test verification
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
 		if err := grpc.SetTrailer(ctx, md); err != nil {
 			return nil, err
@@ -38,7 +34,6 @@ func echoHandler(srv any, ctx context.Context, dec func(any) error, _ grpc.Unary
 	return req, nil
 }
 
-// errorHandler returns a gRPC error with a specific status code and message.
 func errorHandler(srv any, ctx context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
 	var req json.RawMessage
 	if err := dec(&req); err != nil {
@@ -47,7 +42,6 @@ func errorHandler(srv any, ctx context.Context, dec func(any) error, _ grpc.Unar
 	return nil, grpcStatus.Error(codes.Internal, "intentional test error")
 }
 
-// slowHandler sleeps for longer than the test timeout before responding.
 func slowHandler(srv any, ctx context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
 	var req json.RawMessage
 	if err := dec(&req); err != nil {
@@ -57,9 +51,6 @@ func slowHandler(srv any, ctx context.Context, dec func(any) error, _ grpc.Unary
 	return req, nil
 }
 
-// startBufconnServer creates an in-memory gRPC server using bufconn and
-// registers the provided service descriptors. It returns a dialer function
-// suitable for injecting into the gRPC client.
 func startBufconnServer(t *testing.T, serviceDescs ...grpc.ServiceDesc) GrpcDialer {
 	t.Helper()
 
@@ -74,11 +65,12 @@ func startBufconnServer(t *testing.T, serviceDescs ...grpc.ServiceDesc) GrpcDial
 	}()
 	t.Cleanup(func() {
 		server.GracefulStop()
-		lis.Close()
+		if err := lis.Close(); err != nil {
+			t.Logf("warning: failed to close bufconn listener: %v", err)
+		}
 	})
 
 	return func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-		// Ignore the target; always connect to the bufconn listener.
 		return grpc.NewClient(
 			"passthrough:///bufconn",
 			grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) {
@@ -129,7 +121,6 @@ func TestGrpcClient_SuccessfulRequest(t *testing.T) {
 		t.Errorf("GetStatus() = %v, want 0 (OK)", resp.GetStatus())
 	}
 
-	// Verify the echoed body contains our payload
 	bodyBytes, ok := resp.(*modelsDtoResponses.GrpcChannelResponse)
 	if !ok {
 		t.Fatalf("expected *GrpcChannelResponse, got %T", resp)
@@ -189,7 +180,6 @@ func TestGrpcClient_Timeout(t *testing.T) {
 	req := modelsDtoRequests.NewGrpcChannelRequest("svc", "SlowMethod", map[string]any{"ping": true}, nil)
 
 	resp, err := client.Execute(req, "bufconn")
-	// With native gRPC, a deadline exceeded is returned as a gRPC status.
 	if err != nil {
 		t.Fatalf("Execute() unexpected error: %v", err)
 	}
@@ -197,8 +187,6 @@ func TestGrpcClient_Timeout(t *testing.T) {
 		t.Fatal("expected non-nil status")
 	}
 	statusCode := *resp.GetStatus()
-	// DeadlineExceeded (4) is expected when the context deadline fires
-	// before the server responds.
 	if statusCode != int(codes.DeadlineExceeded) {
 		t.Errorf("GetStatus() = %d, want %d (DeadlineExceeded)", statusCode, codes.DeadlineExceeded)
 	}
@@ -207,8 +195,6 @@ func TestGrpcClient_Timeout(t *testing.T) {
 func TestGrpcClient_MetadataPassing(t *testing.T) {
 	t.Parallel()
 
-	// The echo handler copies incoming metadata to response trailers. We verify
-	// the call succeeds and metadata was accepted by gRPC (no errors).
 	svcDesc := grpc.ServiceDesc{
 		ServiceName: "svc",
 		Methods: []grpc.MethodDesc{

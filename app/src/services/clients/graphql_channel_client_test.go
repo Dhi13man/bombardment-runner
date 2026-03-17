@@ -26,7 +26,6 @@ func TestGraphqlClient_SuccessfulRequest(t *testing.T) {
 	t.Parallel()
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify method and path
 		if r.Method != http.MethodPost {
 			t.Errorf("expected POST, got %s", r.Method)
 		}
@@ -34,7 +33,6 @@ func TestGraphqlClient_SuccessfulRequest(t *testing.T) {
 			t.Errorf("expected /graphql, got %s", r.URL.Path)
 		}
 
-		// Verify the payload contains query, variables, and operationName
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			t.Fatalf("failed to read request body: %v", err)
@@ -89,7 +87,7 @@ func TestGraphqlClient_GraphqlErrorsExtracted(t *testing.T) {
 	t.Parallel()
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Return a 200 response with GraphQL errors (common pattern)
+		// HTTP 200 with GraphQL errors is standard GraphQL behavior
 		w.WriteHeader(http.StatusOK)
 		resp := map[string]any{
 			"data": nil,
@@ -134,7 +132,6 @@ func TestGraphqlClient_MixedDataAndErrors(t *testing.T) {
 	t.Parallel()
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Return partial data alongside errors
 		w.WriteHeader(http.StatusOK)
 		resp := map[string]any{
 			"data": map[string]any{
@@ -163,7 +160,6 @@ func TestGraphqlClient_MixedDataAndErrors(t *testing.T) {
 		t.Fatalf("expected *GraphqlChannelResponse, got %T", resp)
 	}
 
-	// Should have both data and errors
 	if gqlResp.Body == nil {
 		t.Error("expected non-nil body with partial data")
 	}
@@ -200,7 +196,6 @@ func TestGraphqlClient_ServerError(t *testing.T) {
 		t.Errorf("GetStatus() = %v, want 500", resp.GetStatus())
 	}
 
-	// Should also extract the GraphQL error
 	gqlResp, ok := resp.(*modelsDtoResponses.GraphqlChannelResponse)
 	if !ok {
 		t.Fatalf("expected *GraphqlChannelResponse, got %T", resp)
@@ -274,12 +269,10 @@ func TestGraphqlClient_OperationNameAndVariables(t *testing.T) {
 			t.Fatalf("failed to unmarshal request body: %v", err)
 		}
 
-		// Verify operationName is sent
 		if payload["operationName"] != "CreateUser" {
 			t.Errorf("operationName = %v, want CreateUser", payload["operationName"])
 		}
 
-		// Verify variables
 		vars, ok := payload["variables"].(map[string]any)
 		if !ok {
 			t.Fatalf("expected variables to be a map, got %T", payload["variables"])

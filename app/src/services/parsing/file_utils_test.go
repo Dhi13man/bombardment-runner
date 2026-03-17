@@ -25,8 +25,8 @@ func TestOpenFileFromPathOrContent_WhenBase64Content_ThenCreatesFileAndReturnsHa
 		t.Fatalf("unexpected error: %v", err)
 	}
 	defer func() {
-		file.Close()
-		os.Remove(path)
+		_ = file.Close()
+		_ = os.Remove(path)
 	}()
 
 	// filepath.Join("./data", ...) resolves to "data/..." so check for both forms
@@ -57,7 +57,9 @@ func TestOpenFileFromPathOrContent_WhenValidFilePath_ThenOpensExistingFile(t *te
 	if _, wErr := tmpFile.WriteString(expected); wErr != nil {
 		t.Fatalf("failed to write test data: %v", wErr)
 	}
-	tmpFile.Close()
+	if err := tmpFile.Close(); err != nil {
+		t.Fatalf("failed to close temp file: %v", err)
+	}
 
 	// Act
 	file, absPath, err := OpenFileFromPathOrContent(tmpFile.Name(), "")
@@ -66,7 +68,11 @@ func TestOpenFileFromPathOrContent_WhenValidFilePath_ThenOpensExistingFile(t *te
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			t.Logf("warning: failed to close file: %v", err)
+		}
+	}()
 
 	if absPath == "" {
 		t.Error("expected non-empty absolute path")
@@ -87,7 +93,7 @@ func TestOpenFileFromPathOrContent_WhenEmptyPathAndNoContent_ThenReturnsError(t 
 
 	// Assert
 	if err == nil {
-		file.Close()
+		_ = file.Close()
 		t.Fatal("expected error for empty path and no content, got nil")
 	}
 }
@@ -100,7 +106,7 @@ func TestOpenFileFromPathOrContent_WhenInvalidBase64_ThenReturnsError(t *testing
 
 	// Assert
 	if err == nil {
-		file.Close()
+		_ = file.Close()
 		t.Fatal("expected error for invalid base64, got nil")
 	}
 }
@@ -126,7 +132,7 @@ func TestOpenFileFromPathOrContent_WhenPathContainsTraversal_ThenReturnsError(t 
 
 			// Assert
 			if err == nil {
-				file.Close()
+				_ = file.Close()
 				t.Fatalf("expected error for path %q containing traversal, got nil", tt.path)
 			}
 		})
@@ -141,7 +147,7 @@ func TestOpenFileFromPathOrContent_WhenFileNotFound_ThenReturnsError(t *testing.
 
 	// Assert
 	if err == nil {
-		file.Close()
+		_ = file.Close()
 		t.Fatal("expected error for nonexistent file, got nil")
 	}
 }
@@ -160,8 +166,8 @@ func TestOpenFileFromPathOrContent_WhenBase64WithEmptyFilePath_ThenGeneratesUUID
 		t.Fatalf("unexpected error: %v", err)
 	}
 	defer func() {
-		file.Close()
-		os.Remove(path)
+		_ = file.Close()
+		_ = os.Remove(path)
 	}()
 
 	baseName := filepath.Base(path)

@@ -38,10 +38,6 @@ type restChannelClient struct {
 	httpClient *http.Client
 }
 
-// NewRestClient creates a new REST client with optimized connection pooling and timeouts.
-//
-// The returned HTTP client is optimized for high-performance load testing with
-// efficient connection reuse and is safe for concurrent use by multiple goroutines.
 func NewRestClient(context modelsDtoClients.ClientContext) RestChannelClient {
 	return &restChannelClient{
 		httpClient: NewHTTPClient(context),
@@ -62,7 +58,6 @@ func (c *restChannelClient) Execute(
 		return nil, errors.New("invalid request type")
 	}
 
-	// Generate request
 	req, err := c.generateHttpRequest(restRequest, baseUrl)
 	if err != nil {
 		return nil, err
@@ -98,14 +93,12 @@ func (*restChannelClient) generateHttpRequest(
 	restRequest *modelsDtoRequests.RestChannelRequest,
 	baseUrl string,
 ) (*http.Request, error) {
-	// Marshal the payload.
 	payloadBytes, err := json.Marshal(restRequest.Body)
 	if err != nil {
 		zap.L().Error("Payload marshalling failed: ", zap.Error(err))
 		return nil, err
 	}
 
-	// Create a new HTTP request.
 	url := baseUrl + restRequest.Endpoint
 	req, err := http.NewRequest(
 		restRequest.Method,
@@ -117,28 +110,19 @@ func (*restChannelClient) generateHttpRequest(
 		return nil, err
 	}
 
-	// Optimize connection handling for HTTP/1.1 (HTTP/2 has its own SETTINGS)
-	// Note: HTTP/2 will be auto-negotiated by the transport when available
 	req.Header.Set(HeaderKeyConnection, HeaderValueKeepAlive)
-
-	// Set default content type headers for JSON
 	req.Header.Set(HeaderKeyContentType, HeaderValueApplicationJSON)
 	req.Header.Set(HeaderKeyAccept, HeaderValueApplicationJSON)
-
-	// Performance optimization - client hints for CDN and server optimizations
-	req.Header.Set(HeaderKeyXClient, HeaderValueBombardmentUA) // Help servers identify load test traffic
-
-	// Prevent caching to ensure we're getting fresh responses
+	req.Header.Set(HeaderKeyXClient, HeaderValueBombardmentUA) // helps servers identify load test traffic
 	req.Header.Set(HeaderKeyCacheControl, HeaderValueNoCache)
 
-	// Attach custom headers from request - will override defaults if needed
 	for key, value := range restRequest.Headers {
 		req.Header.Set(key, value)
 	}
 
-	// Note: Go's HTTP transport handles Accept-Encoding and decompression
-	// automatically when DisableCompression is false (our default). Explicitly
-	// setting Accept-Encoding would bypass automatic decompression.
+	// Go's transport handles Accept-Encoding and decompression automatically
+	// when DisableCompression is false. Explicitly setting Accept-Encoding
+	// would bypass automatic decompression.
 
 	return req, nil
 }

@@ -154,9 +154,7 @@ func (jt *jsonataTransformer) createChannelRequest(
 		}
 		return modelsDtoRequests.NewGraphqlChannelRequest(queryStr, variables, operationName, endpoint, headers), nil
 	case modelsEnums.GRPC:
-		// For gRPC: endpoint expression maps to Service, method expression maps
-		// to Method, body expression maps to Body (JSON payload), and headers
-		// expression maps to Metadata (native gRPC metadata).
+		// endpoint->Service, method->Method, body->Body, headers->Metadata
 		return modelsDtoRequests.NewGrpcChannelRequest(endpoint, method, body, headers), nil
 	default:
 		return nil, errors.New("invalid client channel")

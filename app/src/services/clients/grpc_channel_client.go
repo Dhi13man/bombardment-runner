@@ -19,8 +19,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// jsonCodec is a gRPC codec that uses JSON marshaling, allowing users to send
-// JSON payloads over native gRPC without compiled protobuf files.
+// jsonCodec allows sending JSON payloads over gRPC without compiled protobuf.
 type jsonCodec struct{}
 
 func (jsonCodec) Marshal(v any) ([]byte, error) {
@@ -39,8 +38,7 @@ func init() {
 	encoding.RegisterCodec(jsonCodec{})
 }
 
-// GrpcDialer abstracts the gRPC dial/connect step so tests can inject an
-// in-memory transport (bufconn) without touching the network.
+// GrpcDialer abstracts dial so tests can inject bufconn.
 type GrpcDialer func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error)
 
 type GrpcChannelClient interface {
@@ -53,14 +51,10 @@ type grpcChannelClient struct {
 	dialer      GrpcDialer
 }
 
-// NewGrpcClient creates a gRPC client that uses native gRPC with a JSON codec.
-// Connections are cached per target for reuse across concurrent calls.
 func NewGrpcClient(clientCtx modelsDtoClients.ClientContext) GrpcChannelClient {
 	return newGrpcClientWithDialer(clientCtx, grpc.NewClient)
 }
 
-// newGrpcClientWithDialer is an internal constructor that accepts a custom
-// dialer, used by tests to inject bufconn-based connections.
 func newGrpcClientWithDialer(clientCtx modelsDtoClients.ClientContext, dialer GrpcDialer) GrpcChannelClient {
 	return &grpcChannelClient{
 		context: clientCtx,
@@ -90,7 +84,9 @@ func (c *grpcChannelClient) getOrDial(target string) (*grpc.ClientConn, error) {
 	actual, loaded := c.connections.LoadOrStore(target, conn)
 	if loaded {
 		// Another goroutine dialed first; close the duplicate.
-		conn.Close()
+		if err := conn.Close(); err != nil {
+			zap.L().Warn("failed to close duplicate gRPC connection", zap.String("target", target), zap.Error(err))
+		}
 	}
 	return actual.(*grpc.ClientConn), nil
 }
@@ -110,10 +106,8 @@ func (c *grpcChannelClient) Execute(
 		return nil, err
 	}
 
-	// Build the full method path: /Service/Method
 	fullMethod := "/" + grpcRequest.Service + "/" + grpcRequest.Method
 
-	// Set up context with timeout
 	timeout := c.context.RequestTimeout
 	if timeout == 0 {
 		timeout = 30 * time.Second
@@ -121,13 +115,11 @@ func (c *grpcChannelClient) Execute(
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	// Attach metadata
 	if len(grpcRequest.Metadata) > 0 {
 		md := metadata.New(grpcRequest.Metadata)
 		ctx = metadata.NewOutgoingContext(ctx, md)
 	}
 
-	// Invoke the RPC with JSON codec
 	var response json.RawMessage
 	err = conn.Invoke(ctx, fullMethod, grpcRequest.Body, &response, grpc.ForceCodec(jsonCodec{}))
 
@@ -144,6 +136,5 @@ func (c *grpcChannelClient) Execute(
 		return nil, fmt.Errorf("gRPC invocation failed: %w", err)
 	}
 
-	// Code 0 = OK
-	return modelsDtoResponses.NewGrpcChannelResponse(0, response), nil
+	return modelsDtoResponses.NewGrpcChannelResponse(0, response), nil // 0 = OK
 }

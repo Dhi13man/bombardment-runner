@@ -23,10 +23,6 @@ type graphqlChannelClient struct {
 	httpClient *http.Client
 }
 
-// NewGraphqlClient creates a new GraphQL client that sends queries over HTTP POST.
-//
-// The client reuses the shared HTTP transport for connection pooling and is safe
-// for concurrent use by multiple goroutines.
 func NewGraphqlClient(context modelsDtoClients.ClientContext) GraphqlChannelClient {
 	return &graphqlChannelClient{
 		httpClient: NewHTTPClient(context),
@@ -37,15 +33,12 @@ func (c *graphqlChannelClient) GetStrategy() modelsEnums.ClientChannel {
 	return modelsEnums.GRAPHQL
 }
 
-// graphqlPayload is the standard GraphQL request body format sent to the server.
 type graphqlPayload struct {
 	Query         string         `json:"query"`
 	Variables     map[string]any `json:"variables,omitempty"`
 	OperationName string         `json:"operationName,omitempty"`
 }
 
-// graphqlResponseBody represents the standard GraphQL response format with
-// data and errors fields.
 type graphqlResponseBody struct {
 	Data   json.RawMessage                  `json:"data"`
 	Errors []modelsDtoResponses.GraphqlError `json:"errors"`
@@ -61,7 +54,6 @@ func (c *graphqlChannelClient) Execute(
 		return nil, errors.New("invalid request type")
 	}
 
-	// Build the GraphQL JSON payload with query, variables, and operationName
 	payload := graphqlPayload{
 		Query:         graphqlRequest.Query,
 		Variables:     graphqlRequest.Variables,
@@ -73,7 +65,6 @@ func (c *graphqlChannelClient) Execute(
 		return nil, err
 	}
 
-	// Build the HTTP request
 	url := baseUrl + graphqlRequest.Endpoint
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, bytes.NewBuffer(payloadBytes))
 	if err != nil {
@@ -81,14 +72,12 @@ func (c *graphqlChannelClient) Execute(
 		return nil, err
 	}
 
-	// Set default headers
 	req.Header.Set(HeaderKeyConnection, HeaderValueKeepAlive)
 	req.Header.Set(HeaderKeyContentType, HeaderValueApplicationJSON)
 	req.Header.Set(HeaderKeyAccept, HeaderValueApplicationJSON)
 	req.Header.Set(HeaderKeyXClient, HeaderValueBombardmentUA)
 	req.Header.Set(HeaderKeyCacheControl, HeaderValueNoCache)
 
-	// Apply custom headers (may override defaults)
 	for key, value := range graphqlRequest.Headers {
 		req.Header.Set(key, value)
 	}
@@ -105,23 +94,19 @@ func (c *graphqlChannelClient) Execute(
 		}
 	}(response.Body)
 
-	// Limit response body to 10 MB to prevent OOM from misbehaving targets
-	const maxResponseBodySize = 10 << 20
+	const maxResponseBodySize = 10 << 20 // 10 MB; prevents OOM from oversized responses
 	body, err := io.ReadAll(io.LimitReader(response.Body, maxResponseBodySize))
 	if err != nil {
 		zap.L().Error("Response reading failed", zap.Error(err))
 		return nil, err
 	}
 
-	// Parse the response body to extract GraphQL data and errors
 	var gqlResp graphqlResponseBody
 	var parsedBody any
 	var gqlErrors []modelsDtoResponses.GraphqlError
 
 	if err := json.Unmarshal(body, &gqlResp); err == nil {
-		// Successfully parsed as GraphQL response
 		if gqlResp.Data != nil {
-			// Decode the data field into a generic structure
 			var data any
 			if jsonErr := json.Unmarshal(gqlResp.Data, &data); jsonErr == nil {
 				parsedBody = data
@@ -131,7 +116,6 @@ func (c *graphqlChannelClient) Execute(
 		}
 		gqlErrors = gqlResp.Errors
 	} else {
-		// Could not parse as GraphQL response; store the raw body
 		parsedBody = body
 	}
 

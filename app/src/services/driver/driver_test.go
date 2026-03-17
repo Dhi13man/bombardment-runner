@@ -27,9 +27,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// --- Mock types ---
-
-// mockLoadBalancer implements load_balancing.BaseLoadBalancer for testing.
 type mockLoadBalancer struct {
 	executeFn func(request modelsDtoRequests.BaseChannelRequest) (modelsDtoResponses.BaseChannelResponse, error)
 }
@@ -42,7 +39,6 @@ func (m *mockLoadBalancer) Execute(request modelsDtoRequests.BaseChannelRequest)
 	return m.executeFn(request)
 }
 
-// fakeChannelResponse implements BaseChannelResponse for testing purposes.
 type fakeChannelResponse struct{}
 
 func (f *fakeChannelResponse) GetChannel() modelsEnums.ClientChannel {
@@ -53,7 +49,6 @@ func (f *fakeChannelResponse) GetStatus() *int {
 	return nil
 }
 
-// newTestJob creates a Job in pending state for testing.
 func newTestJob(id string) *services.Job {
 	return &services.Job{
 		ID:        id,
@@ -62,9 +57,6 @@ func newTestJob(id string) *services.Job {
 	}
 }
 
-// simulateCountingChannel replicates the counting channel wrapper logic from
-// executeBombardment: it reads from an upstream data channel, forwards each
-// row to a downstream channel, and calls job.SetTotal with the running count.
 func simulateCountingChannel(
 	upstream <-chan map[string]string,
 	job *services.Job,
@@ -83,8 +75,6 @@ func simulateCountingChannel(
 	}()
 	return countedChannel
 }
-
-// --- makeRequest tests ---
 
 func TestMakeRequest_SuccessfulRestResponse(t *testing.T) {
 	t.Parallel()
@@ -199,10 +189,6 @@ func TestMakeRequest_NilResponseFromLoadBalancer(t *testing.T) {
 	}
 }
 
-// --- Counting channel tests (total rows tracking) ---
-
-// TestCountingChannel_TotalMatchesRecordCount verifies that after all rows are
-// consumed, the job's TotalRows equals the number of records sent.
 func TestCountingChannel_TotalMatchesRecordCount(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -223,7 +209,6 @@ func TestCountingChannel_TotalMatchesRecordCount(t *testing.T) {
 			upstream := make(chan map[string]string)
 			counted := simulateCountingChannel(upstream, job)
 
-			// Feed rows
 			go func() {
 				for i := 0; i < tc.numRows; i++ {
 					upstream <- map[string]string{"id": string(rune('A' + i%26))}
@@ -231,7 +216,6 @@ func TestCountingChannel_TotalMatchesRecordCount(t *testing.T) {
 				close(upstream)
 			}()
 
-			// Drain the counted channel
 			consumed := 0
 			for range counted {
 				consumed++
@@ -249,8 +233,6 @@ func TestCountingChannel_TotalMatchesRecordCount(t *testing.T) {
 	}
 }
 
-// TestCountingChannel_NilJobDoesNotPanic ensures the wrapper works correctly
-// when job is nil (the CLI / sync code path).
 func TestCountingChannel_NilJobDoesNotPanic(t *testing.T) {
 	upstream := make(chan map[string]string)
 	counted := simulateCountingChannel(upstream, nil)
@@ -271,9 +253,6 @@ func TestCountingChannel_NilJobDoesNotPanic(t *testing.T) {
 	}
 }
 
-// TestProgressPercentage_Calculation verifies the progress formula:
-//
-//	progress = (processed + failed) / total * 100
 func TestProgressPercentage_Calculation(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -306,7 +285,6 @@ func TestProgressPercentage_Calculation(t *testing.T) {
 
 			snap := job.Snapshot()
 
-			// Allow a tiny epsilon for float comparison
 			const eps = 1e-9
 			diff := snap.ProgressPercent - tc.expectedProgress
 			if diff < -eps || diff > eps {
@@ -316,9 +294,6 @@ func TestProgressPercentage_Calculation(t *testing.T) {
 	}
 }
 
-// TestCountingChannel_ProgressDuringProcessing verifies that the total is
-// updated incrementally as rows flow through the counting channel, and that
-// progress can be observed mid-stream.
 func TestCountingChannel_ProgressDuringProcessing(t *testing.T) {
 	job := newTestJob("test-mid-stream")
 	job.SetRunning()
@@ -328,7 +303,6 @@ func TestCountingChannel_ProgressDuringProcessing(t *testing.T) {
 
 	totalRows := 20
 
-	// Feed rows one at a time, checking total after each
 	go func() {
 		for i := 0; i < totalRows; i++ {
 			upstream <- map[string]string{"i": "val"}
@@ -351,9 +325,6 @@ func TestCountingChannel_ProgressDuringProcessing(t *testing.T) {
 	}
 }
 
-// TestCountingChannel_ConcurrentSafety uses the race detector (go test -race)
-// to verify that concurrent reads and writes on the Job via the counting
-// channel and simulated batch processing do not race.
 func TestCountingChannel_ConcurrentSafety(t *testing.T) {
 	job := newTestJob("test-race")
 	job.SetRunning()
@@ -363,7 +334,6 @@ func TestCountingChannel_ConcurrentSafety(t *testing.T) {
 
 	numRows := 200
 
-	// Producer
 	go func() {
 		for i := 0; i < numRows; i++ {
 			upstream <- map[string]string{"k": "v"}
@@ -371,7 +341,6 @@ func TestCountingChannel_ConcurrentSafety(t *testing.T) {
 		close(upstream)
 	}()
 
-	// Simulate concurrent batch consumer that also updates processed/failed
 	var wg sync.WaitGroup
 	consumed := 0
 	for row := range counted {
@@ -380,9 +349,7 @@ func TestCountingChannel_ConcurrentSafety(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			// Simulate mixed success/failure
 			job.IncrementProcessed()
-			// Concurrently read snapshot
 			_ = job.Snapshot()
 		}()
 	}
@@ -401,25 +368,18 @@ func TestCountingChannel_ConcurrentSafety(t *testing.T) {
 	}
 }
 
-// TestCountingChannel_TotalUpdatesIncrementally verifies that SetTotal is
-// called with increasing values as each row passes through, not just once
-// at the end.
 func TestCountingChannel_TotalUpdatesIncrementally(t *testing.T) {
 	job := newTestJob("test-incremental")
 	job.SetRunning()
 
-	upstream := make(chan map[string]string, 1) // buffered so we can send+receive in lockstep
+	upstream := make(chan map[string]string, 1)
 	counted := simulateCountingChannel(upstream, job)
 
-	// Send rows one at a time and verify total grows
 	for i := 1; i <= 5; i++ {
 		upstream <- map[string]string{"i": "x"}
 		<-counted // consume one row
 
-		// Give the goroutine a moment to call SetTotal — the channel send
-		// in the wrapper happens before SetTotal, so after we receive the
-		// row the goroutine may not have called SetTotal yet. A short
-		// yield is acceptable for a unit test.
+		// Yield so the goroutine can call SetTotal after forwarding the row.
 		time.Sleep(time.Millisecond)
 
 		snap := job.Snapshot()
@@ -428,13 +388,10 @@ func TestCountingChannel_TotalUpdatesIncrementally(t *testing.T) {
 		}
 	}
 	close(upstream)
-	// Drain remaining
 	for range counted {
 	}
 }
 
-// TestJobSnapshot_CompletedState verifies that a completed job reports 100%
-// progress when all rows are processed.
 func TestJobSnapshot_CompletedState(t *testing.T) {
 	job := newTestJob("test-complete")
 	job.SetRunning()
@@ -469,8 +426,6 @@ func TestJobSnapshot_CompletedState(t *testing.T) {
 		t.Errorf("FailedRows = %d, want 5", snap.FailedRows)
 	}
 }
-
-// --- Job lifecycle tests ---
 
 func TestJobStore_CreateJob_PendingState(t *testing.T) {
 	t.Parallel()
@@ -547,7 +502,6 @@ func TestJob_IncrementProcessedAndFailed_Concurrent(t *testing.T) {
 	job.SetTotal(200)
 
 	var wg sync.WaitGroup
-	// Simulate 100 processed and 100 failed increments concurrently
 	for i := 0; i < 100; i++ {
 		wg.Add(2)
 		go func() {
@@ -604,8 +558,6 @@ func TestJob_Snapshot_ZeroTotal_ZeroProgress(t *testing.T) {
 
 	store := services.NewJobStore()
 	job := store.Create()
-	// Don't set total -- should be 0
-
 	job.IncrementProcessed()
 	snap := job.Snapshot()
 
@@ -614,8 +566,6 @@ func TestJob_Snapshot_ZeroTotal_ZeroProgress(t *testing.T) {
 	}
 }
 
-// --- CreateBombardmentAsync tests ---
-
 func TestCreateBombardmentAsync_ReturnsJobID(t *testing.T) {
 	t.Parallel()
 
@@ -623,11 +573,9 @@ func TestCreateBombardmentAsync_ReturnsJobID(t *testing.T) {
 	driver := NewBombardmentDriver(store)
 	job := store.Create()
 
-	// Use an invalid parser so the goroutine fails fast (no file I/O).
 	req := buildMinimalBombardmentRequest()
 	req.Parser.Strategy = "INVALID_PARSER"
 
-	// The job ID should be returned synchronously before the goroutine finishes.
 	jobID := driver.CreateBombardmentAsync(req, job)
 
 	if jobID == "" {
@@ -637,7 +585,6 @@ func TestCreateBombardmentAsync_ReturnsJobID(t *testing.T) {
 		t.Errorf("expected job ID %q, got %q", job.ID, jobID)
 	}
 
-	// Wait for the async goroutine to settle so it doesn't leak into other tests.
 	waitForJobCompletion(t, store, job.ID, 5*time.Second)
 }
 
@@ -648,13 +595,11 @@ func TestCreateBombardmentAsync_FailedParser_JobFailsAsynchronously(t *testing.T
 	driver := NewBombardmentDriver(store)
 	job := store.Create()
 
-	// Use an invalid parser strategy to trigger parser creation failure
 	req := buildMinimalBombardmentRequest()
 	req.Parser.Strategy = "INVALID_PARSER"
 
 	driver.CreateBombardmentAsync(req, job)
 
-	// Wait for the async goroutine to complete
 	waitForJobCompletion(t, store, job.ID, 5*time.Second)
 
 	snap, ok := store.Get(job.ID)
@@ -690,18 +635,14 @@ func TestCreateBombardment_NilJob_DoesNotPanic(t *testing.T) {
 	store := services.NewJobStore()
 	driver := NewBombardmentDriver(store)
 
-	// The sync path passes nil for job. Should not panic even when it fails.
 	req := buildMinimalBombardmentRequest()
 	req.Parser.Strategy = "INVALID_PARSER"
 
-	// Should return error without panicking
 	err := driver.CreateBombardment(req)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
 }
-
-// --- makeRequest concurrency test ---
 
 func TestMakeRequest_ConcurrentCalls(t *testing.T) {
 	t.Parallel()
@@ -739,8 +680,6 @@ func TestMakeRequest_ConcurrentCalls(t *testing.T) {
 	}
 }
 
-// --- Helpers ---
-
 func buildMinimalBombardmentRequest() dto.BombardmentRequest {
 	return dto.BombardmentRequest{
 		Driver: driverDto.DriverContext{
@@ -762,7 +701,6 @@ func buildMinimalBombardmentRequest() dto.BombardmentRequest {
 	}
 }
 
-// waitForJobCompletion polls the job store until the job reaches a terminal state or timeout.
 func waitForJobCompletion(t *testing.T, store *services.JobStore, jobID string, timeout time.Duration) {
 	t.Helper()
 	deadline := time.Now().Add(timeout)
