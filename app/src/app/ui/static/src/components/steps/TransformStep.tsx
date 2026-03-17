@@ -143,7 +143,7 @@ export function TransformStep() {
         </p>
       </div>
 
-      {/* Expression Fields — 2-column grid */}
+      {/* Expression Fields (2-column grid) */}
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <Input
           id="method-expr"

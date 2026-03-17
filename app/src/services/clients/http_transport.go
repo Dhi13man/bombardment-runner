@@ -10,9 +10,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// NewHTTPClient creates an HTTP client with connection pooling and timeouts
-// from the given ClientContext. Safe for concurrent use. Shared across REST
-// and GraphQL channel clients.
+// NewHTTPClient builds an *http.Client. Safe for concurrent use.
+// Shared by REST and GraphQL channel clients.
 func NewHTTPClient(clientCtx modelsDtoClients.ClientContext) *http.Client {
 	dialer := &net.Dialer{
 		Timeout:   clientCtx.DialTimeout,
@@ -51,8 +50,8 @@ func NewHTTPClient(clientCtx modelsDtoClients.ClientContext) *http.Client {
 
 const DefaultRequestTimeout = 30 * time.Second
 
-// SetDefaultHTTPHeaders applies the standard set of headers shared across
-// all HTTP-based channel clients (REST, GraphQL).
+// SetDefaultHTTPHeaders sets Connection, Content-Type, Accept, X-Client,
+// and Cache-Control for HTTP-based channel clients.
 func SetDefaultHTTPHeaders(req *http.Request) {
 	req.Header.Set("Connection", "keep-alive")
 	req.Header.Set("Content-Type", "application/json")
@@ -61,7 +60,7 @@ func SetDefaultHTTPHeaders(req *http.Request) {
 	req.Header.Set("Cache-Control", "no-cache")
 }
 
-// ApplyCustomHeaders sets caller-provided headers, overriding defaults if needed.
+// ApplyCustomHeaders overrides or adds headers from the caller's map.
 func ApplyCustomHeaders(req *http.Request, headers map[string]string) {
 	for key, value := range headers {
 		req.Header.Set(key, value)

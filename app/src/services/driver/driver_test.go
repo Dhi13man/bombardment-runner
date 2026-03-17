@@ -682,7 +682,6 @@ func TestMakeRequest_ConcurrentCalls(t *testing.T) {
 	}
 }
 
-// errCloser is a mock io.Closer that returns a configurable error.
 type errCloser struct {
 	err error
 }

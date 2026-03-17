@@ -69,7 +69,6 @@ func (c *grpcChannelClient) GetStrategy() modelsEnums.ClientChannel {
 	return modelsEnums.GRPC
 }
 
-// Close closes all cached gRPC connections.
 func (c *grpcChannelClient) Close() error {
 	var firstErr error
 	c.connections.Range(func(key, value any) bool {

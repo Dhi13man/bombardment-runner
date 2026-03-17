@@ -15,7 +15,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// HTTP header constants
 const (
 	HeaderKeyConnection     = "Connection"
 	HeaderKeyContentType    = "Content-Type"

@@ -209,7 +209,7 @@ export function TargetStep() {
           </p>
         </div>
 
-        {/* Timeout Fields — 2-column grid */}
+        {/* Timeout Fields (2-column grid) */}
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {TIMEOUT_FIELDS.map((field) => {
             // Hide HTTP-specific timeout fields for gRPC

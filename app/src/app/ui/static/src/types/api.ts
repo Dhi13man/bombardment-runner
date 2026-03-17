@@ -1,5 +1,5 @@
 /**
- * API type definitions — mirrors Go backend types exactly.
+ * API type definitions. Mirrors Go backend types exactly.
  *
  * Source of truth:
  *   - app/src/models/dto/bombardment_request.go

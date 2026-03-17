@@ -11,7 +11,6 @@ import (
 	"github.dhi13man.com/bombardment-runner/src/models/enums"
 )
 
-// errorMockClient always returns an error from Execute.
 type errorMockClient struct{}
 
 func (m *errorMockClient) Execute(

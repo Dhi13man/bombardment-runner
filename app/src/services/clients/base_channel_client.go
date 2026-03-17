@@ -15,7 +15,6 @@ type BaseChannelClient interface {
 	services.BaseStrategy[modelsEnums.ClientChannel]
 	io.Closer
 
-	// Execute executes the request and returns the response.
 	Execute(
 		request modelsDtoRequests.BaseChannelRequest,
 		baseUrl string,
