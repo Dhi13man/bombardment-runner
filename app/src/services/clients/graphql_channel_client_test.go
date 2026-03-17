@@ -324,3 +324,89 @@ func TestGraphqlClient_GetStrategy(t *testing.T) {
 		t.Errorf("GetStrategy() = %v, want GRAPHQL", got)
 	}
 }
+
+func TestGraphqlClient_Close_ReturnsNil(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	client := newTestGraphqlClient(5 * time.Second)
+
+	// Act
+	err := client.Close()
+
+	// Assert
+	if err != nil {
+		t.Errorf("Close() = %v, want nil", err)
+	}
+}
+
+func TestGraphqlClient_NonJSONResponse_FallbackToRawBytes(t *testing.T) {
+	t.Parallel()
+
+	// Arrange: server returns non-JSON body
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write([]byte(`this is not valid JSON`)); err != nil {
+			t.Errorf("failed to write response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	client := newTestGraphqlClient(5 * time.Second)
+	req := modelsDtoRequests.NewGraphqlChannelRequest("{ test }", nil, "", "/graphql", nil)
+
+	// Act
+	resp, err := client.Execute(req, server.URL)
+
+	// Assert: should not error, but body should be raw bytes
+	if err != nil {
+		t.Fatalf("Execute() error: %v", err)
+	}
+	if resp == nil {
+		t.Fatal("expected non-nil response")
+	}
+	if resp.GetStatus() == nil || *resp.GetStatus() != http.StatusOK {
+		t.Errorf("GetStatus() = %v, want 200", resp.GetStatus())
+	}
+
+	gqlResp, ok := resp.(*modelsDtoResponses.GraphqlChannelResponse)
+	if !ok {
+		t.Fatalf("expected *GraphqlChannelResponse, got %T", resp)
+	}
+	// When JSON parsing fails, body should be raw []byte
+	if _, isByteSlice := gqlResp.Body.([]byte); !isByteSlice {
+		t.Errorf("expected Body to be []byte for non-JSON response, got %T", gqlResp.Body)
+	}
+}
+
+func TestGraphqlClient_NullDataField(t *testing.T) {
+	t.Parallel()
+
+	// Arrange: server returns valid GraphQL JSON with null data
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write([]byte(`{"data": null, "errors": []}`)); err != nil {
+			t.Errorf("failed to write response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	client := newTestGraphqlClient(5 * time.Second)
+	req := modelsDtoRequests.NewGraphqlChannelRequest("{ test }", nil, "", "/graphql", nil)
+
+	// Act
+	resp, err := client.Execute(req, server.URL)
+
+	// Assert
+	if err != nil {
+		t.Fatalf("Execute() error: %v", err)
+	}
+	gqlResp, ok := resp.(*modelsDtoResponses.GraphqlChannelResponse)
+	if !ok {
+		t.Fatalf("expected *GraphqlChannelResponse, got %T", resp)
+	}
+	// data is null so Body should remain nil
+	if gqlResp.Body != nil {
+		t.Errorf("expected nil Body for null data, got %v", gqlResp.Body)
+	}
+}

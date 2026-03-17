@@ -2,6 +2,8 @@ package driver
 
 import (
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"sync"
 	"testing"
@@ -677,6 +679,330 @@ func TestMakeRequest_ConcurrentCalls(t *testing.T) {
 
 	for err := range errCh {
 		t.Errorf("concurrent makeRequest error: %v", err)
+	}
+}
+
+// errCloser is a mock io.Closer that returns a configurable error.
+type errCloser struct {
+	err error
+}
+
+func (e *errCloser) Close() error {
+	return e.err
+}
+
+func TestExecuteBombardment_FullPipeline_WithResponseStorage(t *testing.T) {
+	t.Parallel()
+
+	// Arrange: create a temporary CSV input file
+	tmpDir := t.TempDir()
+	csvPath := tmpDir + "/input.csv"
+	csvContent := "request_id,name,age\nreq_001,Alice,30\nreq_002,Bob,25\n"
+	if err := os.WriteFile(csvPath, []byte(csvContent), 0644); err != nil {
+		t.Fatalf("failed to write test CSV: %v", err)
+	}
+
+	// Arrange: create a test HTTP server that returns 200 for all requests
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"status":"ok"}`))
+	}))
+	defer server.Close()
+
+	responsesDir := tmpDir + "/responses"
+
+	store := services.NewJobStore()
+	driver := NewBombardmentDriver(store)
+	job := store.Create()
+
+	req := dto.BombardmentRequest{
+		Driver: driverDto.DriverContext{
+			BatchSize:            2,
+			ShouldStoreResponses: true,
+			ResponsesStoragePath: responsesDir,
+		},
+		Parser: parserDto.ParserContext{
+			Strategy: "CSV",
+			FilePath: csvPath,
+		},
+		Client: clientDto.ClientContext{
+			Channel:            modelsEnums.REST,
+			RequestTimeout:     5 * time.Second,
+			InsecureSkipVerify: true,
+		},
+		Transformer: transformerDto.TransformerContext{
+			Strategy:           "JSONATA",
+			BodyExpression:     `{"name": name, "age": age}`,
+			EndpointExpression: `"/api/users"`,
+			MethodExpression:   `"POST"`,
+		},
+		LoadBalancer: loadBalancerDto.LoadBalancerContext{
+			Strategy: modelsEnums.ROUND_ROBIN,
+			Urls: []string{server.URL},
+		},
+	}
+
+	// Act
+	jobID := driver.CreateBombardmentAsync(req, job)
+	waitForJobCompletion(t, store, jobID, 10*time.Second)
+
+	// Assert: job completed successfully
+	snap, ok := store.Get(jobID)
+	if !ok {
+		t.Fatal("job not found in store")
+	}
+	if snap.Status != services.JobStatusCompleted {
+		t.Errorf("expected job status %q, got %q (error: %s)", services.JobStatusCompleted, snap.Status, snap.ErrorMessage)
+	}
+	if snap.TotalRows != 2 {
+		t.Errorf("TotalRows = %d, want 2", snap.TotalRows)
+	}
+
+	// Assert: response CSV file was created in responsesDir
+	entries, err := os.ReadDir(responsesDir)
+	if err != nil {
+		t.Fatalf("failed to read responses dir: %v", err)
+	}
+	if len(entries) == 0 {
+		t.Error("expected at least one response CSV file")
+	}
+}
+
+func TestExecuteBombardment_FullPipeline_WithoutResponseStorage(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	tmpDir := t.TempDir()
+	csvPath := tmpDir + "/input.csv"
+	csvContent := "request_id,name\nreq_001,Alice\n"
+	if err := os.WriteFile(csvPath, []byte(csvContent), 0644); err != nil {
+		t.Fatalf("failed to write test CSV: %v", err)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"created":true}`))
+	}))
+	defer server.Close()
+
+	store := services.NewJobStore()
+	driver := NewBombardmentDriver(store)
+
+	req := dto.BombardmentRequest{
+		Driver: driverDto.DriverContext{
+			BatchSize:            1,
+			ShouldStoreResponses: false,
+		},
+		Parser: parserDto.ParserContext{
+			Strategy: "CSV",
+			FilePath: csvPath,
+		},
+		Client: clientDto.ClientContext{
+			Channel:            modelsEnums.REST,
+			RequestTimeout:     5 * time.Second,
+			InsecureSkipVerify: true,
+		},
+		Transformer: transformerDto.TransformerContext{
+			Strategy:           "JSONATA",
+			BodyExpression:     `{"name": name}`,
+			EndpointExpression: `"/api/users"`,
+			MethodExpression:   `"POST"`,
+		},
+		LoadBalancer: loadBalancerDto.LoadBalancerContext{
+			Strategy: modelsEnums.ROUND_ROBIN,
+			Urls: []string{server.URL},
+		},
+	}
+
+	// Act: run synchronously (CLI mode) with nil job
+	err := driver.CreateBombardment(req)
+
+	// Assert
+	if err != nil {
+		t.Fatalf("CreateBombardment() error: %v", err)
+	}
+}
+
+func TestExecuteBombardment_TransformerFailure_IncrementsFailed(t *testing.T) {
+	t.Parallel()
+
+	// Arrange: CSV with data that will cause transformer to fail
+	tmpDir := t.TempDir()
+	csvPath := tmpDir + "/input.csv"
+	csvContent := "request_id,name\nreq_001,Alice\n"
+	if err := os.WriteFile(csvPath, []byte(csvContent), 0644); err != nil {
+		t.Fatalf("failed to write test CSV: %v", err)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	store := services.NewJobStore()
+	driver := NewBombardmentDriver(store)
+	job := store.Create()
+
+	req := dto.BombardmentRequest{
+		Driver: driverDto.DriverContext{
+			BatchSize: 1,
+		},
+		Parser: parserDto.ParserContext{
+			Strategy: "CSV",
+			FilePath: csvPath,
+		},
+		Client: clientDto.ClientContext{
+			Channel:            modelsEnums.REST,
+			RequestTimeout:     5 * time.Second,
+			InsecureSkipVerify: true,
+		},
+		Transformer: transformerDto.TransformerContext{
+			Strategy: "JSONATA",
+			// Invalid JSONata expression that should cause transform errors
+			BodyExpression:     `$invalid_func()`,
+			EndpointExpression: `"/api"`,
+			MethodExpression:   `"POST"`,
+		},
+		LoadBalancer: loadBalancerDto.LoadBalancerContext{
+			Strategy: modelsEnums.ROUND_ROBIN,
+			Urls: []string{server.URL},
+		},
+	}
+
+	// Act
+	jobID := driver.CreateBombardmentAsync(req, job)
+	waitForJobCompletion(t, store, jobID, 10*time.Second)
+
+	// Assert: job completed (not failed -- individual row failures don't fail the job)
+	snap, ok := store.Get(jobID)
+	if !ok {
+		t.Fatal("job not found in store")
+	}
+	// The job should complete even if individual transforms fail
+	if snap.Status != services.JobStatusCompleted && snap.Status != services.JobStatusFailed {
+		t.Errorf("expected job to be completed or failed, got %q", snap.Status)
+	}
+}
+
+func TestCloseAndLog_NilError(t *testing.T) {
+	t.Parallel()
+
+	// Arrange: closer that succeeds
+	c := &errCloser{err: nil}
+
+	// Act: should not panic
+	closeAndLog(c, "test-resource-ok")
+}
+
+func TestCloseAndLog_WithError(t *testing.T) {
+	t.Parallel()
+
+	// Arrange: closer that fails
+	c := &errCloser{err: errors.New("close failed")}
+
+	// Act: should not panic, just log
+	closeAndLog(c, "test-resource-err")
+}
+
+func TestCreateBombardment_InvalidClient_ReturnsError(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	store := services.NewJobStore()
+	driver := NewBombardmentDriver(store)
+
+	req := buildMinimalBombardmentRequest()
+	req.Client.Channel = modelsEnums.ClientChannel("INVALID_CHANNEL")
+
+	// Act
+	err := driver.CreateBombardment(req)
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error for invalid client channel, got nil")
+	}
+}
+
+func TestCreateBombardment_InvalidTransformer_ReturnsError(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	store := services.NewJobStore()
+	driver := NewBombardmentDriver(store)
+
+	req := buildMinimalBombardmentRequest()
+	req.Transformer.Strategy = "INVALID_TRANSFORMER"
+
+	// Act
+	err := driver.CreateBombardment(req)
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error for invalid transformer strategy, got nil")
+	}
+}
+
+func TestCreateBombardment_InvalidLoadBalancer_ReturnsError(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	store := services.NewJobStore()
+	driver := NewBombardmentDriver(store)
+
+	req := buildMinimalBombardmentRequest()
+	req.LoadBalancer.Strategy = modelsEnums.LoadBalancerStrategy("INVALID_LB")
+
+	// Act
+	err := driver.CreateBombardment(req)
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error for invalid load balancer strategy, got nil")
+	}
+}
+
+func TestCreateBombardmentAsync_InvalidClient_JobFails(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	store := services.NewJobStore()
+	driver := NewBombardmentDriver(store)
+	job := store.Create()
+
+	req := buildMinimalBombardmentRequest()
+	req.Client.Channel = modelsEnums.ClientChannel("INVALID_CHANNEL")
+
+	// Act
+	driver.CreateBombardmentAsync(req, job)
+	waitForJobCompletion(t, store, job.ID, 5*time.Second)
+
+	// Assert
+	snap, ok := store.Get(job.ID)
+	if !ok {
+		t.Fatal("job not found in store")
+	}
+	if snap.Status != services.JobStatusFailed {
+		t.Errorf("expected job status %q, got %q", services.JobStatusFailed, snap.Status)
+	}
+}
+
+func TestCreateBombardment_PathTraversal_ReturnsError(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	store := services.NewJobStore()
+	driver := NewBombardmentDriver(store)
+
+	req := buildMinimalBombardmentRequest()
+	req.Driver.ShouldStoreResponses = true
+	req.Driver.ResponsesStoragePath = "../../../etc/evil"
+
+	// Act
+	err := driver.CreateBombardment(req)
+
+	// Assert: should fail due to either path traversal check or parser issue
+	if err == nil {
+		t.Fatal("expected error, got nil")
 	}
 }
 

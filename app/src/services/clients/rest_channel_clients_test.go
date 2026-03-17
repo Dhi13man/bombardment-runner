@@ -170,3 +170,89 @@ func TestRestClient_GetStrategy(t *testing.T) {
 		t.Errorf("GetStrategy() = %v, want REST", got)
 	}
 }
+
+func TestRestClient_Close_ReturnsNil(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	client := newTestClient(5 * time.Second)
+
+	// Act
+	err := client.Close()
+
+	// Assert
+	if err != nil {
+		t.Errorf("Close() = %v, want nil", err)
+	}
+}
+
+func TestRestClient_MarshalFailure(t *testing.T) {
+	t.Parallel()
+
+	// Arrange: body that cannot be JSON-marshaled (channels are not serializable)
+	client := newTestClient(5 * time.Second)
+	unmarshalable := make(chan int)
+	req := modelsDtoRequests.NewRestChannelRequest(unmarshalable, "/api/test", nil, "POST")
+
+	// Act
+	_, err := client.Execute(req, "http://localhost")
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected marshal error, got nil")
+	}
+}
+
+func TestRestClient_InvalidHTTPMethod(t *testing.T) {
+	t.Parallel()
+
+	// Arrange: an invalid HTTP method causes NewRequestWithContext to fail
+	client := newTestClient(5 * time.Second)
+	req := modelsDtoRequests.NewRestChannelRequest(nil, "/api/test", nil, "INVALID METHOD WITH SPACES")
+
+	// Act
+	_, err := client.Execute(req, "http://localhost")
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error for invalid HTTP method, got nil")
+	}
+}
+
+func TestRestClient_StatusCode_Preserved(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		statusCode int
+	}{
+		{"200 OK", http.StatusOK},
+		{"201 Created", http.StatusCreated},
+		{"204 No Content", http.StatusNoContent},
+		{"400 Bad Request", http.StatusBadRequest},
+		{"404 Not Found", http.StatusNotFound},
+		{"500 Internal Server Error", http.StatusInternalServerError},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tc.statusCode)
+			}))
+			defer server.Close()
+
+			client := newTestClient(5 * time.Second)
+			req := modelsDtoRequests.NewRestChannelRequest(nil, "/status", nil, "GET")
+
+			resp, err := client.Execute(req, server.URL)
+			if err != nil {
+				t.Fatalf("Execute() error: %v", err)
+			}
+			if resp.GetStatus() == nil || *resp.GetStatus() != tc.statusCode {
+				t.Errorf("GetStatus() = %v, want %d", resp.GetStatus(), tc.statusCode)
+			}
+		})
+	}
+}
