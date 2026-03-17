@@ -2,6 +2,7 @@ package clients
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -74,7 +75,7 @@ func (c *graphqlChannelClient) Execute(
 
 	// Build the HTTP request
 	url := baseUrl + graphqlRequest.Endpoint
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payloadBytes))
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, url, bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		zap.L().Error("Request creation failed", zap.Error(err))
 		return nil, err
@@ -92,7 +93,7 @@ func (c *graphqlChannelClient) Execute(
 		req.Header.Set(key, value)
 	}
 
-	zap.S().Debugf("GraphQL request created: %v", req)
+	zap.S().Debugf("GraphQL request: %s %s", req.Method, req.URL)
 	response, err := c.httpClient.Do(req)
 	if err != nil {
 		zap.L().Error("GraphQL request failed", zap.Error(err))
@@ -104,7 +105,9 @@ func (c *graphqlChannelClient) Execute(
 		}
 	}(response.Body)
 
-	body, err := io.ReadAll(response.Body)
+	// Limit response body to 10 MB to prevent OOM from misbehaving targets
+	const maxResponseBodySize = 10 << 20
+	body, err := io.ReadAll(io.LimitReader(response.Body, maxResponseBodySize))
 	if err != nil {
 		zap.L().Error("Response reading failed", zap.Error(err))
 		return nil, err

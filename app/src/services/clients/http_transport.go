@@ -7,25 +7,26 @@ import (
 	"time"
 
 	modelsDtoClients "github.dhi13man.com/bombardment-runner/src/models/dto/clients"
+	"go.uber.org/zap"
 )
 
 // NewHTTPClient creates a shared HTTP client with optimized connection pooling
 // and timeouts derived from the given ClientContext. It is safe for concurrent
 // use by multiple goroutines and is shared across REST and GraphQL channel
 // clients.
-func NewHTTPClient(context modelsDtoClients.ClientContext) *http.Client {
+func NewHTTPClient(clientCtx modelsDtoClients.ClientContext) *http.Client {
 	// Optimize dialer with configurable keepalive
 	dialer := &net.Dialer{
-		Timeout:   context.DialTimeout,
-		KeepAlive: context.DialKeepAlive,
+		Timeout:   clientCtx.DialTimeout,
+		KeepAlive: clientCtx.DialKeepAlive,
 	}
 
 	// Optimize transport for connection pooling and reuse
 	transport := &http.Transport{
 		DialContext:           dialer.DialContext,
-		TLSHandshakeTimeout:   context.TlsHandshakeTimeout,
-		ResponseHeaderTimeout: context.ResponseHeaderTimeout,
-		ExpectContinueTimeout: context.ExpectContinueTimeout,
+		TLSHandshakeTimeout:   clientCtx.TlsHandshakeTimeout,
+		ResponseHeaderTimeout: clientCtx.ResponseHeaderTimeout,
+		ExpectContinueTimeout: clientCtx.ExpectContinueTimeout,
 
 		// Connection pooling optimizations
 		MaxIdleConns:        100,              // Increase pool size for connection reuse
@@ -34,16 +35,20 @@ func NewHTTPClient(context modelsDtoClients.ClientContext) *http.Client {
 		IdleConnTimeout:     90 * time.Second, // Keep idle connections alive but not forever
 
 		// Performance optimizations
-		DisableCompression: false,                                                       // Enable compression
-		ForceAttemptHTTP2:  true,                                                        // Enable HTTP/2 for compatible servers
-		TLSClientConfig:    &tls.Config{InsecureSkipVerify: context.InsecureSkipVerify}, // Optional security setting
+		DisableCompression: false,                                                          // Enable compression
+		ForceAttemptHTTP2:  true,                                                           // Enable HTTP/2 for compatible servers
+		TLSClientConfig:    &tls.Config{InsecureSkipVerify: clientCtx.InsecureSkipVerify}, // Optional security setting
 
 		// Connection persistence
 		DisableKeepAlives: false,
 	}
 
+	if clientCtx.InsecureSkipVerify {
+		zap.L().Warn("TLS certificate verification disabled (insecure)")
+	}
+
 	// Set default request timeout if not specified
-	requestTimeout := context.RequestTimeout
+	requestTimeout := clientCtx.RequestTimeout
 	if requestTimeout == 0 {
 		requestTimeout = 30 * time.Second // Default to 30 seconds if not specified
 	}
