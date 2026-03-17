@@ -77,13 +77,13 @@ const FIELD_CONFIG: Record<TransformerStrategy, Record<ExprFieldKey, FieldConfig
   JSONATA: {
     methodExpression:   { label: 'Method expression',   placeholder: '"POST"' },
     endpointExpression: { label: 'Endpoint expression',  placeholder: '"/api/v1/users"' },
-    headersExpression:  { label: 'Headers expression',   placeholder: '{"Content-Type": "application/json", "Authorization": "Bearer " & token}' },
+    headersExpression:  { label: 'Headers expression (optional)',   placeholder: '{"Content-Type": "application/json", "Authorization": "Bearer " & token}', optional: true },
     bodyExpression:     { label: 'Body expression',      placeholder: '{"name": name, "email": email, "age": $number(age)}' },
   },
   GOTEMPLATE: {
     methodExpression:   { label: 'Method template',      placeholder: 'POST',                                        skipBalanceCheck: true },
     endpointExpression: { label: 'Endpoint template',    placeholder: '/api/v1/{{.resource}}',                       skipBalanceCheck: true },
-    headersExpression:  { label: 'Headers template',     placeholder: 'Content-Type: application/json\nAuthorization: Bearer {{.token}}', skipBalanceCheck: true },
+    headersExpression:  { label: 'Headers template (optional)',     placeholder: 'Content-Type: application/json\nAuthorization: Bearer {{.token}}', optional: true, skipBalanceCheck: true },
     bodyExpression:     { label: 'Body template',        placeholder: '{"name": "{{.name}}", "email": "{{.email}}"}', skipBalanceCheck: true },
   },
   PASSTHROUGH: {
