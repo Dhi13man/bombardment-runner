@@ -19,7 +19,8 @@
   },
   "include": [
     "src/app/ui/static/src/**/*.ts",
-    "src/app/ui/static/src/**/*.tsx"
+    "src/app/ui/static/src/**/*.tsx",
+    "vitest.config.ts"
   ],
   "exclude": [
     "node_modules"
