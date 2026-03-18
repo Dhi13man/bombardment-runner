@@ -1,16 +1,16 @@
 import { useRef, useEffect, useCallback } from 'preact/hooks';
 import { useJobForm } from '../../context/JobFormContext';
 import { useWizard } from '../../context/WizardContext';
-import { RadioCardGroup } from '../primitives';
+import { RadioCardGroup, type RadioOption } from '../primitives';
 import { Icon } from '../Icon';
 import { formatFileSize } from '../../utils/format';
 import type { ParserStrategy } from '../../types/api';
 
-const PARSER_OPTIONS: { value: ParserStrategy | 'XML' | 'YAML'; label: string; disabled?: boolean; comingSoon?: boolean }[] = [
-  { value: 'CSV', label: 'CSV' },
-  { value: 'JSON', label: 'JSON' },
-  { value: 'XML' as ParserStrategy, label: 'XML', disabled: true, comingSoon: true },
-  { value: 'YAML' as ParserStrategy, label: 'YAML', disabled: true, comingSoon: true },
+const PARSER_OPTIONS: RadioOption<ParserStrategy | 'XML' | 'YAML'>[] = [
+  { value: 'CSV', label: 'CSV', icon: 'file-input', description: 'Comma-separated values' },
+  { value: 'JSON', label: 'JSON', icon: 'file-code', description: 'JSON array of objects' },
+  { value: 'XML', label: 'XML', icon: 'file-code', description: 'XML documents', disabled: true, comingSoon: true },
+  { value: 'YAML', label: 'YAML', icon: 'file-code', description: 'YAML files', disabled: true, comingSoon: true },
 ];
 
 const FILE_PATH_REGEX = /^(\.[/\\])?([a-zA-Z0-9_\-./\\]+)\.([a-zA-Z0-9]+)$/;
@@ -120,24 +120,21 @@ export function SourceStep() {
 
       {/* File Upload */}
       <div class="mb-6">
-        <label class="label">Data File</label>
-        <div class="flex gap-3">
+        <label for="data-file" class="label">Data File</label>
+        <div class="flex gap-3 file-upload-row">
           <div class="flex-1">
-            <input
+            <button
+              id="data-file"
+              type="button"
               class="input"
-              type="text"
-              placeholder="Click to select a file or enter a server path"
-              value={form.fileName}
-              readOnly
+              style={{ textAlign: 'left', cursor: 'pointer' }}
               onClick={() => fileInputRef.current?.click()}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  fileInputRef.current?.click();
-                }
-              }}
               aria-describedby="file-help"
-            />
+            >
+              <span class={form.fileName ? '' : 'custom-select-placeholder'}>
+                {form.fileName || 'Click to select a file or enter a server path'}
+              </span>
+            </button>
             <input
               ref={fileInputRef}
               type="file"
@@ -163,6 +160,11 @@ export function SourceStep() {
         </p>
       </div>
 
+      {/* Screen reader file selection announcement */}
+      <div aria-live="polite" class="sr-only">
+        {form.fileName ? `File selected: ${form.fileName}` : ''}
+      </div>
+
       {/* File Details */}
       {hasFile && (
         <div class="card-flat mb-6">
@@ -185,6 +187,9 @@ export function SourceStep() {
           </div>
         </div>
       )}
+
+      {/* Divider */}
+      <div class="input-divider"><span>or</span></div>
 
       {/* Server-side File Path */}
       <div class="mb-4">

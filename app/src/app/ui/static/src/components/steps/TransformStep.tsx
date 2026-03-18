@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState } from 'preact/hooks';
 import { useJobForm } from '../../context/JobFormContext';
 import { useWizard } from '../../context/WizardContext';
-import { Select, Input, Textarea } from '../primitives';
+import { RadioCardGroup, type RadioOption, Input, Textarea } from '../primitives';
 import { Icon } from '../Icon';
 import type { TransformerStrategy, ClientChannel } from '../../types/api';
 import type { JSX } from 'preact';
@@ -34,6 +34,12 @@ const STRATEGY_DEFAULTS: Record<TransformerStrategy, Record<ExprFieldKey, string
     bodyExpression: '*',
   },
 };
+
+const TRANSFORMER_OPTIONS: RadioOption<TransformerStrategy>[] = [
+  { value: 'JSONATA', label: 'JSONata', icon: 'code', description: 'JSONata expression language' },
+  { value: 'GOTEMPLATE', label: 'Go Template', icon: 'file-code', description: 'Go template syntax' },
+  { value: 'PASSTHROUGH', label: 'Passthrough', icon: 'layers', description: 'Direct column mapping' },
+];
 
 const STRATEGY_HELP: Record<TransformerStrategy, string> = {
   JSONATA: 'Expressions are evaluated per record from your data file',
@@ -173,12 +179,13 @@ export function TransformStep() {
       </div>
 
       <div class="mb-6">
-        <Select
-          id="trans-strategy"
+        <RadioCardGroup
+          name="transformer_strategy"
           label="Transformer Strategy"
+          options={TRANSFORMER_OPTIONS}
           value={form.transformerStrategy}
-          onChange={(e: JSX.TargetedEvent<HTMLSelectElement>) => {
-            const newStrategy = (e.currentTarget as HTMLSelectElement).value as TransformerStrategy;
+          onChange={(v) => {
+            const newStrategy = v as TransformerStrategy;
             update('transformerStrategy', newStrategy);
             const defaults = STRATEGY_DEFAULTS[newStrategy];
             update('methodExpression', defaults.methodExpression);
@@ -187,11 +194,7 @@ export function TransformStep() {
             update('bodyExpression', defaults.bodyExpression);
             setTouched({});
           }}
-        >
-          <option value="JSONATA">JSONata</option>
-          <option value="GOTEMPLATE">Go Template</option>
-          <option value="PASSTHROUGH">Passthrough</option>
-        </Select>
+        />
         <p class="field-help">
           <Icon name="info" class="w-3 h-3" />
           {STRATEGY_HELP[strategy]}

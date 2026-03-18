@@ -32,7 +32,7 @@ export function WizardPanels({ children }: WizardPanelsProps) {
   }, [currentStep]);
 
   return (
-    <>
+    <div class="step-panels-container">
       {panels.map((panel, i) => {
         const stepNum = i + 1;
         const isActive = stepNum === currentStep;
@@ -43,13 +43,15 @@ export function WizardPanels({ children }: WizardPanelsProps) {
             id={`step-${stepNum}`}
             class={`step-panel${isActive ? ' active' : ''}`}
             data-step={stepNum}
-            role="tabpanel"
+            role="region"
+            aria-label={`Step ${stepNum}`}
             aria-hidden={!isActive ? 'true' : undefined}
+            {...(!isActive ? { inert: true } : {})}
           >
             {panel}
           </div>
         );
       })}
-    </>
+    </div>
   );
 }

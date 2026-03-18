@@ -4,11 +4,13 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.dhi13man.com/bombardment-runner/src/models/dto"
 )
 
 func TestJobStore_Create(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 
 	if job.ID == "" {
 		t.Fatal("expected non-empty UUID, got empty string")
@@ -23,7 +25,7 @@ func TestJobStore_Create(t *testing.T) {
 
 func TestJobStore_Get_Exists(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 
 	snap, ok := store.Get(job.ID)
 	if !ok {
@@ -60,7 +62,7 @@ func TestJobStore_List_Multiple(t *testing.T) {
 
 	ids := make(map[string]bool)
 	for i := 0; i < 3; i++ {
-		job := store.Create()
+		job := store.Create(nil)
 		ids[job.ID] = true
 	}
 
@@ -78,7 +80,7 @@ func TestJobStore_List_Multiple(t *testing.T) {
 
 func TestJob_Lifecycle_PendingToCompleted(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 
 	// Verify initial state
 	if job.Status != JobStatusPending {
@@ -126,7 +128,7 @@ func TestJob_Lifecycle_PendingToCompleted(t *testing.T) {
 
 func TestJob_Lifecycle_PendingToFailed(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 
 	job.SetRunning()
 
@@ -150,7 +152,7 @@ func TestJob_Lifecycle_PendingToFailed(t *testing.T) {
 
 func TestJob_ConcurrentUpdates(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.SetRunning()
 	job.SetTotal(100)
 
@@ -172,7 +174,7 @@ func TestJob_ConcurrentUpdates(t *testing.T) {
 
 func TestJob_ProgressPercent(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.SetRunning()
 	job.SetTotal(100)
 
@@ -193,7 +195,7 @@ func TestJob_ProgressPercent(t *testing.T) {
 
 func TestJob_IncrementFailed(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.SetRunning()
 	job.SetTotal(10)
 
@@ -209,7 +211,7 @@ func TestJob_IncrementFailed(t *testing.T) {
 
 func TestJob_ProgressPercent_IncludesFailedRows(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.SetRunning()
 	job.SetTotal(100)
 
@@ -237,7 +239,7 @@ func TestJob_ProgressPercent_IncludesFailedRows(t *testing.T) {
 
 func TestJob_ProgressPercent_ZeroTotal(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.SetRunning()
 	// total stays at 0
 
@@ -249,7 +251,7 @@ func TestJob_ProgressPercent_ZeroTotal(t *testing.T) {
 
 func TestJob_ConcurrentMixedUpdates(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.SetRunning()
 	job.SetTotal(200)
 
@@ -282,14 +284,92 @@ func TestJob_ConcurrentMixedUpdates(t *testing.T) {
 	}
 }
 
+func TestJobStore_Delete_Exists(t *testing.T) {
+	store := NewJobStore()
+	job := store.Create(nil)
+
+	ok := store.Delete(job.ID)
+	if !ok {
+		t.Fatal("expected Delete to return true for existing job")
+	}
+
+	_, found := store.Get(job.ID)
+	if found {
+		t.Fatal("expected Get to return false after deletion")
+	}
+
+	jobs := store.List()
+	if len(jobs) != 0 {
+		t.Fatalf("expected empty list after deletion, got %d", len(jobs))
+	}
+}
+
+func TestJobStore_Delete_NotFound(t *testing.T) {
+	store := NewJobStore()
+
+	ok := store.Delete("nonexistent-id")
+	if ok {
+		t.Fatal("expected Delete to return false for non-existent ID")
+	}
+}
+
+func TestJobStore_List_OmitsOriginalRequest(t *testing.T) {
+	store := NewJobStore()
+	req := &dto.BombardmentRequest{}
+	req.Parser.FilePath = "/tmp/test.csv"
+	store.Create(req)
+
+	jobs := store.List()
+	if len(jobs) != 1 {
+		t.Fatalf("expected 1 job, got %d", len(jobs))
+	}
+	if jobs[0].OriginalRequest != nil {
+		t.Fatal("expected OriginalRequest to be nil in list results")
+	}
+
+	// Full snapshot via Get() should still include it
+	snap, ok := store.Get(jobs[0].ID)
+	if !ok {
+		t.Fatal("expected Get to return true")
+	}
+	if snap.OriginalRequest == nil {
+		t.Fatal("expected OriginalRequest to be present in Get() result")
+	}
+}
+
+func TestJobStore_Create_StripsFileContentB64(t *testing.T) {
+	store := NewJobStore()
+	req := &dto.BombardmentRequest{}
+	req.Parser.FileContentB64 = "dGVzdA==" // base64("test")
+	req.Parser.FilePath = "/tmp/test.csv"
+
+	job := store.Create(req)
+	snap := job.Snapshot()
+
+	if snap.OriginalRequest == nil {
+		t.Fatal("expected OriginalRequest to be present")
+	}
+	if snap.OriginalRequest.Parser.FileContentB64 != "" {
+		t.Fatal("expected file_content_b64 to be stripped from stored request")
+	}
+	if snap.OriginalRequest.Parser.FilePath != "/tmp/test.csv" {
+		t.Fatalf("expected file_path to be preserved, got %q", snap.OriginalRequest.Parser.FilePath)
+	}
+
+	// Verify the original request was not mutated
+	if req.Parser.FileContentB64 != "dGVzdA==" {
+		t.Fatal("expected original request to remain unmutated")
+	}
+}
+
 func TestJobStore_List_SortedNewestFirst(t *testing.T) {
 	store := NewJobStore()
 
-	job1 := store.Create()
+	job1 := store.Create(nil)
 	time.Sleep(2 * time.Millisecond) // ensure distinct timestamps
-	job2 := store.Create()
+	job2 := store.Create(nil)
 	time.Sleep(2 * time.Millisecond)
-	job3 := store.Create()
+	job3 := store.Create(nil)
 
 	jobs := store.List()
 	if len(jobs) != 3 {

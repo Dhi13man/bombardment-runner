@@ -41,7 +41,8 @@ export type IconName =
   | 'moon'
   | 'menu'
   | 'panel-left'
-  | 'check';
+  | 'check'
+  | 'search';
 
 export type IconSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -56,7 +57,7 @@ interface IconProps {
   name: IconName;
   size?: IconSize;
   class?: string;
-  /** For icon-only buttons — provides accessible label */
+  /** For icon-only buttons: provides accessible label */
   'aria-label'?: string;
 }
 

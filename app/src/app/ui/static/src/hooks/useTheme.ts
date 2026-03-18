@@ -7,7 +7,7 @@ export type Theme = 'dark' | 'light';
 function getInitialTheme(): Theme {
   const stored = localStorage.getItem(THEME_KEY);
   if (stored === 'dark' || stored === 'light') return stored;
-  return 'light';
+  return 'dark';
 }
 
 function applyTheme(theme: Theme): void {
@@ -17,22 +17,19 @@ function applyTheme(theme: Theme): void {
 export function useTheme() {
   const [theme, setThemeState] = useState<Theme>(getInitialTheme);
 
-  const setTheme = useCallback((next: Theme) => {
-    setThemeState(next);
-    localStorage.setItem(THEME_KEY, next);
-    applyTheme(next);
+  const toggle = useCallback(() => {
+    setThemeState((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      localStorage.setItem(THEME_KEY, next);
+      applyTheme(next);
+      return next;
+    });
   }, []);
 
-  const toggle = useCallback(() => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  }, [theme, setTheme]);
-
-  // Apply theme on mount
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
-  // Listen for system preference changes (only when no manual preference stored)
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = (e: MediaQueryListEvent) => {
@@ -46,5 +43,5 @@ export function useTheme() {
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  return { theme, setTheme, toggle } as const;
+  return { theme, toggle } as const;
 }

@@ -1,5 +1,5 @@
 import type { JSX, ComponentChildren } from 'preact';
-import { Icon, type IconName } from '../Icon';
+import { Icon, type IconName, type IconSize } from '../Icon';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -41,7 +41,7 @@ export function Button({
     className,
   ].filter(Boolean).join(' ');
 
-  const iconSize = size === 'sm' ? 'sm' : 'sm';
+  const iconSize: IconSize = size === 'lg' ? 'md' : 'sm';
 
   return (
     <button class={classes} {...rest}>

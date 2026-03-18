@@ -1,7 +1,9 @@
-import { useRef } from 'preact/hooks';
+import { useRef, useState, useEffect } from 'preact/hooks';
 import { useSidebar } from '../hooks/useSidebar';
+import { useRouter } from '../context/RouterContext';
 import { Sidebar } from './Sidebar';
 import { ViewRouter } from './ViewRouter';
+import { CommandPalette } from './composites/CommandPalette';
 import { Icon } from './Icon';
 
 /**
@@ -11,10 +13,26 @@ import { Icon } from './Icon';
 export function AppShell() {
   const { isOpen, open, close } = useSidebar();
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const { navigateTo } = useRouter();
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  useEffect(() => {
+    function handleGlobalKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+      }
+      if (e.altKey && !e.ctrlKey && !e.metaKey) {
+        if (e.key === '1') { e.preventDefault(); navigateTo('create-job'); }
+        if (e.key === '2') { e.preventDefault(); navigateTo('job-history'); }
+      }
+    }
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [navigateTo]);
 
   function handleClose() {
     close();
-    // Return focus to hamburger trigger per accessibility spec
     toggleRef.current?.focus();
   }
 
@@ -49,6 +67,7 @@ export function AppShell() {
           <ViewRouter />
         </main>
       </div>
+      <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </>
   );
 }

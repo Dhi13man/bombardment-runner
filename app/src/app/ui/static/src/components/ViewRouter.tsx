@@ -5,18 +5,29 @@ import { JobHistoryView } from './views/JobHistoryView';
 
 /**
  * Renders the active view based on router state.
+ * Uses key to trigger fade-in animation on view change.
  */
 export function ViewRouter() {
   const { activeView } = useRouter();
 
+  let content;
   switch (activeView) {
     case 'create-job':
-      return <CreateJobView />;
+      content = <CreateJobView />;
+      break;
     case 'job-progress':
-      return <JobProgressView />;
+      content = <JobProgressView />;
+      break;
     case 'job-history':
-      return <JobHistoryView />;
+      content = <JobHistoryView />;
+      break;
     default:
       return null;
   }
+
+  return (
+    <div key={activeView} class="view-enter">
+      {content}
+    </div>
+  );
 }

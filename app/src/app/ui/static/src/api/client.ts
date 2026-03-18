@@ -58,4 +58,15 @@ export async function listJobs(): Promise<JobSnapshot[]> {
   return data.jobs ?? [];
 }
 
+/** Delete a job by ID. */
+export async function deleteJob(id: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/bombardment/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({})) as ErrorResponse;
+    throw new ApiError(res.status, data.error || 'Failed to delete job', data.details);
+  }
+}
+
 export { ApiError };

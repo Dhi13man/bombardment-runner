@@ -10,19 +10,20 @@
   <script>
     (function() {
       var t = localStorage.getItem('bombardment-theme');
-      if (t !== 'dark') document.documentElement.classList.add('light');
+      if (t === 'light') document.documentElement.classList.add('light');
     })();
   </script>
 
-  <!-- Self-hosted fonts (preload critical weights) -->
-  <link rel="preload" href="/static/fonts/ibm-plex-sans-latin-400.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" href="/static/fonts/ibm-plex-sans-latin-500.woff2" as="font" type="font/woff2" crossorigin>
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/static/css/app.min.css?v=5">
 
-  <!-- Build-time CSS (Tailwind + design tokens) -->
-  <link rel="stylesheet" href="/static/css/app.min.css">
+  <!-- Font preloads -->
+  <link rel="preload" as="font" type="font/woff2" href="/static/fonts/ibm-plex-sans-latin-400.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="/static/fonts/ibm-plex-sans-latin-500.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="/static/fonts/jetbrains-mono-latin-400.woff2" crossorigin>
 
   <!-- Preact application bundle -->
-  <script src="/static/js/app.min.js" defer></script>
+  <script src="/static/js/app.min.js?v=5" defer></script>
 </head>
 
 <body>

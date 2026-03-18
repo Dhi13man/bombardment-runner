@@ -1,13 +1,15 @@
-import { useState, useEffect, useRef, useCallback } from 'preact/hooks';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'preact/hooks';
 import { useRouter } from '../../context/RouterContext';
 import { useToast } from '../composites/Toast';
 import { PageHeader } from '../PageHeader';
 import { ProgressBar } from '../composites/ProgressBar';
 import { StatCard } from '../composites/StatCard';
 import { StatusBadge } from '../composites/StatusBadge';
+import { PipelineStrip, deriveStages } from '../composites/PipelineStrip';
 import { Icon } from '../Icon';
 import { Button } from '../primitives';
 import { getJob } from '../../api/client';
+import { progressStatus } from '../../utils/format';
 import type { JobSnapshot, JobStatus } from '../../types/api';
 
 /* ---------- Polling Config ---------- */
@@ -19,12 +21,6 @@ const ERROR_BACKOFF_FACTOR = 2;
 
 function isTerminal(status: JobStatus): boolean {
   return status === 'COMPLETED' || status === 'FAILED';
-}
-
-function progressStatus(status: JobStatus): 'default' | 'success' | 'error' {
-  if (status === 'COMPLETED') return 'success';
-  if (status === 'FAILED') return 'error';
-  return 'default';
 }
 
 function subtitle(status: JobStatus): string {
@@ -75,7 +71,7 @@ export function JobProgressView() {
     } catch {
       errorCountRef.current += 1;
       if (errorCountRef.current === 3 && mountedRef.current) {
-        showToast('error', 'Lost connection to job status — retrying...');
+        showToast('error', 'Lost connection to job status. Retrying...');
       }
       intervalRef.current = Math.min(
         intervalRef.current * ERROR_BACKOFF_FACTOR,
@@ -116,7 +112,7 @@ export function JobProgressView() {
     };
   }, [jobId, poll, stopPolling]);
 
-  // No job ID — show empty state
+  // No job ID, show empty state
   if (!jobId) {
     return (
       <div id="view-job-progress">
@@ -142,8 +138,30 @@ export function JobProgressView() {
   const pct = Math.min(100, Math.max(0, job?.progress_percent ?? 0));
   const done = isTerminal(status);
 
+  const throughput = useMemo(() => {
+    if (!job || !job.processed_rows) return '-';
+    const start = new Date(job.created_at).getTime();
+    const end = done && job.completed_at
+      ? new Date(job.completed_at).getTime()
+      : Date.now();
+    const elapsedSec = (end - start) / 1000;
+    if (elapsedSec <= 0) return '-';
+    const rps = job.processed_rows / elapsedSec;
+    return rps >= 1 ? `${Math.round(rps)}/s` : `${rps.toFixed(2)}/s`;
+  }, [job, done]);
+
   return (
     <div id="view-job-progress">
+      <div class="flex items-center gap-2 mb-2">
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          onClick={() => { stopPolling(); navigateTo('job-history'); }}
+        >
+          <Icon name="arrow-left" size="sm" />
+          History
+        </button>
+      </div>
       <PageHeader title="Job Progress" description={subtitle(status)} />
 
       <div class="card">
@@ -159,6 +177,13 @@ export function JobProgressView() {
             <StatusBadge status={status} />
           </div>
         </div>
+
+        {/* Pipeline Strip */}
+        {job && (
+          <div class="mb-6">
+            <PipelineStrip stages={deriveStages(job)} />
+          </div>
+        )}
 
         {/* Progress Bar */}
         <ProgressBar
@@ -183,6 +208,10 @@ export function JobProgressView() {
             value={String(job?.total_rows ?? 0)}
             label="Total"
             variant="info"
+          />
+          <StatCard
+            value={throughput}
+            label="Throughput"
           />
         </div>
 

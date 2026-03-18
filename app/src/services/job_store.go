@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.dhi13man.com/bombardment-runner/src/models/dto"
 )
 
 // JobStatus represents the current state of a bombardment job
@@ -21,24 +22,26 @@ const (
 
 // JobSnapshot is the JSON-serializable view of a job
 type JobSnapshot struct {
-	ID              string     `json:"id"`
-	Status          JobStatus  `json:"status"`
-	CreatedAt       time.Time  `json:"created_at"`
-	CompletedAt     *time.Time `json:"completed_at,omitempty"`
-	TotalRows       int64      `json:"total_rows"`
-	ProcessedRows   int64      `json:"processed_rows"`
-	FailedRows      int64      `json:"failed_rows"`
-	ProgressPercent float64    `json:"progress_percent"`
-	ErrorMessage    string     `json:"error_message,omitempty"`
+	ID              string                  `json:"id"`
+	Status          JobStatus               `json:"status"`
+	CreatedAt       time.Time               `json:"created_at"`
+	CompletedAt     *time.Time              `json:"completed_at,omitempty"`
+	TotalRows       int64                   `json:"total_rows"`
+	ProcessedRows   int64                   `json:"processed_rows"`
+	FailedRows      int64                   `json:"failed_rows"`
+	ProgressPercent float64                 `json:"progress_percent"`
+	ErrorMessage    string                  `json:"error_message,omitempty"`
+	OriginalRequest *dto.BombardmentRequest `json:"original_request,omitempty"`
 }
 
 // Job is the thread-safe mutable job that tracks bombardment progress
 type Job struct {
-	ID          string
-	Status      JobStatus
-	CreatedAt   time.Time
-	CompletedAt *time.Time
-	ErrorMessage string
+	ID              string
+	Status          JobStatus
+	CreatedAt       time.Time
+	CompletedAt     *time.Time
+	ErrorMessage    string
+	OriginalRequest *dto.BombardmentRequest
 
 	processedAtomic atomic.Int64
 	failedAtomic    atomic.Int64
@@ -110,6 +113,7 @@ func (j *Job) Snapshot() JobSnapshot {
 		FailedRows:      failed,
 		ProgressPercent: progress,
 		ErrorMessage:    j.ErrorMessage,
+		OriginalRequest: j.OriginalRequest,
 	}
 }
 
@@ -124,14 +128,25 @@ func NewJobStore() *JobStore {
 	return &JobStore{jobs: make(map[string]*Job)}
 }
 
-// Create creates a new pending job and returns it
-func (s *JobStore) Create() *Job {
+// Create creates a new pending job and returns it.
+// The stored request has file_content_b64 stripped to avoid retaining
+// potentially large file data in memory for the lifetime of the job.
+func (s *JobStore) Create(req *dto.BombardmentRequest) *Job {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	var stored *dto.BombardmentRequest
+	if req != nil {
+		sanitized := *req
+		sanitized.Parser.FileContentB64 = ""
+		stored = &sanitized
+	}
+
 	job := &Job{
-		ID:        uuid.New().String(),
-		Status:    JobStatusPending,
-		CreatedAt: time.Now(),
+		ID:              uuid.New().String(),
+		Status:          JobStatusPending,
+		CreatedAt:       time.Now(),
+		OriginalRequest: stored,
 	}
 	s.jobs[job.ID] = job
 	return job
@@ -148,16 +163,37 @@ func (s *JobStore) Get(id string) (JobSnapshot, bool) {
 	return job.Snapshot(), true
 }
 
-// List returns snapshots of all jobs, sorted by creation time (newest first)
+// List returns snapshots of all jobs, sorted by creation time (newest first).
+// OriginalRequest is omitted from list results to avoid bloating the response
+// with file contents; use Get() for the full snapshot.
 func (s *JobStore) List() []JobSnapshot {
+	// Collect job references under the store lock, then release before snapshotting.
+	// Each job's own mutex protects its fields during Snapshot().
 	s.mu.RLock()
-	defer s.mu.RUnlock()
-	jobs := make([]JobSnapshot, 0, len(s.jobs))
+	refs := make([]*Job, 0, len(s.jobs))
 	for _, j := range s.jobs {
-		jobs = append(jobs, j.Snapshot())
+		refs = append(refs, j)
+	}
+	s.mu.RUnlock()
+
+	jobs := make([]JobSnapshot, len(refs))
+	for i, j := range refs {
+		jobs[i] = j.Snapshot()
+		jobs[i].OriginalRequest = nil
 	}
 	sort.Slice(jobs, func(i, k int) bool {
 		return jobs[i].CreatedAt.After(jobs[k].CreatedAt)
 	})
 	return jobs
+}
+
+// Delete removes a job by ID. Returns true if the job existed and was deleted.
+func (s *JobStore) Delete(id string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	_, ok := s.jobs[id]
+	if ok {
+		delete(s.jobs, id)
+	}
+	return ok
 }

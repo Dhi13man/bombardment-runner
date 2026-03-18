@@ -2,6 +2,7 @@ import { render } from 'preact';
 import { ThemeProvider } from './context/ThemeContext';
 import { RouterProvider } from './context/RouterContext';
 import { ToastProvider } from './components/composites/Toast';
+import { JobFormProvider } from './context/JobFormContext';
 import { AppShell } from './components/AppShell';
 
 function App() {
@@ -9,7 +10,9 @@ function App() {
     <ThemeProvider>
       <RouterProvider>
         <ToastProvider>
-          <AppShell />
+          <JobFormProvider>
+            <AppShell />
+          </JobFormProvider>
         </ToastProvider>
       </RouterProvider>
     </ThemeProvider>

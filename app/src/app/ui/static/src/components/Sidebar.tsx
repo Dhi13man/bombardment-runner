@@ -31,6 +31,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     firstLink?.focus();
 
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') { onClose(); return; }
       if (e.key !== 'Tab' || !sidebarRef.current) return;
       const focusable = sidebarRef.current.querySelectorAll<HTMLElement>(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
@@ -49,7 +50,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   function handleNav(view: ViewName) {
     navigateTo(view);
@@ -72,7 +73,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         <div class="sidebar-nav">
-          <span class="sidebar-section-label">Jobs</span>
+          <span class="sidebar-section-label" role="heading" aria-level={2}>Jobs</span>
           {NAV_ITEMS.map((item) => {
             const isActive = activeView === item.id;
             return (
@@ -83,15 +84,19 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 aria-current={isActive ? 'page' : undefined}
                 onClick={() => handleNav(item.id)}
               >
-                <Icon name={item.icon} size="sm" />
+                <Icon name={item.icon} size="sm" class="sidebar-link-icon" />
                 <span>{item.label}</span>
+                <kbd class="sidebar-shortcut">Alt+{NAV_ITEMS.indexOf(item) + 1}</kbd>
               </button>
             );
           })}
         </div>
 
         <div class="sidebar-footer">
-          <ThemeToggle />
+          <div class="flex items-center justify-between">
+            <ThemeToggle />
+            <kbd class="sidebar-shortcut" title="Open command palette">Cmd+K</kbd>
+          </div>
         </div>
       </nav>
 
