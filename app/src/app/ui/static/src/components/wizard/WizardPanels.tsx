@@ -43,7 +43,8 @@ export function WizardPanels({ children }: WizardPanelsProps) {
             id={`step-${stepNum}`}
             class={`step-panel${isActive ? ' active' : ''}`}
             data-step={stepNum}
-            role="tabpanel"
+            role="region"
+            aria-label={`Step ${stepNum}`}
             aria-hidden={!isActive ? 'true' : undefined}
           >
             {panel}

@@ -73,7 +73,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         <div class="sidebar-nav">
-          <span class="sidebar-section-label">Jobs</span>
+          <span class="sidebar-section-label" role="heading" aria-level={2}>Jobs</span>
           {NAV_ITEMS.map((item) => {
             const isActive = activeView === item.id;
             return (

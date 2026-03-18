@@ -26,15 +26,15 @@ export function ConfigCard({ section, title, icon, rows, children }: ConfigCardP
         </div>
         <span class="config-card-title">{title}</span>
       </div>
-      <div class="config-card-body">
+      <dl class="config-card-body">
         {rows.map((row) => (
           <div key={row.label} class="config-row">
-            <span class="config-row-label">{row.label}</span>
-            <span class={`config-row-value${row.mono ? ' mono' : ''}`}>{row.value}</span>
+            <dt class="config-row-label">{row.label}</dt>
+            <dd class={`config-row-value${row.mono ? ' mono' : ''}`}>{row.value}</dd>
           </div>
         ))}
         {children}
-      </div>
+      </dl>
     </div>
   );
 }

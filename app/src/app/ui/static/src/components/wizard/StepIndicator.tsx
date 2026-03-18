@@ -23,8 +23,10 @@ export function StepIndicator() {
           <div class="step-circle">
             {isCompleted ? (
               <Icon name="check" size="sm" />
-            ) : (
+            ) : isActive ? (
               <Icon name={step.icon} size="sm" />
+            ) : (
+              <span>{stepNum}</span>
             )}
           </div>
         );

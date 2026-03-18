@@ -195,6 +195,10 @@
     color: var(--text-primary);
   }
 
+  dl, dt, dd {
+    @apply m-0 p-0;
+  }
+
   a {
     color: var(--accent);
     text-decoration: none;
@@ -932,7 +936,7 @@
     counter-reset: step;
   }
   .step {
-    @apply flex items-center;
+    @apply flex items-start;
     counter-increment: step;
   }
   .step + .step::before {
@@ -941,10 +945,9 @@
     width: 56px;
     height: 2px;
     background: var(--border-default);
-    margin: 0 12px;
+    margin: 17px 12px 0;
     flex-shrink: 0;
   }
-  .step.active + .step::before,
   .step.completed + .step::before {
     background: var(--accent);
   }
@@ -966,6 +969,8 @@
     color: var(--text-tertiary);
     border: 2px solid var(--border-default);
     transition: all 150ms ease;
+    font-size: 13px;
+    font-weight: 600;
   }
   .step.active .step-circle {
     background: var(--accent);
@@ -1628,8 +1633,6 @@
   /* Step indicator: compact for mobile */
   .steps {
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    justify-content: flex-start;
     padding: 0 8px;
   }
   .step-circle {
@@ -1638,7 +1641,7 @@
   }
   .step + .step::before {
     width: 24px;
-    margin: 0 4px;
+    margin: 13px 4px 0;
   }
 
   /* Review grid stacks */

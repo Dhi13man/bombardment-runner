@@ -151,6 +151,7 @@ export function CustomSelect({
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-controls={listboxId}
+        aria-activedescendant={isOpen && highlightedIndex >= 0 && listboxId ? `${listboxId}-opt-${highlightedIndex}` : undefined}
         aria-invalid={error ? 'true' : undefined}
         aria-describedby={error && id ? `${id}-error` : undefined}
         onClick={() => (isOpen ? close() : open())}

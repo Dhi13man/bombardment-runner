@@ -28,6 +28,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     { id: 'nav-create', label: 'Create Job', icon: 'plus', category: 'Navigation', action: () => navigateTo('create-job') },
     { id: 'nav-history', label: 'Job History', icon: 'history', category: 'Navigation', action: () => navigateTo('job-history') },
     { id: 'action-theme', label: 'Toggle Theme', icon: 'sun', category: 'Actions', action: toggleTheme },
+    { id: 'action-refresh', label: 'Refresh Page', icon: 'refresh-cw', category: 'Actions', action: () => location.reload() },
+    { id: 'help-shortcuts', label: 'Keyboard Shortcuts', icon: 'info', category: 'Help', action: () => { onClose(); alert('Alt+1: Create Job\nAlt+2: Job History\nAlt+Enter: Next step\nAlt+Left: Previous step\nCmd+K: Command palette\nEscape: Close'); } },
+    { id: 'help-docs', label: 'API Documentation', icon: 'file-code', category: 'Help', action: () => { window.open('/swagger/index.html', '_blank'); onClose(); } },
   ];
 
   const filtered = query

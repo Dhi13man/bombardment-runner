@@ -120,24 +120,21 @@ export function SourceStep() {
 
       {/* File Upload */}
       <div class="mb-6">
-        <label class="label">Data File</label>
+        <label for="data-file" class="label">Data File</label>
         <div class="flex gap-3 file-upload-row">
           <div class="flex-1">
-            <input
+            <button
+              id="data-file"
+              type="button"
               class="input"
-              type="text"
-              placeholder="Click to select a file or enter a server path"
-              value={form.fileName}
-              readOnly
+              style={{ textAlign: 'left', cursor: 'pointer' }}
               onClick={() => fileInputRef.current?.click()}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  fileInputRef.current?.click();
-                }
-              }}
               aria-describedby="file-help"
-            />
+            >
+              <span class={form.fileName ? '' : 'custom-select-placeholder'}>
+                {form.fileName || 'Click to select a file or enter a server path'}
+              </span>
+            </button>
             <input
               ref={fileInputRef}
               type="file"
