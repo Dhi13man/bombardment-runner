@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from 'preact/hooks';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'preact/hooks';
 import { useRouter } from '../../context/RouterContext';
 import { useToast } from '../composites/Toast';
 import { PageHeader } from '../PageHeader';
 import { ProgressBar } from '../composites/ProgressBar';
 import { StatCard } from '../composites/StatCard';
 import { StatusBadge } from '../composites/StatusBadge';
+import { PipelineStrip, deriveStages } from '../composites/PipelineStrip';
 import { Icon } from '../Icon';
 import { Button } from '../primitives';
 import { getJob } from '../../api/client';
@@ -142,8 +143,30 @@ export function JobProgressView() {
   const pct = Math.min(100, Math.max(0, job?.progress_percent ?? 0));
   const done = isTerminal(status);
 
+  const throughput = useMemo(() => {
+    if (!job || !job.processed_rows) return '-';
+    const start = new Date(job.created_at).getTime();
+    const end = done && job.completed_at
+      ? new Date(job.completed_at).getTime()
+      : Date.now();
+    const elapsedSec = (end - start) / 1000;
+    if (elapsedSec <= 0) return '-';
+    const rps = job.processed_rows / elapsedSec;
+    return rps >= 1 ? `${Math.round(rps)}/s` : `${rps.toFixed(2)}/s`;
+  }, [job, done]);
+
   return (
     <div id="view-job-progress">
+      <div class="flex items-center gap-2 mb-2">
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          onClick={() => { stopPolling(); navigateTo('job-history'); }}
+        >
+          <Icon name="arrow-left" size="sm" />
+          History
+        </button>
+      </div>
       <PageHeader title="Job Progress" description={subtitle(status)} />
 
       <div class="card">
@@ -159,6 +182,13 @@ export function JobProgressView() {
             <StatusBadge status={status} />
           </div>
         </div>
+
+        {/* Pipeline Strip */}
+        {job && (
+          <div class="mb-6">
+            <PipelineStrip stages={deriveStages(job)} />
+          </div>
+        )}
 
         {/* Progress Bar */}
         <ProgressBar
@@ -183,6 +213,10 @@ export function JobProgressView() {
             value={String(job?.total_rows ?? 0)}
             label="Total"
             variant="info"
+          />
+          <StatCard
+            value={throughput}
+            label="Throughput"
           />
         </div>
 

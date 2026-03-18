@@ -43,6 +43,7 @@ const ICON_LIST = [
   'menu',
   'panel-left',
   'check',
+  'search',
 ];
 
 const outDir = path.dirname(SPRITE_OUT);

@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'preact/hooks';
 import { useJobForm } from '../../context/JobFormContext';
 import { useWizard } from '../../context/WizardContext';
 import { ConfigCard } from '../composites/ConfigCard';
+import { PipelineStrip, DEFAULT_STAGES } from '../composites/PipelineStrip';
 import { StatusBadge } from '../composites/StatusBadge';
 import { Icon } from '../Icon';
 import type { ClientChannel } from '../../types/api';
@@ -93,13 +94,18 @@ export function ReviewStep() {
         </div>
       </div>
 
+      {/* Pipeline Preview */}
+      <div class="mb-6">
+        <PipelineStrip stages={DEFAULT_STAGES} compact />
+      </div>
+
       {/* Config Summary Cards Grid */}
       <div class="review-grid mb-6">
         <ConfigCard section="source" title="Source" icon="file-input" rows={sourceRows}>
           <div class="config-row">
             <span class="config-row-label">Status</span>
             <span class="config-row-value">
-              <StatusBadge variant={stepValid[1] ? 'green' : 'red'} label={stepValid[1] ? 'Valid' : 'Invalid'} />
+              <StatusBadge variant={stepValid[1] ? 'success' : 'error'} label={stepValid[1] ? 'Valid' : 'Invalid'} />
             </span>
           </div>
         </ConfigCard>
@@ -108,7 +114,7 @@ export function ReviewStep() {
           <div class="config-row">
             <span class="config-row-label">Status</span>
             <span class="config-row-value">
-              <StatusBadge variant={stepValid[2] ? 'green' : 'red'} label={stepValid[2] ? 'Valid' : 'Invalid'} />
+              <StatusBadge variant={stepValid[2] ? 'success' : 'error'} label={stepValid[2] ? 'Valid' : 'Invalid'} />
             </span>
           </div>
         </ConfigCard>
@@ -117,7 +123,7 @@ export function ReviewStep() {
           <div class="config-row">
             <span class="config-row-label">Status</span>
             <span class="config-row-value">
-              <StatusBadge variant={stepValid[3] ? 'green' : 'red'} label={stepValid[3] ? 'Valid' : 'Invalid'} />
+              <StatusBadge variant={stepValid[3] ? 'success' : 'error'} label={stepValid[3] ? 'Valid' : 'Invalid'} />
             </span>
           </div>
         </ConfigCard>
@@ -132,7 +138,7 @@ export function ReviewStep() {
             <div class="flex items-center gap-2 mb-3">
               <Icon name="alert-triangle" size="sm" class="review-issues-icon" />
               <h3 class="text-sm font-semibold">Configuration Issues</h3>
-              <StatusBadge variant="red" label={String(issues.length)} />
+              <StatusBadge variant="error" label={String(issues.length)} />
             </div>
             <div role="alert" aria-live="polite">
               {issues.map((issue) => (

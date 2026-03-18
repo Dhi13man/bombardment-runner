@@ -32,7 +32,7 @@ export function WizardPanels({ children }: WizardPanelsProps) {
   }, [currentStep]);
 
   return (
-    <>
+    <div class="step-panels-container">
       {panels.map((panel, i) => {
         const stepNum = i + 1;
         const isActive = stepNum === currentStep;
@@ -50,6 +50,6 @@ export function WizardPanels({ children }: WizardPanelsProps) {
           </div>
         );
       })}
-    </>
+    </div>
   );
 }

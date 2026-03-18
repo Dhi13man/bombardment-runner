@@ -68,21 +68,29 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
   if (!isOpen) return null;
 
+  const highlightedId = filtered.length > 0 ? `palette-opt-${filtered[highlightedIndex].id}` : undefined;
+
   return (
     <dialog
       ref={dialogRef}
       class="command-palette-backdrop"
+      aria-label="Command palette"
       onClick={(e) => { if (e.target === dialogRef.current) onClose(); }}
       onCancel={onClose}
     >
       <div class="command-palette" onKeyDown={handleKeyDown}>
         <div class="command-palette-input-wrapper">
-          <Icon name="settings" size="sm" class="command-palette-search-icon" />
+          <Icon name="search" size="sm" class="command-palette-search-icon" />
           <input
             ref={inputRef}
             type="text"
             class="command-palette-input"
             placeholder="Type a command..."
+            role="combobox"
+            aria-expanded={filtered.length > 0}
+            aria-controls="palette-listbox"
+            aria-activedescendant={highlightedId}
+            aria-autocomplete="list"
             value={query}
             onInput={(e) => {
               setQuery((e.target as HTMLInputElement).value);
@@ -91,10 +99,11 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
           />
           <kbd class="command-palette-esc">Esc</kbd>
         </div>
-        <ul class="command-palette-list" role="listbox">
+        <ul id="palette-listbox" class="command-palette-list" role="listbox">
           {filtered.map((action, i) => (
             <li
               key={action.id}
+              id={`palette-opt-${action.id}`}
               role="option"
               class={`command-palette-item${i === highlightedIndex ? ' highlighted' : ''}`}
               aria-selected={i === highlightedIndex}

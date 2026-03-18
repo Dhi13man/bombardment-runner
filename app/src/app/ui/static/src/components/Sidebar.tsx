@@ -31,6 +31,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     firstLink?.focus();
 
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') { onClose(); return; }
       if (e.key !== 'Tab' || !sidebarRef.current) return;
       const focusable = sidebarRef.current.querySelectorAll<HTMLElement>(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
@@ -85,14 +86,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               >
                 <Icon name={item.icon} size="sm" class="sidebar-link-icon" />
                 <span>{item.label}</span>
-                <kbd class="sidebar-shortcut">{NAV_ITEMS.indexOf(item) + 1}</kbd>
+                <kbd class="sidebar-shortcut">Alt+{NAV_ITEMS.indexOf(item) + 1}</kbd>
               </button>
             );
           })}
         </div>
 
         <div class="sidebar-footer">
-          <ThemeToggle />
+          <div class="flex items-center justify-between">
+            <ThemeToggle />
+            <kbd class="sidebar-shortcut" title="Open command palette">Cmd+K</kbd>
+          </div>
         </div>
       </nav>
 

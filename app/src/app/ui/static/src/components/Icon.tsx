@@ -41,7 +41,8 @@ export type IconName =
   | 'moon'
   | 'menu'
   | 'panel-left'
-  | 'check';
+  | 'check'
+  | 'search';
 
 export type IconSize = 'sm' | 'md' | 'lg' | 'xl';
 

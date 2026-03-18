@@ -4,6 +4,7 @@ interface Column<T> {
   key: string;
   label: string;
   class?: string;
+  align?: 'left' | 'right';
   render?: (row: T) => ComponentChildren;
 }
 
@@ -26,23 +27,31 @@ export function DataTable<T>({ columns, data, rowKey, emptyContent }: DataTableP
       <table class="table">
         <thead>
           <tr>
-            {columns.map((col) => (
-              <th key={col.key} class={col.class}>
-                {col.label}
-              </th>
-            ))}
+            {columns.map((col) => {
+              const alignClass = col.align === 'right' ? 'text-right font-mono tabular-nums' : '';
+              const cls = [col.class, alignClass].filter(Boolean).join(' ');
+              return (
+                <th key={col.key} class={cls || undefined}>
+                  {col.label}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
           {data.map((row) => (
             <tr key={rowKey(row)}>
-              {columns.map((col) => (
-                <td key={col.key} class={col.class} data-label={col.label}>
-                  {col.render
-                    ? col.render(row)
-                    : String((row as Record<string, unknown>)[col.key] ?? '')}
-                </td>
-              ))}
+              {columns.map((col) => {
+                const alignClass = col.align === 'right' ? 'text-right font-mono tabular-nums' : '';
+                const cls = [col.class, alignClass].filter(Boolean).join(' ');
+                return (
+                  <td key={col.key} class={cls || undefined} data-label={col.label}>
+                    {col.render
+                      ? col.render(row)
+                      : String((row as Record<string, unknown>)[col.key] ?? '')}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>

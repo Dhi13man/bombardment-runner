@@ -172,7 +172,7 @@ export function CustomSelect({
           {options.map((opt, i) => {
             const optClasses = [
               'custom-select-option',
-              opt.value === value && 'selected',
+              opt.value === value && 'active',
               i === highlightedIndex && 'highlighted',
               opt.disabled && 'disabled',
             ].filter(Boolean).join(' ');

@@ -72,7 +72,7 @@ export function ToastProvider({ children }: { children: ComponentChildren }) {
             <div
               key={toast.id}
               class={`toast toast-${toast.type}${toast.exiting ? ' toast-exiting' : ''}`}
-              role="alert"
+              role="status"
             >
               <Icon name={TOAST_ICON[toast.type]} class="toast-icon" />
               <span class="toast-message">{toast.message}</span>
@@ -82,7 +82,7 @@ export function ToastProvider({ children }: { children: ComponentChildren }) {
                 aria-label="Dismiss"
                 onClick={() => dismiss(toast.id)}
               >
-                &times;
+                <Icon name="x" size="sm" />
               </button>
               <div
                 class="toast-countdown"

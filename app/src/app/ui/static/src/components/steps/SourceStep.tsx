@@ -121,7 +121,7 @@ export function SourceStep() {
       {/* File Upload */}
       <div class="mb-6">
         <label class="label">Data File</label>
-        <div class="flex gap-3">
+        <div class="flex gap-3 file-upload-row">
           <div class="flex-1">
             <input
               class="input"
@@ -185,6 +185,9 @@ export function SourceStep() {
           </div>
         </div>
       )}
+
+      {/* Divider */}
+      <div class="input-divider"><span>or</span></div>
 
       {/* Server-side File Path */}
       <div class="mb-4">

@@ -18,9 +18,9 @@ function WizardKeyboardShortcuts() {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') return;
 
-      if (e.key === 'Enter') { e.preventDefault(); next(); }
+      if (e.altKey && e.key === 'Enter') { e.preventDefault(); next(); }
       if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); back(); }
       if (['1', '2', '3', '4'].includes(e.key) && e.altKey) {
         e.preventDefault();

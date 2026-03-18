@@ -10,13 +10,20 @@
   <script>
     (function() {
       var t = localStorage.getItem('bombardment-theme');
-      if (t !== 'dark') document.documentElement.classList.add('light');
+      if (t === 'light') document.documentElement.classList.add('light');
     })();
   </script>
 
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/static/css/app.min.css?v=2">
+
+  <!-- Font preloads -->
+  <link rel="preload" as="font" type="font/woff2" href="/static/fonts/ibm-plex-sans-latin-400.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="/static/fonts/ibm-plex-sans-latin-500.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="/static/fonts/jetbrains-mono-latin-400.woff2" crossorigin>
 
   <!-- Preact application bundle -->
-  <script src="/static/js/app.min.js" defer></script>
+  <script src="/static/js/app.min.js?v=2" defer></script>
 </head>
 
 <body>

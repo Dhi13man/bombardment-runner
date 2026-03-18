@@ -43,7 +43,7 @@ export function WizardNav() {
             class="btn btn-primary"
             disabled={!isCurrentValid}
             onClick={handleNext}
-            title="Next step (Enter)"
+            title="Next step (Alt+Enter)"
           >
             Next
             <Icon name="arrow-right" size="sm" />
