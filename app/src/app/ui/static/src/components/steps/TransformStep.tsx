@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState } from 'preact/hooks';
 import { useJobForm } from '../../context/JobFormContext';
 import { useWizard } from '../../context/WizardContext';
-import { CustomSelect, Input, Textarea } from '../primitives';
+import { RadioCardGroup, type RadioOption, Input, Textarea } from '../primitives';
 import { Icon } from '../Icon';
 import type { TransformerStrategy, ClientChannel } from '../../types/api';
 import type { JSX } from 'preact';
@@ -34,6 +34,12 @@ const STRATEGY_DEFAULTS: Record<TransformerStrategy, Record<ExprFieldKey, string
     bodyExpression: '*',
   },
 };
+
+const TRANSFORMER_OPTIONS: RadioOption<TransformerStrategy>[] = [
+  { value: 'JSONATA', label: 'JSONata', icon: 'code', description: 'JSONata expression language' },
+  { value: 'GOTEMPLATE', label: 'Go Template', icon: 'file-code', description: 'Go template syntax' },
+  { value: 'PASSTHROUGH', label: 'Passthrough', icon: 'layers', description: 'Direct column mapping' },
+];
 
 const STRATEGY_HELP: Record<TransformerStrategy, string> = {
   JSONATA: 'Expressions are evaluated per record from your data file',
@@ -173,14 +179,10 @@ export function TransformStep() {
       </div>
 
       <div class="mb-6">
-        <CustomSelect
-          id="trans-strategy"
+        <RadioCardGroup
+          name="transformer_strategy"
           label="Transformer Strategy"
-          options={[
-            { value: 'JSONATA', label: 'JSONata' },
-            { value: 'GOTEMPLATE', label: 'Go Template' },
-            { value: 'PASSTHROUGH', label: 'Passthrough' },
-          ]}
+          options={TRANSFORMER_OPTIONS}
           value={form.transformerStrategy}
           onChange={(v) => {
             const newStrategy = v as TransformerStrategy;
