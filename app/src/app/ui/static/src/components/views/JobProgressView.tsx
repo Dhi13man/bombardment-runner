@@ -9,6 +9,7 @@ import { PipelineStrip, deriveStages } from '../composites/PipelineStrip';
 import { Icon } from '../Icon';
 import { Button } from '../primitives';
 import { getJob } from '../../api/client';
+import { progressStatus } from '../../utils/format';
 import type { JobSnapshot, JobStatus } from '../../types/api';
 
 /* ---------- Polling Config ---------- */
@@ -20,12 +21,6 @@ const ERROR_BACKOFF_FACTOR = 2;
 
 function isTerminal(status: JobStatus): boolean {
   return status === 'COMPLETED' || status === 'FAILED';
-}
-
-function progressStatus(status: JobStatus): 'default' | 'success' | 'error' {
-  if (status === 'COMPLETED') return 'success';
-  if (status === 'FAILED') return 'error';
-  return 'default';
 }
 
 function subtitle(status: JobStatus): string {

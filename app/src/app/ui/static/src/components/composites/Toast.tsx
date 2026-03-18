@@ -41,14 +41,19 @@ const TOAST_ICON: Record<ToastType, IconName> = {
 export function ToastProvider({ children }: { children: ComponentChildren }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextId = useRef(0);
+  const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
 
   const dismiss = useCallback((id: number) => {
+    // Clear auto-dismiss timer if still pending
+    const tid = timers.current.get(id);
+    if (tid !== undefined) { clearTimeout(tid); timers.current.delete(id); }
     // Trigger exit animation
     setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, exiting: true } : t)));
     // Remove after animation completes
-    setTimeout(() => {
+    const removeTid = setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 200);
+    timers.current.set(-id, removeTid); // track removal timer with negative key
   }, []);
 
   const showToast = useCallback(
@@ -57,7 +62,10 @@ export function ToastProvider({ children }: { children: ComponentChildren }) {
       setToasts((prev) => [...prev, { id, type, message, exiting: false, duration }]);
 
       if (duration > 0) {
-        setTimeout(() => dismiss(id), duration);
+        timers.current.set(id, setTimeout(() => {
+          timers.current.delete(id);
+          dismiss(id);
+        }, duration));
       }
     },
     [dismiss],

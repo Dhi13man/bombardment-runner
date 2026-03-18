@@ -1,5 +1,5 @@
 import { createContext } from 'preact';
-import { useState, useCallback, useContext, useMemo } from 'preact/hooks';
+import { useState, useCallback, useContext, useMemo, useRef } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import type {
   ParserStrategy,
@@ -92,6 +92,8 @@ const JobFormContext = createContext<JobFormContextValue | null>(null);
 
 export function JobFormProvider({ children }: { children: ComponentChildren }) {
   const [form, setForm] = useState<JobFormState>({ ...DEFAULT_STATE });
+  const formRef = useRef(form);
+  formRef.current = form;
 
   const update = useCallback(
     <K extends keyof JobFormState>(key: K, value: JobFormState[K]) => {
@@ -133,40 +135,41 @@ export function JobFormProvider({ children }: { children: ComponentChildren }) {
   }, []);
 
   const toRequest = useCallback((): BombardmentRequest => {
+    const f = formRef.current;
     return {
       parser_context: {
-        strategy: form.parserStrategy,
-        file_path: form.filePath || undefined,
-        file_content_b64: form.fileContentB64 || undefined,
+        strategy: f.parserStrategy,
+        file_path: f.filePath || undefined,
+        file_content_b64: f.fileContentB64 || undefined,
       },
       transformer_context: {
-        strategy: form.transformerStrategy,
-        method_expression: form.methodExpression,
-        endpoint_expression: form.endpointExpression,
-        headers_expression: form.headersExpression,
-        body_expression: form.bodyExpression,
+        strategy: f.transformerStrategy,
+        method_expression: f.methodExpression,
+        endpoint_expression: f.endpointExpression,
+        headers_expression: f.headersExpression,
+        body_expression: f.bodyExpression,
       },
       client_context: {
-        channel: form.clientChannel,
-        dial_timeout: msToNs(form.dialTimeoutMs),
-        dial_keep_alive: msToNs(form.keepAliveMs),
-        tls_handshake_timeout: msToNs(form.tlsHandshakeMs),
-        response_header_timeout: msToNs(form.responseHeaderMs),
-        expect_continue_timeout: msToNs(form.expectContinueMs),
-        request_timeout: msToNs(form.requestTimeoutMs),
-        insecure_skip_verify: form.insecureSkipVerify,
+        channel: f.clientChannel,
+        dial_timeout: msToNs(f.dialTimeoutMs),
+        dial_keep_alive: msToNs(f.keepAliveMs),
+        tls_handshake_timeout: msToNs(f.tlsHandshakeMs),
+        response_header_timeout: msToNs(f.responseHeaderMs),
+        expect_continue_timeout: msToNs(f.expectContinueMs),
+        request_timeout: msToNs(f.requestTimeoutMs),
+        insecure_skip_verify: f.insecureSkipVerify,
       },
       load_balancer_context: {
-        strategy: form.lbStrategy,
-        urls: form.urls.filter((u) => u.trim() !== ''),
+        strategy: f.lbStrategy,
+        urls: f.urls.filter((u) => u.trim() !== ''),
       },
       driver_context: {
-        batch_size: form.batchSize,
-        should_store_responses: form.shouldStoreResponses,
-        responses_storage_path: form.responsesPath,
+        batch_size: f.batchSize,
+        should_store_responses: f.shouldStoreResponses,
+        responses_storage_path: f.responsesPath,
       },
     };
-  }, [form]);
+  }, []);
 
   const value = useMemo(
     () => ({ form, update, toRequest, reset, fromRequest }),

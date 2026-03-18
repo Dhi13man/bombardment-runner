@@ -19,8 +19,27 @@ export const DEFAULT_STAGES: PipelineStage[] = [
   { name: 'Send', status: 'pending' },
 ];
 
+function stageIndexFromProgress(pct: number): number {
+  if (pct < 20) return 2;
+  if (pct < 60) return 3;
+  return 4;
+}
+
+function buildStagesWithHighlight(
+  names: string[],
+  pct: number,
+  highlightStatus: PipelineStage['status'],
+): PipelineStage[] {
+  const idx = stageIndexFromProgress(pct);
+  return names.map((name, i) => {
+    if (i < idx) return { name, status: 'complete' as const };
+    if (i === idx) return { name, status: highlightStatus };
+    return { name, status: 'pending' as const };
+  });
+}
+
 export function deriveStages(job: JobSnapshot): PipelineStage[] {
-  const names = ['Source', 'Parse', 'Transform', 'Batch', 'Send'];
+  const names = DEFAULT_STAGES.map((s) => s.name);
 
   if (job.status === 'COMPLETED') {
     return names.map((name) => ({ name, status: 'complete' as const }));
@@ -28,32 +47,8 @@ export function deriveStages(job: JobSnapshot): PipelineStage[] {
   if (job.status === 'PENDING') {
     return names.map((name) => ({ name, status: 'pending' as const }));
   }
-  if (job.status === 'FAILED') {
-    const pct = job.progress_percent ?? 0;
-    let failIndex: number;
-    if (pct < 20) failIndex = 2;
-    else if (pct < 60) failIndex = 3;
-    else failIndex = 4;
-
-    return names.map((name, i) => {
-      if (i < failIndex) return { name, status: 'complete' as const };
-      if (i === failIndex) return { name, status: 'error' as const };
-      return { name, status: 'pending' as const };
-    });
-  }
-
-  // RUNNING
   const pct = job.progress_percent ?? 0;
-  let activeIndex: number;
-  if (pct < 20) activeIndex = 2;
-  else if (pct < 60) activeIndex = 3;
-  else activeIndex = 4;
-
-  return names.map((name, i) => {
-    if (i < activeIndex) return { name, status: 'complete' as const };
-    if (i === activeIndex) return { name, status: 'active' as const };
-    return { name, status: 'pending' as const };
-  });
+  return buildStagesWithHighlight(names, pct, job.status === 'FAILED' ? 'error' : 'active');
 }
 
 export function PipelineStrip({ stages, compact = false }: PipelineStripProps) {

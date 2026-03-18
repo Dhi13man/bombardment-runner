@@ -9,8 +9,8 @@ import type { ParserStrategy } from '../../types/api';
 const PARSER_OPTIONS: RadioOption<ParserStrategy | 'XML' | 'YAML'>[] = [
   { value: 'CSV', label: 'CSV', icon: 'file-input', description: 'Comma-separated values' },
   { value: 'JSON', label: 'JSON', icon: 'file-code', description: 'JSON array of objects' },
-  { value: 'XML' as ParserStrategy, label: 'XML', icon: 'file-code', description: 'XML documents', disabled: true, comingSoon: true },
-  { value: 'YAML' as ParserStrategy, label: 'YAML', icon: 'file-code', description: 'YAML files', disabled: true, comingSoon: true },
+  { value: 'XML', label: 'XML', icon: 'file-code', description: 'XML documents', disabled: true, comingSoon: true },
+  { value: 'YAML', label: 'YAML', icon: 'file-code', description: 'YAML files', disabled: true, comingSoon: true },
 ];
 
 const FILE_PATH_REGEX = /^(\.[/\\])?([a-zA-Z0-9_\-./\\]+)\.([a-zA-Z0-9]+)$/;

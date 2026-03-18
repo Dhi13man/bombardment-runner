@@ -1,3 +1,5 @@
+import { useState } from 'preact/hooks';
+
 export type StatCardVariant = 'success' | 'error' | 'info';
 
 interface TrendInfo {
@@ -22,7 +24,7 @@ let statCardCounter = 0;
 
 export function StatCard({ value, label, variant, trend }: StatCardProps) {
   const classes = ['stat-card', variant && VARIANT_CLASS[variant]].filter(Boolean).join(' ');
-  const labelId = `stat-label-${++statCardCounter}`;
+  const [labelId] = useState(() => `stat-label-${++statCardCounter}`);
 
   return (
     <div class={classes} role="group" aria-labelledby={labelId}>

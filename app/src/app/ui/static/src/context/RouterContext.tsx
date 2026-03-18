@@ -66,8 +66,9 @@ const RouterContext = createContext<RouterContextValue>({
 });
 
 export function RouterProvider({ children }: { children: ComponentChildren }) {
-  const [activeView, setActiveView] = useState<ViewName>(() => hashToRoute(window.location.hash).view);
-  const [params, setParams] = useState<ViewParams>(() => hashToRoute(window.location.hash).params);
+  const [initialRoute] = useState(() => hashToRoute(window.location.hash));
+  const [activeView, setActiveView] = useState<ViewName>(initialRoute.view);
+  const [params, setParams] = useState<ViewParams>(initialRoute.params);
 
   const navigateTo = useCallback((view: ViewName, newParams?: ViewParams) => {
     const hash = viewToHash(view, newParams);

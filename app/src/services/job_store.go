@@ -167,13 +167,19 @@ func (s *JobStore) Get(id string) (JobSnapshot, bool) {
 // OriginalRequest is omitted from list results to avoid bloating the response
 // with file contents; use Get() for the full snapshot.
 func (s *JobStore) List() []JobSnapshot {
+	// Collect job references under the store lock, then release before snapshotting.
+	// Each job's own mutex protects its fields during Snapshot().
 	s.mu.RLock()
-	defer s.mu.RUnlock()
-	jobs := make([]JobSnapshot, 0, len(s.jobs))
+	refs := make([]*Job, 0, len(s.jobs))
 	for _, j := range s.jobs {
-		snap := j.Snapshot()
-		snap.OriginalRequest = nil
-		jobs = append(jobs, snap)
+		refs = append(refs, j)
+	}
+	s.mu.RUnlock()
+
+	jobs := make([]JobSnapshot, len(refs))
+	for i, j := range refs {
+		jobs[i] = j.Snapshot()
+		jobs[i].OriginalRequest = nil
 	}
 	sort.Slice(jobs, func(i, k int) bool {
 		return jobs[i].CreatedAt.After(jobs[k].CreatedAt)

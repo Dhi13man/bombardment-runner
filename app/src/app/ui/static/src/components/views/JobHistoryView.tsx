@@ -12,16 +12,8 @@ import { Icon } from '../Icon';
 import { Button } from '../primitives';
 import { SkeletonTable } from '../composites/SkeletonRow';
 import { listJobs, deleteJob } from '../../api/client';
-import { formatRelativeTime } from '../../utils/format';
+import { formatRelativeTime, progressStatus } from '../../utils/format';
 import type { JobSnapshot, JobStatus } from '../../types/api';
-
-/* ---------- Helpers ---------- */
-
-function progressStatus(status: JobStatus): string | undefined {
-  if (status === 'COMPLETED') return 'success';
-  if (status === 'FAILED') return 'error';
-  return undefined;
-}
 
 type SortField = 'created_at' | 'status' | 'progress_percent';
 type SortDir = 'asc' | 'desc';

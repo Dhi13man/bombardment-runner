@@ -1,5 +1,5 @@
 import { createContext } from 'preact';
-import { useContext } from 'preact/hooks';
+import { useContext, useMemo } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import { useTheme, type Theme } from '../hooks/useTheme';
 
@@ -15,9 +15,10 @@ const ThemeContext = createContext<ThemeContextValue>({
 
 export function ThemeProvider({ children }: { children: ComponentChildren }) {
   const { theme, toggle } = useTheme();
+  const value = useMemo(() => ({ theme, toggle }), [theme, toggle]);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggle }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

@@ -26,6 +26,15 @@ export function formatRelativeTime(isoString: string | null | undefined): string
 }
 
 /**
+ * Map a job status to a progress-bar status variant.
+ */
+export function progressStatus(status: string): 'success' | 'error' | undefined {
+  if (status === 'COMPLETED') return 'success';
+  if (status === 'FAILED') return 'error';
+  return undefined;
+}
+
+/**
  * Format bytes to human-readable size (e.g., "1.2 MB").
  */
 export function formatFileSize(bytes: number): string {

@@ -47,7 +47,7 @@ export function Wizard({ children, onSubmit }: WizardProps) {
         description="Configure your data migration pipeline in 4 steps"
       />
       <StepIndicator />
-      <div class="card" style={{ marginTop: '24px' }}>
+      <div class="card mt-6">
         <WizardPanels>{children}</WizardPanels>
         <WizardNav />
       </div>

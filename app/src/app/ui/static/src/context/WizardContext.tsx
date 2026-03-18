@@ -1,5 +1,5 @@
 import { createContext } from 'preact';
-import { useState, useCallback, useContext, useMemo } from 'preact/hooks';
+import { useState, useCallback, useContext, useMemo, useRef } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
 import type { IconName } from '../components/Icon';
 
@@ -60,29 +60,35 @@ export function WizardProvider({ children, onSubmit }: WizardProviderProps) {
 
   const totalSteps = WIZARD_STEPS.length;
 
+  // Refs for stable callbacks
+  const stepValidRef = useRef(stepValid);
+  stepValidRef.current = stepValid;
+  const currentStepRef = useRef(currentStep);
+  currentStepRef.current = currentStep;
+  const onSubmitRef = useRef(onSubmit);
+  onSubmitRef.current = onSubmit;
+
   const setValid = useCallback((step: number, valid: boolean) => {
     setStepValid((prev) => ({ ...prev, [step]: valid }));
   }, []);
 
   const next = useCallback(() => {
-    if (!stepValid[currentStep]) return false;
-    if (currentStep < totalSteps) {
+    const cs = currentStepRef.current;
+    if (!stepValidRef.current[cs]) return false;
+    if (cs < totalSteps) {
       setCurrentStep((s) => s + 1);
       return true;
     }
-    // On last step, trigger submit
-    if (currentStep === totalSteps && onSubmit) {
-      onSubmit();
+    if (cs === totalSteps && onSubmitRef.current) {
+      onSubmitRef.current();
       return true;
     }
     return false;
-  }, [currentStep, stepValid, totalSteps, onSubmit]);
+  }, [totalSteps]);
 
   const back = useCallback(() => {
-    if (currentStep > 1) {
-      setCurrentStep((s) => s - 1);
-    }
-  }, [currentStep]);
+    setCurrentStep((s) => (s > 1 ? s - 1 : s));
+  }, []);
 
   const goTo = useCallback(
     (step: number) => {
