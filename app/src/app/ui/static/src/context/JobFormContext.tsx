@@ -8,7 +8,7 @@ import type {
   LoadBalancerStrategy,
   BombardmentRequest,
 } from '../types/api';
-import { msToNs } from '../types/api';
+import { msToNs, nsToMs } from '../types/api';
 
 /* ---------- Form State ---------- */
 
@@ -84,6 +84,8 @@ interface JobFormContextValue {
   toRequest: () => BombardmentRequest;
   /** Reset all form data to defaults. */
   reset: () => void;
+  /** Populate form from an existing API request (for re-run). */
+  fromRequest: (req: BombardmentRequest) => void;
 }
 
 const JobFormContext = createContext<JobFormContextValue | null>(null);
@@ -100,6 +102,34 @@ export function JobFormProvider({ children }: { children: ComponentChildren }) {
 
   const reset = useCallback(() => {
     setForm({ ...DEFAULT_STATE });
+  }, []);
+
+  const fromRequest = useCallback((req: BombardmentRequest) => {
+    setForm({
+      parserStrategy: req.parser_context.strategy,
+      filePath: req.parser_context.file_path ?? '',
+      fileContentB64: req.parser_context.file_content_b64 ?? '',
+      fileName: '',
+      fileSize: 0,
+      transformerStrategy: req.transformer_context.strategy,
+      methodExpression: req.transformer_context.method_expression,
+      endpointExpression: req.transformer_context.endpoint_expression,
+      headersExpression: req.transformer_context.headers_expression,
+      bodyExpression: req.transformer_context.body_expression,
+      clientChannel: req.client_context.channel,
+      dialTimeoutMs: nsToMs(req.client_context.dial_timeout),
+      keepAliveMs: nsToMs(req.client_context.dial_keep_alive),
+      tlsHandshakeMs: nsToMs(req.client_context.tls_handshake_timeout),
+      responseHeaderMs: nsToMs(req.client_context.response_header_timeout),
+      expectContinueMs: nsToMs(req.client_context.expect_continue_timeout),
+      requestTimeoutMs: nsToMs(req.client_context.request_timeout),
+      insecureSkipVerify: req.client_context.insecure_skip_verify,
+      lbStrategy: req.load_balancer_context.strategy,
+      urls: req.load_balancer_context.urls.length > 0 ? req.load_balancer_context.urls : [''],
+      batchSize: req.driver_context.batch_size,
+      shouldStoreResponses: req.driver_context.should_store_responses,
+      responsesPath: req.driver_context.responses_storage_path,
+    });
   }, []);
 
   const toRequest = useCallback((): BombardmentRequest => {
@@ -139,8 +169,8 @@ export function JobFormProvider({ children }: { children: ComponentChildren }) {
   }, [form]);
 
   const value = useMemo(
-    () => ({ form, update, toRequest, reset }),
-    [form, update, toRequest, reset],
+    () => ({ form, update, toRequest, reset, fromRequest }),
+    [form, update, toRequest, reset, fromRequest],
   );
 
   return (

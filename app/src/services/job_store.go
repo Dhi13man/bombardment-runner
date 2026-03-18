@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.dhi13man.com/bombardment-runner/src/models/dto"
 )
 
 // JobStatus represents the current state of a bombardment job
@@ -21,24 +22,26 @@ const (
 
 // JobSnapshot is the JSON-serializable view of a job
 type JobSnapshot struct {
-	ID              string     `json:"id"`
-	Status          JobStatus  `json:"status"`
-	CreatedAt       time.Time  `json:"created_at"`
-	CompletedAt     *time.Time `json:"completed_at,omitempty"`
-	TotalRows       int64      `json:"total_rows"`
-	ProcessedRows   int64      `json:"processed_rows"`
-	FailedRows      int64      `json:"failed_rows"`
-	ProgressPercent float64    `json:"progress_percent"`
-	ErrorMessage    string     `json:"error_message,omitempty"`
+	ID              string                  `json:"id"`
+	Status          JobStatus               `json:"status"`
+	CreatedAt       time.Time               `json:"created_at"`
+	CompletedAt     *time.Time              `json:"completed_at,omitempty"`
+	TotalRows       int64                   `json:"total_rows"`
+	ProcessedRows   int64                   `json:"processed_rows"`
+	FailedRows      int64                   `json:"failed_rows"`
+	ProgressPercent float64                 `json:"progress_percent"`
+	ErrorMessage    string                  `json:"error_message,omitempty"`
+	OriginalRequest *dto.BombardmentRequest `json:"original_request,omitempty"`
 }
 
 // Job is the thread-safe mutable job that tracks bombardment progress
 type Job struct {
-	ID          string
-	Status      JobStatus
-	CreatedAt   time.Time
-	CompletedAt *time.Time
-	ErrorMessage string
+	ID              string
+	Status          JobStatus
+	CreatedAt       time.Time
+	CompletedAt     *time.Time
+	ErrorMessage    string
+	OriginalRequest *dto.BombardmentRequest
 
 	processedAtomic atomic.Int64
 	failedAtomic    atomic.Int64
@@ -110,6 +113,7 @@ func (j *Job) Snapshot() JobSnapshot {
 		FailedRows:      failed,
 		ProgressPercent: progress,
 		ErrorMessage:    j.ErrorMessage,
+		OriginalRequest: j.OriginalRequest,
 	}
 }
 
@@ -125,13 +129,14 @@ func NewJobStore() *JobStore {
 }
 
 // Create creates a new pending job and returns it
-func (s *JobStore) Create() *Job {
+func (s *JobStore) Create(req *dto.BombardmentRequest) *Job {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	job := &Job{
-		ID:        uuid.New().String(),
-		Status:    JobStatusPending,
-		CreatedAt: time.Now(),
+		ID:              uuid.New().String(),
+		Status:          JobStatusPending,
+		CreatedAt:       time.Now(),
+		OriginalRequest: req,
 	}
 	s.jobs[job.ID] = job
 	return job

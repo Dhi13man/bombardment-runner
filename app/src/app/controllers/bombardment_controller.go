@@ -66,7 +66,7 @@ func (bc *bombardmentControllerImpl) Bombard(c *gin.Context) {
 	}
 
 	// Create a job and run asynchronously
-	job := bc.jobStore.Create()
+	job := bc.jobStore.Create(&req)
 	bc.driver.CreateBombardmentAsync(req, job)
 
 	c.JSON(201, job.Snapshot())

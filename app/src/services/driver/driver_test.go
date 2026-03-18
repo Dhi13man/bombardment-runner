@@ -433,7 +433,7 @@ func TestJobStore_CreateJob_PendingState(t *testing.T) {
 	t.Parallel()
 
 	store := services.NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 
 	if job.Status != services.JobStatusPending {
 		t.Errorf("expected job status %q, got %q", services.JobStatusPending, job.Status)
@@ -447,7 +447,7 @@ func TestJob_SetRunning_TransitionFromPending(t *testing.T) {
 	t.Parallel()
 
 	store := services.NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 
 	if job.Status != services.JobStatusPending {
 		t.Fatalf("precondition: expected PENDING, got %q", job.Status)
@@ -463,7 +463,7 @@ func TestJob_Complete_TransitionFromRunning(t *testing.T) {
 	t.Parallel()
 
 	store := services.NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.SetRunning()
 	job.Complete()
 
@@ -479,7 +479,7 @@ func TestJob_Fail_TransitionFromRunning(t *testing.T) {
 	t.Parallel()
 
 	store := services.NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.SetRunning()
 
 	errMsg := "parser initialization failed"
@@ -500,7 +500,7 @@ func TestJob_IncrementProcessedAndFailed_Concurrent(t *testing.T) {
 	t.Parallel()
 
 	store := services.NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.SetTotal(200)
 
 	var wg sync.WaitGroup
@@ -537,7 +537,7 @@ func TestJob_Snapshot_ProgressPercent(t *testing.T) {
 	t.Parallel()
 
 	store := services.NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.SetTotal(10)
 
 	for i := 0; i < 3; i++ {
@@ -559,7 +559,7 @@ func TestJob_Snapshot_ZeroTotal_ZeroProgress(t *testing.T) {
 	t.Parallel()
 
 	store := services.NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.IncrementProcessed()
 	snap := job.Snapshot()
 
@@ -573,7 +573,7 @@ func TestCreateBombardmentAsync_ReturnsJobID(t *testing.T) {
 
 	store := services.NewJobStore()
 	driver := NewBombardmentDriver(store)
-	job := store.Create()
+	job := store.Create(nil)
 
 	req := buildMinimalBombardmentRequest()
 	req.Parser.Strategy = "INVALID_PARSER"
@@ -595,7 +595,7 @@ func TestCreateBombardmentAsync_FailedParser_JobFailsAsynchronously(t *testing.T
 
 	store := services.NewJobStore()
 	driver := NewBombardmentDriver(store)
-	job := store.Create()
+	job := store.Create(nil)
 
 	req := buildMinimalBombardmentRequest()
 	req.Parser.Strategy = "INVALID_PARSER"
@@ -712,7 +712,7 @@ func TestExecuteBombardment_FullPipeline_WithResponseStorage(t *testing.T) {
 
 	store := services.NewJobStore()
 	driver := NewBombardmentDriver(store)
-	job := store.Create()
+	job := store.Create(nil)
 
 	req := dto.BombardmentRequest{
 		Driver: driverDto.DriverContext{
@@ -840,7 +840,7 @@ func TestExecuteBombardment_TransformerFailure_IncrementsFailed(t *testing.T) {
 
 	store := services.NewJobStore()
 	driver := NewBombardmentDriver(store)
-	job := store.Create()
+	job := store.Create(nil)
 
 	req := dto.BombardmentRequest{
 		Driver: driverDto.DriverContext{
@@ -966,7 +966,7 @@ func TestCreateBombardmentAsync_InvalidClient_JobFails(t *testing.T) {
 	// Arrange
 	store := services.NewJobStore()
 	driver := NewBombardmentDriver(store)
-	job := store.Create()
+	job := store.Create(nil)
 
 	req := buildMinimalBombardmentRequest()
 	req.Client.Channel = modelsEnums.ClientChannel("INVALID_CHANNEL")

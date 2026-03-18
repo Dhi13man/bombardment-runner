@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'preact/hooks';
-import { JobFormProvider, useJobForm } from '../../context/JobFormContext';
+import { useJobForm } from '../../context/JobFormContext';
 import { useRouter } from '../../context/RouterContext';
 import { useToast } from '../composites/Toast';
 import { Wizard } from '../wizard';
@@ -47,14 +47,13 @@ function CreateJobWizard() {
 }
 
 /**
- * Complete Create Job view with all required providers.
+ * Complete Create Job view.
+ * JobFormProvider is mounted globally in main.tsx for cross-view state sharing (re-run).
  */
 export function CreateJobView() {
   return (
     <div id="view-create-job">
-      <JobFormProvider>
-        <CreateJobWizard />
-      </JobFormProvider>
+      <CreateJobWizard />
     </div>
   );
 }

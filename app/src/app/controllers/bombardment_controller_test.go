@@ -157,7 +157,7 @@ func TestBombardmentController_GetJobStatus_Found(t *testing.T) {
 
 	driver := &mockDriver{}
 	store := services.NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	router := setupRouterWithStore(driver, store)
 
 	w := httptest.NewRecorder()
@@ -244,8 +244,8 @@ func TestBombardmentController_ListJobs_WithJobs(t *testing.T) {
 
 	driver := &mockDriver{}
 	store := services.NewJobStore()
-	store.Create()
-	store.Create()
+	store.Create(nil)
+	store.Create(nil)
 	router := setupRouterWithStore(driver, store)
 
 	w := httptest.NewRecorder()

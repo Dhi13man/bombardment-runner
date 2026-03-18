@@ -82,6 +82,7 @@ export interface JobSnapshot {
   failed_rows: number;
   progress_percent: number;
   error_message: string;
+  original_request?: BombardmentRequest;
 }
 
 export interface JobListResponse {

@@ -8,7 +8,7 @@ import (
 
 func TestJobStore_Create(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 
 	if job.ID == "" {
 		t.Fatal("expected non-empty UUID, got empty string")
@@ -23,7 +23,7 @@ func TestJobStore_Create(t *testing.T) {
 
 func TestJobStore_Get_Exists(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 
 	snap, ok := store.Get(job.ID)
 	if !ok {
@@ -60,7 +60,7 @@ func TestJobStore_List_Multiple(t *testing.T) {
 
 	ids := make(map[string]bool)
 	for i := 0; i < 3; i++ {
-		job := store.Create()
+		job := store.Create(nil)
 		ids[job.ID] = true
 	}
 
@@ -78,7 +78,7 @@ func TestJobStore_List_Multiple(t *testing.T) {
 
 func TestJob_Lifecycle_PendingToCompleted(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 
 	// Verify initial state
 	if job.Status != JobStatusPending {
@@ -126,7 +126,7 @@ func TestJob_Lifecycle_PendingToCompleted(t *testing.T) {
 
 func TestJob_Lifecycle_PendingToFailed(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 
 	job.SetRunning()
 
@@ -150,7 +150,7 @@ func TestJob_Lifecycle_PendingToFailed(t *testing.T) {
 
 func TestJob_ConcurrentUpdates(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.SetRunning()
 	job.SetTotal(100)
 
@@ -172,7 +172,7 @@ func TestJob_ConcurrentUpdates(t *testing.T) {
 
 func TestJob_ProgressPercent(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.SetRunning()
 	job.SetTotal(100)
 
@@ -193,7 +193,7 @@ func TestJob_ProgressPercent(t *testing.T) {
 
 func TestJob_IncrementFailed(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.SetRunning()
 	job.SetTotal(10)
 
@@ -209,7 +209,7 @@ func TestJob_IncrementFailed(t *testing.T) {
 
 func TestJob_ProgressPercent_IncludesFailedRows(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.SetRunning()
 	job.SetTotal(100)
 
@@ -237,7 +237,7 @@ func TestJob_ProgressPercent_IncludesFailedRows(t *testing.T) {
 
 func TestJob_ProgressPercent_ZeroTotal(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.SetRunning()
 	// total stays at 0
 
@@ -249,7 +249,7 @@ func TestJob_ProgressPercent_ZeroTotal(t *testing.T) {
 
 func TestJob_ConcurrentMixedUpdates(t *testing.T) {
 	store := NewJobStore()
-	job := store.Create()
+	job := store.Create(nil)
 	job.SetRunning()
 	job.SetTotal(200)
 
@@ -285,11 +285,11 @@ func TestJob_ConcurrentMixedUpdates(t *testing.T) {
 func TestJobStore_List_SortedNewestFirst(t *testing.T) {
 	store := NewJobStore()
 
-	job1 := store.Create()
+	job1 := store.Create(nil)
 	time.Sleep(2 * time.Millisecond) // ensure distinct timestamps
-	job2 := store.Create()
+	job2 := store.Create(nil)
 	time.Sleep(2 * time.Millisecond)
-	job3 := store.Create()
+	job3 := store.Create(nil)
 
 	jobs := store.List()
 	if len(jobs) != 3 {
