@@ -83,8 +83,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 aria-current={isActive ? 'page' : undefined}
                 onClick={() => handleNav(item.id)}
               >
-                <Icon name={item.icon} size="sm" />
+                <Icon name={item.icon} size="sm" class="sidebar-link-icon" />
                 <span>{item.label}</span>
+                <kbd class="sidebar-shortcut">{NAV_ITEMS.indexOf(item) + 1}</kbd>
               </button>
             );
           })}

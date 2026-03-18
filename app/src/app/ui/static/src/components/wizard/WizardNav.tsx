@@ -27,7 +27,7 @@ export function WizardNav() {
   return (
     <div class="wizard-nav">
       {!isFirstStep ? (
-        <Button variant="secondary" onClick={back}>
+        <Button variant="secondary" onClick={back} title="Go back (Alt+Left)">
           <Icon name="arrow-left" size="sm" />
           Back
         </Button>
@@ -43,6 +43,7 @@ export function WizardNav() {
             class="btn btn-primary"
             disabled={!isCurrentValid}
             onClick={handleNext}
+            title="Next step (Enter)"
           >
             Next
             <Icon name="arrow-right" size="sm" />
