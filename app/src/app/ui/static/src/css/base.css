@@ -929,24 +929,28 @@
 
   /* ---- Wizard Steps Indicator ---- */
   .steps {
-    @apply flex items-center justify-center gap-0 mb-8;
+    @apply flex items-start mb-8;
     list-style: none;
     padding: 0;
     margin-left: 0;
     counter-reset: step;
+    width: 100%;
   }
   .step {
-    @apply flex items-start;
+    @apply flex flex-col items-center;
+    flex: 1;
     counter-increment: step;
+    position: relative;
   }
+  /* Connector line between steps using absolute positioning */
   .step + .step::before {
     content: '';
-    display: block;
-    width: 56px;
+    position: absolute;
+    top: 17px;
+    right: 50%;
+    width: 100%;
     height: 2px;
     background: var(--border-default);
-    margin: 17px 12px 0;
-    flex-shrink: 0;
   }
   .step.completed + .step::before {
     background: var(--accent);
@@ -965,6 +969,7 @@
     @apply flex items-center justify-center rounded-full flex-shrink-0;
     width: 36px;
     height: 36px;
+    z-index: 1;
     background: var(--bg-elevated);
     color: var(--text-tertiary);
     border: 2px solid var(--border-default);
@@ -1633,17 +1638,15 @@
   /* Step indicator: compact for mobile */
   .steps {
     overflow-x: auto;
-    padding: 0 8px;
+    padding: 0 4px;
+  }
+  .step + .step::before {
+    top: 13px;
   }
   .step-circle {
     width: 28px;
     height: 28px;
   }
-  .step + .step::before {
-    width: 24px;
-    margin: 13px 4px 0;
-  }
-
   /* Review grid stacks */
   .review-grid {
     grid-template-columns: 1fr;
