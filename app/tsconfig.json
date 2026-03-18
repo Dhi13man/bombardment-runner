@@ -11,11 +11,7 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/app/ui/static/src/*"]
-    }
+    "noEmit": true
   },
   "include": [
     "src/app/ui/static/src/**/*.ts",

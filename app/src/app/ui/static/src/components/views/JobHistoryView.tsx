@@ -175,9 +175,9 @@ export function JobHistoryView() {
 
       {/* Error */}
       {error && !loading && (
-        <div class="card" style={{ textAlign: 'center', padding: '48px 24px' }}>
+        <div class="card empty-state">
           <Icon name="alert-triangle" size="lg" class="mb-3 progress-error-icon" />
-          <p class="text-sm" style={{ color: 'var(--status-error-text)' }}>{error}</p>
+          <p class="text-sm progress-error-title">{error}</p>
           <Button variant="secondary" class="mt-4" onClick={handleRefresh}>
             Retry
           </Button>
