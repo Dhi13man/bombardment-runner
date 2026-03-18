@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createJob, getJob, listJobs, deleteJob, ApiError } from './client';
 import type { BombardmentRequest, JobSnapshot, ErrorResponse } from '../types/api';
 
-// -- Helpers --
+// Helpers
 
 function mockJsonResponse(body: unknown, status = 200): Response {
   return {
@@ -55,7 +55,7 @@ const MOCK_REQUEST: BombardmentRequest = {
   driver_context: { batch_size: 100, should_store_responses: false, responses_storage_path: '' },
 };
 
-// -- Test Suite --
+// Test Suite
 
 describe('API Client', () => {
   const mockFetch = vi.fn<(input: string | URL | Request, init?: RequestInit) => Promise<Response>>();

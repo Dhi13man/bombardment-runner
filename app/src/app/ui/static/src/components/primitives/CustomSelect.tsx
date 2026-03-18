@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'preact/hooks';
-import type { JSX } from 'preact';
-import { Icon, type IconName } from '../Icon';
+import { Icon } from '../Icon';
 
 interface SelectOption {
   value: string;

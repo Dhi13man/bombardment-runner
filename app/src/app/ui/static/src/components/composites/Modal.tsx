@@ -13,7 +13,7 @@ interface ModalProps {
   variant?: 'default' | 'destructive';
 }
 
-export function Modal({ open, onClose, title, children, actions }: ModalProps) {
+export function Modal({ open, onClose, title, children, actions, variant }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<Element | null>(null);
   const [titleId] = useState(() => `modal-title-${++modalIdCounter}`);
@@ -43,7 +43,7 @@ export function Modal({ open, onClose, title, children, actions }: ModalProps) {
       onClick={(e) => { if (e.target === dialogRef.current) onClose(); }}
       onCancel={onClose}
     >
-      <div class="modal-panel">
+      <div class={`modal-panel${variant === 'destructive' ? ' modal-destructive' : ''}`}>
         <div class="modal-header">
           <h2 id={titleId}>{title}</h2>
           <button

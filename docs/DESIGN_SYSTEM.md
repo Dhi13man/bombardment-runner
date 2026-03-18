@@ -18,7 +18,6 @@
 9. [Performance Standards](#performance-standards)
 10. [Accessibility Requirements](#accessibility-requirements)
 11. [Development Guidelines](#development-guidelines)
-12. [Implementation Roadmap](#implementation-roadmap)
 
 ## Overview
 
@@ -898,59 +897,9 @@ Status is never communicated by color alone:
 - Communicate status with color alone
 - Use Inter, Roboto, or Arial as the body font
 
-## Implementation Roadmap
-
-### Phase 1: Foundation (Tokens + Global Styles)
-
-- [ ] Define all CSS custom properties in `base.css` (`:root` for dark, `.light` for light)
-- [ ] Configure Tailwind theme to reference CSS variables
-- [ ] Set up `@font-face` declarations for IBM Plex Sans and JetBrains Mono
-- [ ] Create utility classes: `.tabular-nums`, `.font-mono`, `.glass-overlay`
-- [ ] Implement reduced motion, high contrast, and forced colors media queries
-- [ ] Add skip link to `index.html`
-
-### Phase 2: Primitives
-
-- [ ] Button (all variants, sizes, states)
-- [ ] Input, Textarea, Select
-- [ ] RadioCardGroup
-- [ ] Badge and StatusBadge
-- [ ] Toggle
-- [ ] Icon (SVG sprite integration)
-
-### Phase 3: Composites
-
-- [ ] StatCard
-- [ ] ProgressBar
-- [ ] ConfigCard
-- [ ] Toast (provider + component)
-- [ ] PipelineStrip (compact + expanded)
-
-### Phase 4: Patterns + Layout
-
-- [ ] AppShell (sidebar + content area + mobile responsive)
-- [ ] DataTable (sortable, filterable, skeleton loading)
-- [ ] WizardStepper
-- [ ] CommandPalette
-- [ ] Modal
-
-### Phase 5: Views
-
-- [ ] CreateJobView (4-step wizard with all steps)
-- [ ] JobHistoryView (stat cards + filters + table)
-- [ ] JobProgressView (live polling + pipeline strip + stats)
-
-### Phase 6: Polish
-
-- [ ] Light mode complete pass (every component, every state)
-- [ ] Keyboard shortcut system integration
-- [ ] Accessibility audit (screen reader testing, contrast validation)
-- [ ] Performance audit (bundle size, font loading, CLS measurement)
-- [ ] Cross-browser testing (Chrome, Firefox, Safari, Edge)
-
 ## Research Sources
 
-This design system was informed by analysis of 35+ industry sources:
+Key references used during design:
 
 | Category | Key Sources |
 | --- | --- |

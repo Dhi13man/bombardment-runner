@@ -11,9 +11,9 @@ const STATUS_VARIANT: Record<JobStatus, BadgeVariant> = {
 };
 
 interface StatusBadgeProps {
-  /** Explicit variant -- overrides status-based auto-mapping. */
+  /** Explicit variant; overrides status-based auto-mapping. */
   variant?: BadgeVariant;
-  /** Job status -- auto-maps to variant if no explicit variant is set. */
+  /** Job status; auto-maps to variant if no explicit variant is set. */
   status?: JobStatus;
   /** Badge text. Falls back to the status string if not provided. */
   label?: string;

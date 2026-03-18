@@ -91,6 +91,6 @@ const sizeKB = (fs.statSync(SPRITE_OUT).size / 1024).toFixed(1);
 
 console.log(`Sprite built: ${ICON_LIST.length - missing}/${ICON_LIST.length} icons, ${sizeKB} KB`);
 if (missing > 0) {
-  console.error(`${missing} icon(s) missing — check ICON_LIST names against lucide-static`);
+  console.error(`${missing} icon(s) missing, check ICON_LIST names against lucide-static`);
   process.exit(1);
 }

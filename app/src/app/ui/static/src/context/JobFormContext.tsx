@@ -29,7 +29,7 @@ export interface JobFormState {
   headersExpression: string;
   bodyExpression: string;
 
-  // Step 3: Target — Client
+  // Step 3: Target (Client)
   clientChannel: ClientChannel;
   dialTimeoutMs: number;
   keepAliveMs: number;
@@ -39,7 +39,7 @@ export interface JobFormState {
   requestTimeoutMs: number;
   insecureSkipVerify: boolean;
 
-  // Step 3: Target — Load Balancer
+  // Step 3: Target (Load Balancer)
   lbStrategy: LoadBalancerStrategy;
   urls: string[];
 

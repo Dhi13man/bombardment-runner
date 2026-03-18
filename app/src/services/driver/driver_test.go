@@ -933,7 +933,7 @@ func TestExecuteBombardment_TransformerFailure_IncrementsFailed(t *testing.T) {
 	jobID := driver.CreateBombardmentAsync(req, job)
 	waitForJobCompletion(t, store, jobID, 10*time.Second)
 
-	// Assert: job completed (not failed -- individual row failures don't fail the job)
+	// Assert: job completed (not failed, individual row failures don't fail the job)
 	snap, ok := store.Get(jobID)
 	if !ok {
 		t.Fatal("job not found in store")

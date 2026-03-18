@@ -76,7 +76,7 @@ export function JobProgressView() {
     } catch {
       errorCountRef.current += 1;
       if (errorCountRef.current === 3 && mountedRef.current) {
-        showToast('error', 'Lost connection to job status — retrying...');
+        showToast('error', 'Lost connection to job status. Retrying...');
       }
       intervalRef.current = Math.min(
         intervalRef.current * ERROR_BACKOFF_FACTOR,
@@ -117,7 +117,7 @@ export function JobProgressView() {
     };
   }, [jobId, poll, stopPolling]);
 
-  // No job ID — show empty state
+  // No job ID, show empty state
   if (!jobId) {
     return (
       <div id="view-job-progress">

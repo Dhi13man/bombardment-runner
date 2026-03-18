@@ -1,4 +1,3 @@
-import type { JSX } from 'preact';
 import { Icon, type IconName } from '../Icon';
 
 export interface RadioOption<T extends string> {

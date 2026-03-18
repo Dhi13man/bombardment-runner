@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/preact';
 import { RouterProvider, useRouter, type ViewName } from './RouterContext';
 
