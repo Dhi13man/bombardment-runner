@@ -1,8 +1,11 @@
 import type { JSX } from 'preact';
+import { Icon, type IconName } from '../Icon';
 
-interface RadioOption<T extends string> {
+export interface RadioOption<T extends string> {
   value: T;
   label: string;
+  description?: string;
+  icon?: IconName;
   disabled?: boolean;
   comingSoon?: boolean;
 }
@@ -42,7 +45,11 @@ export function RadioCardGroup<T extends string>({
               disabled={opt.disabled}
               onChange={() => onChange(opt.value)}
             />
-            <span class="radio-label">{opt.label}</span>
+            {opt.icon && <Icon name={opt.icon} size="sm" class="radio-card-icon" />}
+            <div class="radio-card-content">
+              <span class="radio-label">{opt.label}</span>
+              {opt.description && <span class="radio-description">{opt.description}</span>}
+            </div>
             {opt.comingSoon && <span class="badge-soon">Soon</span>}
           </label>
         );

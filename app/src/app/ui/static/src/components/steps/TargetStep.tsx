@@ -1,24 +1,24 @@
 import { useEffect, useCallback, useRef } from 'preact/hooks';
 import { useJobForm } from '../../context/JobFormContext';
 import { useWizard } from '../../context/WizardContext';
-import { RadioCardGroup, Input, Checkbox } from '../primitives';
+import { RadioCardGroup, type RadioOption, Input, Checkbox } from '../primitives';
 import { Icon } from '../Icon';
 import type { ClientChannel, LoadBalancerStrategy } from '../../types/api';
 import type { JSX } from 'preact';
 
 /* ---------- Constants ---------- */
 
-const CLIENT_CHANNEL_OPTIONS: { value: ClientChannel; label: string; disabled?: boolean; comingSoon?: boolean }[] = [
-  { value: 'REST', label: 'REST' },
-  { value: 'GRAPHQL', label: 'GraphQL' },
-  { value: 'GRPC', label: 'gRPC' },
-  { value: 'KAFKA', label: 'Kafka', disabled: true, comingSoon: true },
+const CLIENT_CHANNEL_OPTIONS: RadioOption<ClientChannel>[] = [
+  { value: 'REST', label: 'REST', icon: 'link', description: 'HTTP REST requests' },
+  { value: 'GRAPHQL', label: 'GraphQL', icon: 'code', description: 'GraphQL queries and mutations' },
+  { value: 'GRPC', label: 'gRPC', icon: 'plug', description: 'gRPC service calls' },
+  { value: 'KAFKA', label: 'Kafka', icon: 'layers', description: 'Kafka topic messages', disabled: true, comingSoon: true },
 ];
 
-const LB_STRATEGY_OPTIONS: { value: LoadBalancerStrategy; label: string; disabled?: boolean; comingSoon?: boolean }[] = [
-  { value: 'ROUND_ROBIN', label: 'Round Robin' },
-  { value: 'RANDOM', label: 'Random' },
-  { value: 'LEAST_CONNECTION', label: 'Least Connection', disabled: true, comingSoon: true },
+const LB_STRATEGY_OPTIONS: RadioOption<LoadBalancerStrategy>[] = [
+  { value: 'ROUND_ROBIN', label: 'Round Robin', icon: 'refresh-cw', description: 'Cycle through targets' },
+  { value: 'RANDOM', label: 'Random', icon: 'scale', description: 'Random target selection' },
+  { value: 'LEAST_CONNECTION', label: 'Least Connection', icon: 'target', description: 'Fewest active connections', disabled: true, comingSoon: true },
 ];
 
 const CHANNEL_INFO: Record<ClientChannel, string> = {

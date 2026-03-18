@@ -1,16 +1,16 @@
 import { useRef, useEffect, useCallback } from 'preact/hooks';
 import { useJobForm } from '../../context/JobFormContext';
 import { useWizard } from '../../context/WizardContext';
-import { RadioCardGroup } from '../primitives';
+import { RadioCardGroup, type RadioOption } from '../primitives';
 import { Icon } from '../Icon';
 import { formatFileSize } from '../../utils/format';
 import type { ParserStrategy } from '../../types/api';
 
-const PARSER_OPTIONS: { value: ParserStrategy | 'XML' | 'YAML'; label: string; disabled?: boolean; comingSoon?: boolean }[] = [
-  { value: 'CSV', label: 'CSV' },
-  { value: 'JSON', label: 'JSON' },
-  { value: 'XML' as ParserStrategy, label: 'XML', disabled: true, comingSoon: true },
-  { value: 'YAML' as ParserStrategy, label: 'YAML', disabled: true, comingSoon: true },
+const PARSER_OPTIONS: RadioOption<ParserStrategy | 'XML' | 'YAML'>[] = [
+  { value: 'CSV', label: 'CSV', icon: 'file-input', description: 'Comma-separated values' },
+  { value: 'JSON', label: 'JSON', icon: 'file-code', description: 'JSON array of objects' },
+  { value: 'XML' as ParserStrategy, label: 'XML', icon: 'file-code', description: 'XML documents', disabled: true, comingSoon: true },
+  { value: 'YAML' as ParserStrategy, label: 'YAML', icon: 'file-code', description: 'YAML files', disabled: true, comingSoon: true },
 ];
 
 const FILE_PATH_REGEX = /^(\.[/\\])?([a-zA-Z0-9_\-./\\]+)\.([a-zA-Z0-9]+)$/;

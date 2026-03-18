@@ -5,13 +5,14 @@ import { Icon, type IconName } from '../Icon';
 
 /* ---------- Types ---------- */
 
-export type ToastType = 'success' | 'error' | 'warning';
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
 interface ToastItem {
   id: number;
   type: ToastType;
   message: string;
   exiting: boolean;
+  duration: number;
 }
 
 interface ToastContextValue {
@@ -33,7 +34,8 @@ export function useToast(): ToastContextValue {
 const TOAST_ICON: Record<ToastType, IconName> = {
   success: 'check-circle-2',
   error: 'alert-triangle',
-  warning: 'info',
+  warning: 'alert-triangle',
+  info: 'info',
 };
 
 export function ToastProvider({ children }: { children: ComponentChildren }) {
@@ -52,7 +54,7 @@ export function ToastProvider({ children }: { children: ComponentChildren }) {
   const showToast = useCallback(
     (type: ToastType, message: string, duration = 5000) => {
       const id = nextId.current++;
-      setToasts((prev) => [...prev, { id, type, message, exiting: false }]);
+      setToasts((prev) => [...prev, { id, type, message, exiting: false, duration }]);
 
       if (duration > 0) {
         setTimeout(() => dismiss(id), duration);
@@ -82,6 +84,10 @@ export function ToastProvider({ children }: { children: ComponentChildren }) {
               >
                 &times;
               </button>
+              <div
+                class="toast-countdown"
+                style={{ animationDuration: `${toast.duration}ms` }}
+              />
             </div>
           ))}
         </div>

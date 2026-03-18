@@ -30,7 +30,7 @@ export function StepIndicator() {
                 {isCompleted ? (
                   <Icon name="check" size="sm" />
                 ) : (
-                  stepNum
+                  <Icon name={step.icon} size="sm" />
                 )}
               </div>
               <span class="step-label">{step.label}</span>
