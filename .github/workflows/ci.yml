@@ -48,7 +48,7 @@ jobs:
           cache-dependency-path: app/package-lock.json
       - name: Install frontend dependencies
         working-directory: ./app
-        run: npm ci
+        run: npm install --ignore-scripts=false
       - name: Run frontend tests
         working-directory: ./app
         run: npm test
