@@ -5,7 +5,7 @@ import type { IconName } from '../components/Icon';
 
 /* ---------- Types ---------- */
 
-export interface StepDefinition {
+interface StepDefinition {
   label: string;
   icon: IconName;
 }

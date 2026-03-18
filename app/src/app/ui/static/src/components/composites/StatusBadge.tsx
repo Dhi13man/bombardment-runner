@@ -1,8 +1,6 @@
 import type { JobStatus } from '../../types/api';
 import { Badge, type BadgeVariant } from '../primitives/Badge';
 
-export type StatusBadgeVariant = BadgeVariant;
-
 const STATUS_VARIANT: Record<JobStatus, BadgeVariant> = {
   PENDING: 'neutral',
   RUNNING: 'warning',

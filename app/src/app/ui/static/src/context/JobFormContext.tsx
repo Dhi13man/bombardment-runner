@@ -12,7 +12,7 @@ import { msToNs, nsToMs } from '../types/api';
 
 /* ---------- Form State ---------- */
 
-export interface JobFormState {
+interface JobFormState {
   // Step 1: Source
   parserStrategy: ParserStrategy;
   filePath: string;

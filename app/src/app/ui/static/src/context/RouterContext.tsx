@@ -5,28 +5,15 @@ import type { ComponentChildren } from 'preact';
 /** All routable views in the application. */
 export type ViewName = 'create-job' | 'job-history' | 'job-progress';
 
-/** Optional parameters passed between views. */
-export interface ViewParams {
+interface ViewParams {
   jobId?: string;
 }
 
 interface RouterContextValue {
-  /** Currently active view. */
   activeView: ViewName;
-  /** Parameters for the current view. */
   params: ViewParams;
-  /** Navigate to a named view with optional params. */
   navigateTo: (view: ViewName, params?: ViewParams) => void;
 }
-
-const ROUTE_MAP: Record<string, { view: ViewName; extractParams?: (hash: string) => ViewParams }> = {
-  '#/create': { view: 'create-job' },
-  '#/history': { view: 'job-history' },
-  '#/jobs/': {
-    view: 'job-progress',
-    extractParams: (hash) => ({ jobId: hash.replace('#/jobs/', '') }),
-  },
-};
 
 function viewToHash(view: ViewName, params?: ViewParams): string {
   switch (view) {
@@ -38,13 +25,9 @@ function viewToHash(view: ViewName, params?: ViewParams): string {
 
 function hashToRoute(hash: string): { view: ViewName; params: ViewParams } {
   if (hash.startsWith('#/jobs/') && hash.length > 7) {
-    return { view: 'job-progress', params: { jobId: hash.replace('#/jobs/', '') } };
+    return { view: 'job-progress', params: { jobId: hash.slice(7) } };
   }
-  for (const [pattern, route] of Object.entries(ROUTE_MAP)) {
-    if (hash === pattern) {
-      return { view: route.view, params: route.extractParams?.(hash) ?? {} };
-    }
-  }
+  if (hash === '#/history') return { view: 'job-history', params: {} };
   return { view: 'create-job', params: {} };
 }
 

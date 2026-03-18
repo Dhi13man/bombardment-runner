@@ -2,7 +2,7 @@ interface SkeletonRowProps {
   columns: number;
 }
 
-export function SkeletonRow({ columns }: SkeletonRowProps) {
+function SkeletonRow({ columns }: SkeletonRowProps) {
   return (
     <tr class="skeleton-row" aria-hidden="true">
       {Array.from({ length: columns }, (_, i) => (
