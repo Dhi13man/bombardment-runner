@@ -48,10 +48,10 @@ jobs:
           cache-dependency-path: app/package-lock.json
       - name: Install frontend dependencies
         working-directory: ./app
-        run: npm install --ignore-scripts=false
+        run: rm -rf node_modules && npm install
       - name: Run frontend tests
         working-directory: ./app
-        run: npm test
+        run: npx vitest run
 
   ui-bundle-check:
     runs-on: ubuntu-latest
