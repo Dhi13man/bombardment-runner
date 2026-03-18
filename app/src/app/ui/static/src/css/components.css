@@ -256,6 +256,24 @@
 .command-palette-category { margin-left: auto; font-size: 11px; color: var(--text-tertiary); }
 .command-palette-empty { padding: 24px; text-align: center; font-size: 14px; color: var(--text-tertiary); }
 .progress-fill[data-status="running"] { background-size: 200% 100%; background-image: linear-gradient(90deg, #6366F1 0%, #818CF8 30%, #A5B4FC 50%, #818CF8 70%, #6366F1 100%); animation: shimmer 2s linear infinite; }
+.light .card { background: var(--bg-surface); backdrop-filter: none; border-color: var(--border-default); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.light .card-flat, .light .stat-card, .light .config-card, .light .table-container { box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.light .btn-primary:hover { box-shadow: 0 2px 8px rgba(79,70,229,.25); }
+.light .badge-indigo, .light .badge-cyan { color: #4F46E5; }
+.light .badge-success, .light .badge-green, .light .toast-success { background: rgba(16,185,129,.12); border-color: rgba(16,185,129,.3); }
+.light .badge-warning, .light .badge-amber, .light .toast-warning { background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.3); }
+.light .badge-error, .light .badge-red, .light .toast-error { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.3); }
+.light .badge-info, .light .toast-info { background: rgba(59,130,246,.12); border-color: rgba(59,130,246,.3); }
+.light .select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
+.light .progress-fill { background: #4F46E5; }
+.light .progress-fill[data-status="success"] { background: #059669; }
+.light .progress-fill[data-status="error"] { background: #DC2626; }
+.light .input-code, .light .textarea-code { background: #F1F5F9; }
+.light .stat-card-success { border-color: rgba(16,185,129,.35); }
+.light .stat-card-error { border-color: rgba(239,68,68,.35); }
+.light .stat-card-info { border-color: rgba(79,70,229,.35); }
+.light .custom-select-dropdown { box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+.light .empty-state { box-shadow: 0 1px 3px rgba(0,0,0,.08); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }

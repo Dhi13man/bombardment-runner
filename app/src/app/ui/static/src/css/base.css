@@ -25,7 +25,7 @@
   --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
 }
 .light {
-  --bg-base: #F8FAFC; --bg-surface: #FFFFFF; --bg-elevated: #FFFFFF;
+  --bg-base: #F8FAFC; --bg-surface: #FFFFFF; --bg-elevated: #F1F5F9;
   --bg-overlay: rgba(0,0,0,.4); --bg-inset: #F1F5F9;
   --text-primary: #0F172A; --text-secondary: #475569; --text-tertiary: #94A3B8; --text-inverse: #F1F5F9;
   --accent: #4F46E5; --accent-hover: #6366F1; --accent-active: #4338CA;
