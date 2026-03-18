@@ -146,13 +146,4 @@ body {
   }
 }
 
-/* 7. Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
 /* (component styles imported at top of file for Tailwind CLI compatibility) */
