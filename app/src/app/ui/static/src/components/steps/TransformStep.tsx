@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState } from 'preact/hooks';
 import { useJobForm } from '../../context/JobFormContext';
 import { useWizard } from '../../context/WizardContext';
-import { Select, Input, Textarea } from '../primitives';
+import { CustomSelect, Input, Textarea } from '../primitives';
 import { Icon } from '../Icon';
 import type { TransformerStrategy, ClientChannel } from '../../types/api';
 import type { JSX } from 'preact';
@@ -173,12 +173,17 @@ export function TransformStep() {
       </div>
 
       <div class="mb-6">
-        <Select
+        <CustomSelect
           id="trans-strategy"
           label="Transformer Strategy"
+          options={[
+            { value: 'JSONATA', label: 'JSONata' },
+            { value: 'GOTEMPLATE', label: 'Go Template' },
+            { value: 'PASSTHROUGH', label: 'Passthrough' },
+          ]}
           value={form.transformerStrategy}
-          onChange={(e: JSX.TargetedEvent<HTMLSelectElement>) => {
-            const newStrategy = (e.currentTarget as HTMLSelectElement).value as TransformerStrategy;
+          onChange={(v) => {
+            const newStrategy = v as TransformerStrategy;
             update('transformerStrategy', newStrategy);
             const defaults = STRATEGY_DEFAULTS[newStrategy];
             update('methodExpression', defaults.methodExpression);
@@ -187,11 +192,7 @@ export function TransformStep() {
             update('bodyExpression', defaults.bodyExpression);
             setTouched({});
           }}
-        >
-          <option value="JSONATA">JSONata</option>
-          <option value="GOTEMPLATE">Go Template</option>
-          <option value="PASSTHROUGH">Passthrough</option>
-        </Select>
+        />
         <p class="field-help">
           <Icon name="info" class="w-3 h-3" />
           {STRATEGY_HELP[strategy]}
