@@ -1,11 +1,13 @@
 import { useRef, useCallback } from 'preact/hooks';
 import { useWizard } from '../../context/WizardContext';
+import { useToast } from '../composites/Toast';
 import { Button } from '../primitives';
 import { Icon } from '../Icon';
 
 export function WizardNav() {
   const { isFirstStep, isLastStep, stepValid, currentStep, next, back } =
     useWizard();
+  const { showToast } = useToast();
   const nextRef = useRef<HTMLButtonElement>(null);
   const submitRef = useRef<HTMLButtonElement>(null);
 
@@ -13,16 +15,17 @@ export function WizardNav() {
 
   const handleNext = useCallback(() => {
     if (!isCurrentValid) {
-      // Shake the button to indicate validation failure
+      // Visual shake + accessible announcement
       const el = isLastStep ? submitRef.current : nextRef.current;
       if (el) {
         el.classList.add('shake');
         setTimeout(() => el.classList.remove('shake'), 400);
       }
+      showToast('warning', 'Please complete required fields before proceeding');
       return;
     }
     next();
-  }, [isCurrentValid, isLastStep, next]);
+  }, [isCurrentValid, isLastStep, next, showToast]);
 
   return (
     <div class="wizard-nav">

@@ -22,7 +22,7 @@ function WizardKeyboardShortcuts() {
 
       if (e.altKey && e.key === 'Enter') { e.preventDefault(); next(); }
       if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); back(); }
-      if (['1', '2', '3', '4'].includes(e.key) && e.altKey) {
+      if (['1', '2', '3', '4'].includes(e.key) && e.altKey && e.shiftKey) {
         e.preventDefault();
         goTo(Number(e.key));
       }

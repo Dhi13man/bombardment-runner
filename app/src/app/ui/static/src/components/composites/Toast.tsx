@@ -72,7 +72,7 @@ export function ToastProvider({ children }: { children: ComponentChildren }) {
             <div
               key={toast.id}
               class={`toast toast-${toast.type}${toast.exiting ? ' toast-exiting' : ''}`}
-              role="status"
+              role={toast.type === 'error' ? 'alert' : 'status'}
             >
               <Icon name={TOAST_ICON[toast.type]} class="toast-icon" />
               <span class="toast-message">{toast.message}</span>

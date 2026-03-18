@@ -46,6 +46,7 @@ export function WizardPanels({ children }: WizardPanelsProps) {
             role="region"
             aria-label={`Step ${stepNum}`}
             aria-hidden={!isActive ? 'true' : undefined}
+            {...(!isActive ? { inert: true } : {})}
           >
             {panel}
           </div>

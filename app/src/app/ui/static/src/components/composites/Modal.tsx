@@ -1,6 +1,5 @@
 import type { ComponentChildren } from 'preact';
 import { useRef, useEffect, useState } from 'preact/hooks';
-import { Button } from '../primitives';
 import { Icon } from '../Icon';
 
 let modalIdCounter = 0;

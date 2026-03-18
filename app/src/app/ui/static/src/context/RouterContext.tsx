@@ -66,9 +66,8 @@ const RouterContext = createContext<RouterContextValue>({
 });
 
 export function RouterProvider({ children }: { children: ComponentChildren }) {
-  const initial = hashToRoute(window.location.hash);
-  const [activeView, setActiveView] = useState<ViewName>(initial.view);
-  const [params, setParams] = useState<ViewParams>(initial.params);
+  const [activeView, setActiveView] = useState<ViewName>(() => hashToRoute(window.location.hash).view);
+  const [params, setParams] = useState<ViewParams>(() => hashToRoute(window.location.hash).params);
 
   const navigateTo = useCallback((view: ViewName, newParams?: ViewParams) => {
     const hash = viewToHash(view, newParams);
@@ -89,10 +88,10 @@ export function RouterProvider({ children }: { children: ComponentChildren }) {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Set initial title
+  // Set initial title on mount only
   useEffect(() => {
     document.title = viewTitle(activeView, params);
-  }, [activeView, params]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const value = useMemo(
     () => ({ activeView, params, navigateTo }),

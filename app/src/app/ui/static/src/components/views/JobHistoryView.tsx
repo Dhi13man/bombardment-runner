@@ -26,6 +26,8 @@ function progressStatus(status: JobStatus): string | undefined {
 type SortField = 'created_at' | 'status' | 'progress_percent';
 type SortDir = 'asc' | 'desc';
 
+const STATUS_FILTERS = ['ALL', 'PENDING', 'RUNNING', 'COMPLETED', 'FAILED'] as const;
+
 /* ---------- Component ---------- */
 
 export function JobHistoryView() {
@@ -48,9 +50,6 @@ export function JobHistoryView() {
     setError('');
     try {
       const result = await listJobs();
-      result.sort((a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      );
       setJobs(result);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to fetch jobs';
@@ -112,13 +111,6 @@ export function JobHistoryView() {
     }
   }
 
-  function handleSortKeyDown(e: KeyboardEvent, field: SortField) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      toggleSort(field);
-    }
-  }
-
   function ariaSortDir(field: SortField): 'ascending' | 'descending' | 'none' {
     if (sortField !== field) return 'none';
     return sortDir === 'asc' ? 'ascending' : 'descending';
@@ -130,8 +122,6 @@ export function JobHistoryView() {
     navigateTo('create-job');
     showToast('info', `Loaded config from job ${job.id.substring(0, 8)}`);
   }
-
-  const STATUS_FILTERS = ['ALL', 'PENDING', 'RUNNING', 'COMPLETED', 'FAILED'] as const;
 
   // Computed stats
   const stats = useMemo(() => {
@@ -235,7 +225,7 @@ export function JobHistoryView() {
                 <button
                   key={s}
                   type="button"
-                  class={`badge ${statusFilter === s ? 'badge-indigo' : 'badge-neutral'}`}
+                  class={`badge ${statusFilter === s ? 'badge-accent' : 'badge-neutral'}`}
                   aria-pressed={statusFilter === s}
                   onClick={() => setStatusFilter(s)}
                 >
@@ -258,18 +248,24 @@ export function JobHistoryView() {
               <thead>
                 <tr>
                   <th scope="col">Job ID</th>
-                  <th scope="col" class="sortable" tabIndex={0} aria-sort={ariaSortDir('status')} onClick={() => toggleSort('status')} onKeyDown={(e) => handleSortKeyDown(e as unknown as KeyboardEvent, 'status')}>
-                    Status
-                    {sortField === 'status' && <Icon name="chevron-down" size="sm" class={sortDir === 'asc' ? 'sort-asc' : ''} />}
+                  <th scope="col" aria-sort={ariaSortDir('status')}>
+                    <button type="button" class="sortable" onClick={() => toggleSort('status')}>
+                      Status
+                      {sortField === 'status' && <Icon name="chevron-down" size="sm" class={sortDir === 'asc' ? 'sort-asc' : ''} />}
+                    </button>
                   </th>
                   <th scope="col">Pipeline</th>
-                  <th scope="col" class="sortable" tabIndex={0} aria-sort={ariaSortDir('created_at')} onClick={() => toggleSort('created_at')} onKeyDown={(e) => handleSortKeyDown(e as unknown as KeyboardEvent, 'created_at')}>
-                    Created
-                    {sortField === 'created_at' && <Icon name="chevron-down" size="sm" class={sortDir === 'asc' ? 'sort-asc' : ''} />}
+                  <th scope="col" aria-sort={ariaSortDir('created_at')}>
+                    <button type="button" class="sortable" onClick={() => toggleSort('created_at')}>
+                      Created
+                      {sortField === 'created_at' && <Icon name="chevron-down" size="sm" class={sortDir === 'asc' ? 'sort-asc' : ''} />}
+                    </button>
                   </th>
-                  <th scope="col" class="sortable" tabIndex={0} aria-sort={ariaSortDir('progress_percent')} onClick={() => toggleSort('progress_percent')} onKeyDown={(e) => handleSortKeyDown(e as unknown as KeyboardEvent, 'progress_percent')}>
-                    Progress
-                    {sortField === 'progress_percent' && <Icon name="chevron-down" size="sm" class={sortDir === 'asc' ? 'sort-asc' : ''} />}
+                  <th scope="col" aria-sort={ariaSortDir('progress_percent')}>
+                    <button type="button" class="sortable" onClick={() => toggleSort('progress_percent')}>
+                      Progress
+                      {sortField === 'progress_percent' && <Icon name="chevron-down" size="sm" class={sortDir === 'asc' ? 'sort-asc' : ''} />}
+                    </button>
                   </th>
                   <th scope="col">Rows</th>
                   <th scope="col">Actions</th>

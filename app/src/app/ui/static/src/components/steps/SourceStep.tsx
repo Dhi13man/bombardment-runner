@@ -160,6 +160,11 @@ export function SourceStep() {
         </p>
       </div>
 
+      {/* Screen reader file selection announcement */}
+      <div aria-live="polite" class="sr-only">
+        {form.fileName ? `File selected: ${form.fileName}` : ''}
+      </div>
+
       {/* File Details */}
       {hasFile && (
         <div class="card-flat mb-6">

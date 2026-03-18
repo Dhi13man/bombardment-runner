@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'preact/hooks';
 import { Icon, type IconName } from '../Icon';
+import { useToast } from './Toast';
 import { useRouter } from '../../context/RouterContext';
 import { useThemeContext } from '../../context/ThemeContext';
 
@@ -19,17 +20,19 @@ interface CommandPaletteProps {
 export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const { navigateTo } = useRouter();
   const { toggle: toggleTheme } = useThemeContext();
+  const { showToast } = useToast();
   const [query, setQuery] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const triggerRef = useRef<Element | null>(null);
 
   const actions: PaletteAction[] = [
     { id: 'nav-create', label: 'Create Job', icon: 'plus', category: 'Navigation', action: () => navigateTo('create-job') },
     { id: 'nav-history', label: 'Job History', icon: 'history', category: 'Navigation', action: () => navigateTo('job-history') },
     { id: 'action-theme', label: 'Toggle Theme', icon: 'sun', category: 'Actions', action: toggleTheme },
     { id: 'action-refresh', label: 'Refresh Page', icon: 'refresh-cw', category: 'Actions', action: () => location.reload() },
-    { id: 'help-shortcuts', label: 'Keyboard Shortcuts', icon: 'info', category: 'Help', action: () => { onClose(); alert('Alt+1: Create Job\nAlt+2: Job History\nAlt+Enter: Next step\nAlt+Left: Previous step\nCmd+K: Command palette\nEscape: Close'); } },
+    { id: 'help-shortcuts', label: 'Keyboard Shortcuts', icon: 'info', category: 'Help', action: () => { onClose(); showToast('info', 'Alt+1: Create Job | Alt+2: History | Alt+Enter: Next step | Alt+Left: Back | Alt+Shift+1-4: Go to step | Cmd+K: Palette | Esc: Close'); } },
     { id: 'help-docs', label: 'API Documentation', icon: 'file-code', category: 'Help', action: () => { window.open('/swagger/index.html', '_blank'); onClose(); } },
   ];
 
@@ -39,12 +42,16 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
   useEffect(() => {
     if (isOpen) {
+      triggerRef.current = document.activeElement;
       dialogRef.current?.showModal();
       setQuery('');
       setHighlightedIndex(0);
       requestAnimationFrame(() => inputRef.current?.focus());
     } else {
       dialogRef.current?.close();
+      if (triggerRef.current instanceof HTMLElement) {
+        triggerRef.current.focus();
+      }
     }
   }, [isOpen]);
 
@@ -89,6 +96,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             type="text"
             class="command-palette-input"
             placeholder="Type a command..."
+            aria-label="Search commands"
             role="combobox"
             aria-expanded={filtered.length > 0}
             aria-controls="palette-listbox"

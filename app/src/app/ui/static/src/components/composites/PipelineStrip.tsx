@@ -1,3 +1,4 @@
+import { Fragment } from 'preact';
 import type { JobSnapshot } from '../../types/api';
 
 export interface PipelineStage {
@@ -69,7 +70,7 @@ export function PipelineStrip({ stages, compact = false }: PipelineStripProps) {
       aria-label={`Pipeline: ${ariaLabel}`}
     >
       {stages.map((stage, i) => (
-        <>
+        <Fragment key={stage.name}>
           {i > 0 && (
             <div
               class={`pipeline-connector${stage.status === 'complete' || stages[i - 1].status === 'complete' ? ' filled' : ''}`}
@@ -86,7 +87,7 @@ export function PipelineStrip({ stages, compact = false }: PipelineStripProps) {
               <span class="pipeline-label">{stage.name}</span>
             )}
           </div>
-        </>
+        </Fragment>
       ))}
     </div>
   );

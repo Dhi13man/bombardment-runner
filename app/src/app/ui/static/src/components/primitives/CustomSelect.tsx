@@ -8,6 +8,8 @@ interface SelectOption {
   disabled?: boolean;
 }
 
+let selectIdCounter = 0;
+
 interface CustomSelectProps {
   id?: string;
   label?: string;
@@ -31,7 +33,9 @@ export function CustomSelect({
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const listboxRef = useRef<HTMLUListElement>(null);
-  const listboxId = id ? `${id}-listbox` : undefined;
+  const [fallbackId] = useState(() => `select-${++selectIdCounter}`);
+  const resolvedId = id || fallbackId;
+  const listboxId = `${resolvedId}-listbox`;
 
   const selectedOption = options.find((o) => o.value === value);
 
@@ -142,9 +146,9 @@ export function CustomSelect({
 
   return (
     <div ref={containerRef} class="custom-select">
-      {fieldLabel && <label for={id} class="label">{fieldLabel}</label>}
+      {fieldLabel && <label for={resolvedId} class="label">{fieldLabel}</label>}
       <button
-        id={id}
+        id={resolvedId}
         type="button"
         role="combobox"
         class={triggerClasses}
@@ -153,7 +157,7 @@ export function CustomSelect({
         aria-controls={listboxId}
         aria-activedescendant={isOpen && highlightedIndex >= 0 && listboxId ? `${listboxId}-opt-${highlightedIndex}` : undefined}
         aria-invalid={error ? 'true' : undefined}
-        aria-describedby={error && id ? `${id}-error` : undefined}
+        aria-describedby={error ? `${resolvedId}-error` : undefined}
         onClick={() => (isOpen ? close() : open())}
         onKeyDown={handleKeyDown}
       >
@@ -168,7 +172,7 @@ export function CustomSelect({
           id={listboxId}
           role="listbox"
           class="custom-select-dropdown"
-          aria-label={fieldLabel}
+          aria-label={fieldLabel || 'Options'}
         >
           {options.map((opt, i) => {
             const optClasses = [
@@ -195,7 +199,7 @@ export function CustomSelect({
           })}
         </ul>
       )}
-      {error && <p id={id ? `${id}-error` : undefined} class="field-error" role="alert">{error}</p>}
+      {error && <p id={`${resolvedId}-error`} class="field-error" role="alert">{error}</p>}
     </div>
   );
 }
