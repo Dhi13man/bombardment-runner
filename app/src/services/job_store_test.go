@@ -4,6 +4,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.dhi13man.com/bombardment-runner/src/models/dto"
 )
 
 func TestJobStore_Create(t *testing.T) {
@@ -279,6 +281,84 @@ func TestJob_ConcurrentMixedUpdates(t *testing.T) {
 	const epsilon = 0.001
 	if snap.ProgressPercent < expectedProgress-epsilon || snap.ProgressPercent > expectedProgress+epsilon {
 		t.Fatalf("expected ProgressPercent ~%.1f, got %.4f", expectedProgress, snap.ProgressPercent)
+	}
+}
+
+func TestJobStore_Delete_Exists(t *testing.T) {
+	store := NewJobStore()
+	job := store.Create(nil)
+
+	ok := store.Delete(job.ID)
+	if !ok {
+		t.Fatal("expected Delete to return true for existing job")
+	}
+
+	_, found := store.Get(job.ID)
+	if found {
+		t.Fatal("expected Get to return false after deletion")
+	}
+
+	jobs := store.List()
+	if len(jobs) != 0 {
+		t.Fatalf("expected empty list after deletion, got %d", len(jobs))
+	}
+}
+
+func TestJobStore_Delete_NotFound(t *testing.T) {
+	store := NewJobStore()
+
+	ok := store.Delete("nonexistent-id")
+	if ok {
+		t.Fatal("expected Delete to return false for non-existent ID")
+	}
+}
+
+func TestJobStore_List_OmitsOriginalRequest(t *testing.T) {
+	store := NewJobStore()
+	req := &dto.BombardmentRequest{}
+	req.Parser.FilePath = "/tmp/test.csv"
+	store.Create(req)
+
+	jobs := store.List()
+	if len(jobs) != 1 {
+		t.Fatalf("expected 1 job, got %d", len(jobs))
+	}
+	if jobs[0].OriginalRequest != nil {
+		t.Fatal("expected OriginalRequest to be nil in list results")
+	}
+
+	// Full snapshot via Get() should still include it
+	snap, ok := store.Get(jobs[0].ID)
+	if !ok {
+		t.Fatal("expected Get to return true")
+	}
+	if snap.OriginalRequest == nil {
+		t.Fatal("expected OriginalRequest to be present in Get() result")
+	}
+}
+
+func TestJobStore_Create_StripsFileContentB64(t *testing.T) {
+	store := NewJobStore()
+	req := &dto.BombardmentRequest{}
+	req.Parser.FileContentB64 = "dGVzdA==" // base64("test")
+	req.Parser.FilePath = "/tmp/test.csv"
+
+	job := store.Create(req)
+	snap := job.Snapshot()
+
+	if snap.OriginalRequest == nil {
+		t.Fatal("expected OriginalRequest to be present")
+	}
+	if snap.OriginalRequest.Parser.FileContentB64 != "" {
+		t.Fatal("expected file_content_b64 to be stripped from stored request")
+	}
+	if snap.OriginalRequest.Parser.FilePath != "/tmp/test.csv" {
+		t.Fatalf("expected file_path to be preserved, got %q", snap.OriginalRequest.Parser.FilePath)
+	}
+
+	// Verify the original request was not mutated
+	if req.Parser.FileContentB64 != "dGVzdA==" {
+		t.Fatal("expected original request to remain unmutated")
 	}
 }
 

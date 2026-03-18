@@ -20,6 +20,9 @@ type BombardmentController interface {
 
 	// ListJobs List all bombardment jobs
 	ListJobs(c *gin.Context)
+
+	// DeleteJob Delete a bombardment job
+	DeleteJob(c *gin.Context)
 }
 
 // Implements BaseController interface
@@ -38,6 +41,7 @@ func (bc *bombardmentControllerImpl) RegisterRoutes(r *gin.Engine) {
 	r.POST("/v1/bombardment", bc.Bombard)
 	r.GET("/v1/bombardment", bc.ListJobs)
 	r.GET("/v1/bombardment/:id", bc.GetJobStatus)
+	r.DELETE("/v1/bombardment/:id", bc.DeleteJob)
 }
 
 // Bombard triggers bombardment process asynchronously
@@ -127,4 +131,22 @@ func (bc *bombardmentControllerImpl) GetJobStatus(c *gin.Context) {
 func (bc *bombardmentControllerImpl) ListJobs(c *gin.Context) {
 	jobs := bc.jobStore.List()
 	c.JSON(200, gin.H{"jobs": jobs})
+}
+
+// DeleteJob deletes a bombardment job by ID
+//
+//	@Summary		Delete a job
+//	@Description	Delete a bombardment job by its ID
+//	@Tags			Bombardment Core
+//	@Param			id	path	string	true	"Job ID"
+//	@Success		204
+//	@Failure		404	{object}	map[string]string
+//	@Router			/v1/bombardment/{id} [delete]
+func (bc *bombardmentControllerImpl) DeleteJob(c *gin.Context) {
+	id := c.Param("id")
+	if !bc.jobStore.Delete(id) {
+		c.JSON(404, gin.H{"error": "job not found"})
+		return
+	}
+	c.Status(204)
 }

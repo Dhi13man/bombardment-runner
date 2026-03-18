@@ -128,15 +128,25 @@ func NewJobStore() *JobStore {
 	return &JobStore{jobs: make(map[string]*Job)}
 }
 
-// Create creates a new pending job and returns it
+// Create creates a new pending job and returns it.
+// The stored request has file_content_b64 stripped to avoid retaining
+// potentially large file data in memory for the lifetime of the job.
 func (s *JobStore) Create(req *dto.BombardmentRequest) *Job {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	var stored *dto.BombardmentRequest
+	if req != nil {
+		sanitized := *req
+		sanitized.Parser.FileContentB64 = ""
+		stored = &sanitized
+	}
+
 	job := &Job{
 		ID:              uuid.New().String(),
 		Status:          JobStatusPending,
 		CreatedAt:       time.Now(),
-		OriginalRequest: req,
+		OriginalRequest: stored,
 	}
 	s.jobs[job.ID] = job
 	return job
@@ -153,16 +163,31 @@ func (s *JobStore) Get(id string) (JobSnapshot, bool) {
 	return job.Snapshot(), true
 }
 
-// List returns snapshots of all jobs, sorted by creation time (newest first)
+// List returns snapshots of all jobs, sorted by creation time (newest first).
+// OriginalRequest is omitted from list results to avoid bloating the response
+// with file contents; use Get() for the full snapshot.
 func (s *JobStore) List() []JobSnapshot {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	jobs := make([]JobSnapshot, 0, len(s.jobs))
 	for _, j := range s.jobs {
-		jobs = append(jobs, j.Snapshot())
+		snap := j.Snapshot()
+		snap.OriginalRequest = nil
+		jobs = append(jobs, snap)
 	}
 	sort.Slice(jobs, func(i, k int) bool {
 		return jobs[i].CreatedAt.After(jobs[k].CreatedAt)
 	})
 	return jobs
+}
+
+// Delete removes a job by ID. Returns true if the job existed and was deleted.
+func (s *JobStore) Delete(id string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	_, ok := s.jobs[id]
+	if ok {
+		delete(s.jobs, id)
+	}
+	return ok
 }

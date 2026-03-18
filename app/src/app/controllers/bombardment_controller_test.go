@@ -201,6 +201,101 @@ func TestBombardmentController_RegisterRoutes(t *testing.T) {
 	if w2.Code == http.StatusNotFound {
 		t.Error("expected GET /v1/bombardment route to be registered")
 	}
+
+	// Verify the DELETE route is registered.
+	// The handler returns 404 with JSON when the job doesn't exist,
+	// while Gin returns a plain-text 404 for unregistered routes.
+	w3 := httptest.NewRecorder()
+	req3, _ := http.NewRequest("DELETE", "/v1/bombardment/some-id", nil)
+	router.ServeHTTP(w3, req3)
+
+	var deleteResp map[string]string
+	if err := json.Unmarshal(w3.Body.Bytes(), &deleteResp); err != nil {
+		t.Error("expected DELETE /v1/bombardment/:id route to be registered (got non-JSON response)")
+	}
+}
+
+func TestBombardmentController_DeleteJob_NotFound(t *testing.T) {
+	t.Parallel()
+
+	driver := &mockDriver{}
+	router := setupRouter(driver)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/v1/bombardment/nonexistent", nil)
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected status 404, got %d", w.Code)
+	}
+
+	var resp map[string]string
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	if resp["error"] != "job not found" {
+		t.Errorf("expected error %q, got %q", "job not found", resp["error"])
+	}
+}
+
+func TestBombardmentController_DeleteJob_Success(t *testing.T) {
+	t.Parallel()
+
+	driver := &mockDriver{}
+	store := services.NewJobStore()
+	job := store.Create(nil)
+	router := setupRouterWithStore(driver, store)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/v1/bombardment/"+job.ID, nil)
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNoContent {
+		t.Errorf("expected status 204, got %d; body: %s", w.Code, w.Body.String())
+	}
+
+	// Verify it's actually gone
+	w2 := httptest.NewRecorder()
+	req2, _ := http.NewRequest("GET", "/v1/bombardment/"+job.ID, nil)
+	router.ServeHTTP(w2, req2)
+
+	if w2.Code != http.StatusNotFound {
+		t.Errorf("expected 404 after deletion, got %d", w2.Code)
+	}
+}
+
+func TestBombardmentController_ListJobs_OmitsOriginalRequest(t *testing.T) {
+	t.Parallel()
+
+	driver := &mockDriver{}
+	store := services.NewJobStore()
+	reqBody := &dto.BombardmentRequest{}
+	reqBody.Driver.BatchSize = 10
+	reqBody.LoadBalancer.Urls = []string{"http://example.com"}
+	reqBody.Parser.FilePath = "/tmp/test.csv"
+	store.Create(reqBody)
+	router := setupRouterWithStore(driver, store)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/v1/bombardment", nil)
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	// Parse raw JSON to check original_request is absent
+	var raw map[string][]map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &raw); err != nil {
+		t.Fatalf("failed to unmarshal response: %v", err)
+	}
+	jobs := raw["jobs"]
+	if len(jobs) != 1 {
+		t.Fatalf("expected 1 job, got %d", len(jobs))
+	}
+	if _, hasReq := jobs[0]["original_request"]; hasReq {
+		t.Error("expected original_request to be omitted from list response")
+	}
 }
 
 func TestBombardmentController_Bombard_WithFileContentB64(t *testing.T) {
