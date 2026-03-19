@@ -1012,10 +1012,14 @@
   .step.completed .step-label {
     color: var(--status-success-text);
   }
-  .step-circle-error {
-    background: var(--status-error) !important;
-    color: white !important;
-    border-color: var(--status-error) !important;
+  .step.error .step-circle {
+    background: var(--status-error);
+    color: white;
+    border-color: var(--status-error);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--status-error) 15%, transparent);
+  }
+  .step.error .step-label {
+    color: var(--status-error-text);
   }
 
   .step-panels-container {

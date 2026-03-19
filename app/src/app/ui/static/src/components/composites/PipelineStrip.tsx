@@ -3,8 +3,10 @@ import { Icon } from '../Icon';
 import type { IconName } from '../Icon';
 import type { JobSnapshot } from '../../types/api';
 
+export type StageName = 'Source' | 'Parse' | 'Transform' | 'Batch' | 'Send';
+
 export interface PipelineStage {
-  name: string;
+  name: StageName;
   status: 'pending' | 'active' | 'complete' | 'error';
 }
 
@@ -21,13 +23,17 @@ export const DEFAULT_STAGES: PipelineStage[] = [
   { name: 'Send', status: 'pending' },
 ];
 
-const STAGE_ICONS: Record<string, IconName> = {
+const STAGE_ICONS: Record<StageName, IconName> = {
   Source: 'file-input',
   Parse: 'list-checks',
   Transform: 'sliders-horizontal',
   Batch: 'layers',
   Send: 'rocket',
 };
+
+function stagesAriaLabel(stages: PipelineStage[]): string {
+  return stages.map((s) => `${s.name}: ${s.status}`).join(', ');
+}
 
 function stageIndexFromProgress(pct: number): number {
   if (pct < 20) return 2;
@@ -36,7 +42,7 @@ function stageIndexFromProgress(pct: number): number {
 }
 
 function buildStagesWithHighlight(
-  names: string[],
+  names: StageName[],
   pct: number,
   highlightStatus: PipelineStage['status'],
 ): PipelineStage[] {
@@ -62,10 +68,8 @@ export function deriveStages(job: JobSnapshot): PipelineStage[] {
 }
 
 function CompactStrip({ stages }: { stages: PipelineStage[] }) {
-  const ariaLabel = stages.map((s) => `${s.name}: ${s.status}`).join(', ');
-
   return (
-    <div class="pipeline-strip compact" role="list" aria-label={`Pipeline: ${ariaLabel}`}>
+    <div class="pipeline-strip compact" role="list" aria-label={`Pipeline: ${stagesAriaLabel(stages)}`}>
       {stages.map((stage, i) => (
         <Fragment key={stage.name}>
           {i > 0 && (
@@ -83,38 +87,30 @@ function CompactStrip({ stages }: { stages: PipelineStage[] }) {
   );
 }
 
+const STATUS_TO_STEP_CLASS: Record<PipelineStage['status'], string> = {
+  pending: 'step',
+  active: 'step active',
+  complete: 'step completed',
+  error: 'step error',
+};
+
 function ExpandedStrip({ stages }: { stages: PipelineStage[] }) {
-  const ariaLabel = stages.map((s) => `${s.name}: ${s.status}`).join(', ');
-
   return (
-    <ol class="steps" aria-label={`Pipeline: ${ariaLabel}`}>
-      {stages.map((stage) => {
-        const cls = [
-          'step',
-          stage.status === 'active' && 'active',
-          stage.status === 'complete' && 'completed',
-          stage.status === 'error' && 'active',
-        ].filter(Boolean).join(' ');
-
-        const icon = STAGE_ICONS[stage.name];
-
-        return (
-          <li key={stage.name} class={cls}>
-            <div class="step-trigger">
-              <div class={`step-circle${stage.status === 'error' ? ' step-circle-error' : ''}`}>
-                {stage.status === 'complete' ? (
-                  <Icon name="check" size="sm" />
-                ) : icon ? (
-                  <Icon name={icon} size="sm" />
-                ) : (
-                  <span>{stage.name[0]}</span>
-                )}
-              </div>
-              <span class="step-label">{stage.name}</span>
+    <ol class="steps" aria-label={`Pipeline: ${stagesAriaLabel(stages)}`}>
+      {stages.map((stage) => (
+        <li key={stage.name} class={STATUS_TO_STEP_CLASS[stage.status]}>
+          <div class="step-trigger">
+            <div class="step-circle">
+              {stage.status === 'complete' ? (
+                <Icon name="check" size="sm" />
+              ) : (
+                <Icon name={STAGE_ICONS[stage.name]} size="sm" />
+              )}
             </div>
-          </li>
-        );
-      })}
+            <span class="step-label">{stage.name}</span>
+          </div>
+        </li>
+      ))}
     </ol>
   );
 }
