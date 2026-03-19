@@ -40,7 +40,7 @@ func ContainsPathTraversal(path string) bool {
 // and return the file handle and the path to the temporary file.
 // If fileContentB64 is empty, it will try to open the file at filePath.
 func OpenFileFromPathOrContent(filePath, fileContentB64 string) (*os.File, string, error) {
-	// If base64 content is provided, decode and save to a temp file
+	// Base64 content provided: decode and save to a temp file
 	if fileContentB64 != "" {
 		file, path, err := openFromBase64Content(filePath, fileContentB64)
 		if err != nil {
@@ -50,7 +50,7 @@ func OpenFileFromPathOrContent(filePath, fileContentB64 string) (*os.File, strin
 		return file, path, nil
 	}
 
-	// If no content provided, open the file at a validated path
+	// No content provided: open from validated path
 	file, path, err := openFromPath(filePath)
 	if err != nil {
 		return nil, "", err
@@ -60,13 +60,11 @@ func OpenFileFromPathOrContent(filePath, fileContentB64 string) (*os.File, strin
 }
 
 func openFromBase64Content(filePath, fileContentB64 string) (*os.File, string, error) {
-	// Create an uploads directory if it doesn't exist
 	if err := os.MkdirAll(allowedDataDir, 0755); err != nil {
 		zap.L().Error("Failed to create data directory", zap.Error(err))
 		return nil, "", err
 	}
 
-	// Decode base64 content
 	data, err := base64.StdEncoding.DecodeString(fileContentB64)
 	if err != nil {
 		zap.L().Error("Failed to decode base64 content", zap.Error(err))
@@ -77,10 +75,8 @@ func openFromBase64Content(filePath, fileContentB64 string) (*os.File, string, e
 		return nil, "", fmt.Errorf("decoded file size %d bytes exceeds maximum %d bytes", len(data), MaxUploadSize)
 	}
 
-	// Generate a safe filename: use sanitized base name from filePath, or UUID
 	fileName := generateSafeFilename(filePath)
 
-	// Create a temporary file with the content
 	tempFilePath := filepath.Join(allowedDataDir, fileName)
 	tempFile, err := os.Create(tempFilePath)
 	if err != nil {
@@ -88,7 +84,6 @@ func openFromBase64Content(filePath, fileContentB64 string) (*os.File, string, e
 		return nil, "", err
 	}
 
-	// Write decoded content to a file
 	if _, writeErr := tempFile.Write(data); writeErr != nil {
 		_ = tempFile.Close()
 		removeTempFile(tempFilePath)
@@ -96,7 +91,6 @@ func openFromBase64Content(filePath, fileContentB64 string) (*os.File, string, e
 		return nil, "", writeErr
 	}
 
-	// Reset a file pointer to the beginning
 	if _, seekErr := tempFile.Seek(0, io.SeekStart); seekErr != nil {
 		_ = tempFile.Close()
 		removeTempFile(tempFilePath)
@@ -112,7 +106,6 @@ func openFromPath(filePath string) (*os.File, string, error) {
 		return nil, "", fmt.Errorf("file path is required when no base64 content is provided")
 	}
 
-	// Ensure the path doesn't contain traversal sequences
 	if ContainsPathTraversal(filePath) {
 		return nil, "", fmt.Errorf("file path must not contain directory traversal sequences")
 	}
