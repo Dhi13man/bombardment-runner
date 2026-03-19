@@ -35,17 +35,24 @@ func NewCsvParser[T any](parserContext modelsDtoParsing.ParserContext) (CsvFileP
 		return nil, fmt.Errorf("failed to open CSV file: %w", err)
 	}
 
+	var tempPath string
+	if parserContext.FileContentB64 != "" {
+		tempPath = path
+	}
+
 	delimiter := ','
 	if parserContext.Options != nil {
 		var opts modelsDtoParsing.CsvParserOptions
 		if err := json.Unmarshal(parserContext.Options, &opts); err != nil {
 			_ = file.Close()
+			removeTempFile(tempPath)
 			return nil, fmt.Errorf("invalid CSV options: %w", err)
 		}
 		if opts.Delimiter != "" {
 			runes := []rune(opts.Delimiter)
 			if len(runes) != 1 {
 				_ = file.Close()
+				removeTempFile(tempPath)
 				return nil, fmt.Errorf("delimiter must be a single character, got %q", opts.Delimiter)
 			}
 			delimiter = runes[0]
@@ -55,11 +62,6 @@ func NewCsvParser[T any](parserContext modelsDtoParsing.ParserContext) (CsvFileP
 	onError := parserContext.OnError
 	if onError == "" {
 		onError = modelsEnums.OnErrorSkip
-	}
-
-	var tempPath string
-	if parserContext.FileContentB64 != "" {
-		tempPath = path
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -89,21 +91,21 @@ func (c *csvParser[T]) CreateRawDataStream() (chan map[string]string, error) {
 		var lineNum int
 		for {
 			rec, err := r.Read()
+			if err == io.EOF {
+				zap.L().Debug("End of file " + c.file.Name())
+				break
+			}
+			lineNum++
 			if err != nil {
-				if err == io.EOF {
-					zap.L().Debug("End of file " + c.file.Name())
-					break
-				}
 				if c.onError == modelsEnums.OnErrorStop {
 					c.mu.Lock()
-					c.parseErr = fmt.Errorf("record %d: %w", lineNum+1, err)
+					c.parseErr = fmt.Errorf("record %d: %w", lineNum, err)
 					c.mu.Unlock()
 					return
 				}
-				zap.L().Error("Skipping malformed CSV record", zap.Int("record", lineNum+1), zap.Error(err))
+				zap.L().Error("Skipping malformed CSV record", zap.Int("record", lineNum), zap.Error(err))
 				continue
 			}
-			lineNum++
 
 			rawData := make(map[string]string)
 			for i, val := range rec {

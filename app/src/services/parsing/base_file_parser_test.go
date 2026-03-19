@@ -80,3 +80,13 @@ func TestCreateFileParser_InvalidStrategy(t *testing.T) {
 		t.Fatal("expected error for invalid strategy, got nil")
 	}
 }
+
+func TestCreateFileParser_PROTOBUF(t *testing.T) {
+	_, err := CreateFileParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.PROTOBUF,
+		FilePath: "irrelevant.bin",
+	})
+	if err == nil {
+		t.Fatal("expected error for unimplemented PROTOBUF parser, got nil")
+	}
+}

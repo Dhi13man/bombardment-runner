@@ -301,3 +301,58 @@ func TestNdjsonParser_ContextCancellation(t *testing.T) {
 	for range ch {
 	}
 }
+
+func TestNdjsonParser_ErrReturnsNilOnSuccess(t *testing.T) {
+	t.Parallel()
+	path := writeTempNDJSON(t, `{"a":"1"}`+"\n"+`{"b":"2"}`)
+	parser, err := NewNdjsonParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.NDJSON,
+		FilePath: path,
+	})
+	if err != nil {
+		t.Fatalf("NewNdjsonParser() error: %v", err)
+	}
+	defer func() { _ = parser.Close() }()
+
+	ch, _ := parser.CreateRawDataStream()
+	drainChannel(t, ch)
+
+	if parser.Err() != nil {
+		t.Errorf("expected nil Err(), got %v", parser.Err())
+	}
+}
+
+func TestNdjsonParser_NonStringValues(t *testing.T) {
+	t.Parallel()
+	content := `{"count":42,"active":true,"tags":["a","b"]}`
+	path := writeTempNDJSON(t, content)
+	parser, err := NewNdjsonParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.NDJSON,
+		FilePath: path,
+	})
+	if err != nil {
+		t.Fatalf("NewNdjsonParser() error: %v", err)
+	}
+	defer func() { _ = parser.Close() }()
+
+	ch, err := parser.CreateRawDataStream()
+	if err != nil {
+		t.Fatalf("CreateRawDataStream() error: %v", err)
+	}
+
+	rows := drainChannel(t, ch)
+	if len(rows) != 1 {
+		t.Fatalf("expected 1 row, got %d", len(rows))
+	}
+	row := rows[0]
+
+	if row["count"] != "42" {
+		t.Errorf("count: got %q, want %q", row["count"], "42")
+	}
+	if row["active"] != "true" {
+		t.Errorf("active: got %q, want %q", row["active"], "true")
+	}
+	if row["tags"] == "" {
+		t.Error("tags: expected non-empty coerced string for array value")
+	}
+}

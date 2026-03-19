@@ -478,3 +478,37 @@ func TestCsvParser_MalformedRecordSkip(t *testing.T) {
 		t.Errorf("expected nil Err() with SKIP, got %v", parser.Err())
 	}
 }
+
+func TestCsvParser_InvalidOptionsJSON(t *testing.T) {
+	t.Parallel()
+	filePath := writeTempCSV(t, "a,b\n1,2\n")
+
+	_, err := NewCsvParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.CSV,
+		FilePath: filePath,
+		Options:  []byte("{invalid json"),
+	})
+	if err == nil {
+		t.Fatal("expected error for invalid options JSON, got nil")
+	}
+}
+
+func TestCsvParser_EmptyFileNoHeaders(t *testing.T) {
+	t.Parallel()
+	filePath := writeTempCSV(t, "")
+
+	parser, err := NewCsvParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.CSV,
+		FilePath: filePath,
+	})
+	if err != nil {
+		t.Fatalf("NewCsvParser() error: %v", err)
+	}
+	defer func() { _ = parser.Close() }()
+
+	// Completely empty file should fail at header reading
+	_, err = parser.CreateRawDataStream()
+	if err == nil {
+		t.Fatal("expected error for empty file with no headers, got nil")
+	}
+}

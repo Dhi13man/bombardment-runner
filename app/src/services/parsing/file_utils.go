@@ -124,6 +124,17 @@ func openFromPath(filePath string) (*os.File, string, error) {
 	return file, absPath, nil
 }
 
+// removeTempFile removes a temporary file at the given path if non-empty.
+// Used by parser constructors to clean up base64-uploaded temp files on error.
+func removeTempFile(path string) {
+	if path == "" {
+		return
+	}
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		zap.L().Error("Failed to remove temp file", zap.String("path", path), zap.Error(err))
+	}
+}
+
 // generateSafeFilename creates a sanitized filename from the given path,
 // or generates a UUID-based filename if the path is empty.
 func generateSafeFilename(filePath string) string {

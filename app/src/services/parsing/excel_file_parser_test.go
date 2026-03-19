@@ -302,3 +302,17 @@ func TestExcelParser_ContextCancellation(t *testing.T) {
 	for range ch {
 	}
 }
+
+func TestExcelParser_InvalidOptionsJSON(t *testing.T) {
+	t.Parallel()
+	path := writeTempExcel(t, "", []string{"a"}, [][]string{{"1"}})
+
+	_, err := NewExcelParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.EXCEL,
+		FilePath: path,
+		Options:  []byte("{not valid json"),
+	})
+	if err == nil {
+		t.Fatal("expected error for invalid options JSON, got nil")
+	}
+}
