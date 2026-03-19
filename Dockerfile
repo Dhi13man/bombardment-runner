@@ -8,7 +8,7 @@ COPY app/src/app/ui/static/src/ ./src/app/ui/static/src/
 COPY app/src/app/ui/static/icons/ ./src/app/ui/static/icons/
 RUN npm run build
 
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 WORKDIR /build
 COPY app/go.mod app/go.sum ./
 RUN go mod download
