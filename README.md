@@ -49,12 +49,12 @@ Bombardment includes a guided 4-step wizard for configuring and monitoring jobs 
 
 | Job Progress | Job History |
 | --- | --- |
-| ![Completed bombardment job with pipeline visualization and throughput metrics](screenshots/06-job-complete.png) | ![Job history dashboard with success rate, duration, and per-job pipeline status](screenshots/08-job-history-dark.png) |
+| ![Completed bombardment job with pipeline visualization and throughput metrics](screenshots/06-job-complete.png) | ![Job history dashboard with success rate, duration, and per-job pipeline status](screenshots/07-job-history-light.png) |
 
 <details>
 <summary>Dark mode</summary>
 
-![Source step in dark mode showing all format cards](screenshots/07-source-step-dark.png)
+![Source step in dark mode showing all format cards](screenshots/08-source-step-dark.png)
 
 </details>
 
