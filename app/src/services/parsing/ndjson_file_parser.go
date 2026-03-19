@@ -20,6 +20,7 @@ type NdjsonFileParser[T any] interface {
 
 type ndjsonParser[T any] struct {
 	file     *os.File
+	tempPath string // non-empty for base64 uploads; removed on Close
 	onError  modelsEnums.OnErrorBehavior
 	parseErr error
 	mu       sync.Mutex
@@ -28,7 +29,7 @@ type ndjsonParser[T any] struct {
 }
 
 func NewNdjsonParser[T any](parserContext modelsDtoParsing.ParserContext) (NdjsonFileParser[T], error) {
-	file, _, err := OpenFileFromPathOrContent(parserContext.FilePath, parserContext.FileContentB64)
+	file, path, err := OpenFileFromPathOrContent(parserContext.FilePath, parserContext.FileContentB64)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open NDJSON file: %w", err)
 	}
@@ -38,8 +39,13 @@ func NewNdjsonParser[T any](parserContext modelsDtoParsing.ParserContext) (Ndjso
 		onError = modelsEnums.OnErrorSkip
 	}
 
+	var tempPath string
+	if parserContext.FileContentB64 != "" {
+		tempPath = path
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
-	return &ndjsonParser[T]{file: file, onError: onError, ctx: ctx, cancel: cancel}, nil
+	return &ndjsonParser[T]{file: file, tempPath: tempPath, onError: onError, ctx: ctx, cancel: cancel}, nil
 }
 
 func (p *ndjsonParser[T]) CreateRawDataStream() (chan map[string]string, error) {
@@ -100,7 +106,13 @@ func (p *ndjsonParser[T]) CreateParsedDataStream(mapper func(map[string]string) 
 
 func (p *ndjsonParser[T]) Close() error {
 	p.cancel()
-	return p.file.Close()
+	err := p.file.Close()
+	if p.tempPath != "" {
+		if rmErr := os.Remove(p.tempPath); rmErr != nil && !os.IsNotExist(rmErr) {
+			zap.L().Error("Failed to remove temp file", zap.String("path", p.tempPath), zap.Error(rmErr))
+		}
+	}
+	return err
 }
 
 func (p *ndjsonParser[T]) GetStrategy() modelsEnums.ParserStrategy {

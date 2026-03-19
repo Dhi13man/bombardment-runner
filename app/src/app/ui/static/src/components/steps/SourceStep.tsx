@@ -45,7 +45,7 @@ export function SourceStep() {
   function autoDetect(ext: string | undefined, b64?: string) {
     const strat = detectStrategyFromExt(ext);
     if (!strat) return;
-    update('parserStrategy', strat === 'JSON' && b64 ? detectJsonMode(b64) : strat === 'NDJSON' && b64 ? detectJsonMode(b64) : strat);
+    update('parserStrategy', (strat === 'JSON' || strat === 'NDJSON') && b64 ? detectJsonMode(b64) : strat);
     if (strat === 'CSV') update('delimiter', ext === 'tsv' ? '\t' : (b64 ? detectDelimiter(b64) : ','));
   }
 

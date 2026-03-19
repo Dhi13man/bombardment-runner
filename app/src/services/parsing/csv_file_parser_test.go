@@ -11,10 +11,9 @@ import (
 	"go.uber.org/zap"
 )
 
-func init() {
-	// Initialize a no-op logger to prevent nil pointer panics in tests.
-	logger := zap.NewNop()
-	zap.ReplaceGlobals(logger)
+func TestMain(m *testing.M) {
+	zap.ReplaceGlobals(zap.NewNop())
+	os.Exit(m.Run())
 }
 
 func writeTempCSV(t *testing.T, content string) string {
@@ -411,5 +410,71 @@ func TestCsvParser_ContextCancellation(t *testing.T) {
 	_ = parser.Close()
 
 	for range ch {
+	}
+}
+
+func TestCsvParser_MalformedRecordStop(t *testing.T) {
+	t.Parallel()
+	// 3 columns in header, but second data row has 4 columns (malformed)
+	csvContent := "name,age,city\nAlice,30,London\n\"bad,record\",25,Paris,extra\n"
+	filePath := writeTempCSV(t, csvContent)
+
+	parser, err := NewCsvParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.CSV,
+		FilePath: filePath,
+		OnError:  modelsEnums.OnErrorStop,
+	})
+	if err != nil {
+		t.Fatalf("NewCsvParser() error: %v", err)
+	}
+	defer func() { _ = parser.Close() }()
+
+	ch, err := parser.CreateRawDataStream()
+	if err != nil {
+		t.Fatalf("CreateRawDataStream() error: %v", err)
+	}
+
+	rows := drainChannel(t, ch)
+	// First valid row should come through; stops at the malformed second row
+	if len(rows) != 1 {
+		t.Fatalf("expected 1 row (stopped at malformed record), got %d", len(rows))
+	}
+	if rows[0]["name"] != "Alice" {
+		t.Errorf("row 0: got %q, want %q", rows[0]["name"], "Alice")
+	}
+
+	if parser.Err() == nil {
+		t.Fatal("expected non-nil Err() with STOP")
+	}
+}
+
+func TestCsvParser_MalformedRecordSkip(t *testing.T) {
+	t.Parallel()
+	csvContent := "name,age,city\nAlice,30,London\n\"bad,record\",25,Paris,extra\nCharlie,35,Berlin\n"
+	filePath := writeTempCSV(t, csvContent)
+
+	parser, err := NewCsvParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.CSV,
+		FilePath: filePath,
+		OnError:  modelsEnums.OnErrorSkip,
+	})
+	if err != nil {
+		t.Fatalf("NewCsvParser() error: %v", err)
+	}
+	defer func() { _ = parser.Close() }()
+
+	ch, err := parser.CreateRawDataStream()
+	if err != nil {
+		t.Fatalf("CreateRawDataStream() error: %v", err)
+	}
+
+	rows := drainChannel(t, ch)
+	// First + third rows should come through; malformed second is skipped
+	if len(rows) != 2 {
+		t.Fatalf("expected 2 rows (bad row skipped), got %d", len(rows))
+	}
+
+	if parser.Err() != nil {
+		t.Errorf("expected nil Err() with SKIP, got %v", parser.Err())
 	}
 }

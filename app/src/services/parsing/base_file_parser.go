@@ -56,6 +56,8 @@ func CreateFileParser[T any](
 		return NewNdjsonParser[T](context)
 	case modelsEnums.EXCEL:
 		return NewExcelParser[T](context)
+	case modelsEnums.PROTOBUF:
+		return nil, errors.New("PROTOBUF parser is not yet implemented")
 	default:
 		return nil, errors.New("invalid parser strategy: " + string(context.Strategy))
 	}

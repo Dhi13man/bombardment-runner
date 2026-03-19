@@ -20,6 +20,7 @@ type CsvFileParser[T any] interface {
 
 type csvParser[T any] struct {
 	file      *os.File
+	tempPath  string // non-empty for base64 uploads; removed on Close
 	delimiter rune
 	onError   modelsEnums.OnErrorBehavior
 	parseErr  error
@@ -29,7 +30,7 @@ type csvParser[T any] struct {
 }
 
 func NewCsvParser[T any](parserContext modelsDtoParsing.ParserContext) (CsvFileParser[T], error) {
-	file, _, err := OpenFileFromPathOrContent(parserContext.FilePath, parserContext.FileContentB64)
+	file, path, err := OpenFileFromPathOrContent(parserContext.FilePath, parserContext.FileContentB64)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open CSV file: %w", err)
 	}
@@ -56,9 +57,15 @@ func NewCsvParser[T any](parserContext modelsDtoParsing.ParserContext) (CsvFileP
 		onError = modelsEnums.OnErrorSkip
 	}
 
+	var tempPath string
+	if parserContext.FileContentB64 != "" {
+		tempPath = path
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	return &csvParser[T]{
 		file:      file,
+		tempPath:  tempPath,
 		delimiter: delimiter,
 		onError:   onError,
 		ctx:       ctx,
@@ -124,7 +131,13 @@ func (c *csvParser[T]) CreateParsedDataStream(
 
 func (c *csvParser[T]) Close() error {
 	c.cancel()
-	return c.file.Close()
+	err := c.file.Close()
+	if c.tempPath != "" {
+		if rmErr := os.Remove(c.tempPath); rmErr != nil && !os.IsNotExist(rmErr) {
+			zap.L().Error("Failed to remove temp file", zap.String("path", c.tempPath), zap.Error(rmErr))
+		}
+	}
+	return err
 }
 
 func (c *csvParser[T]) GetStrategy() modelsEnums.ParserStrategy {

@@ -38,6 +38,7 @@ func drainChannel(t *testing.T, ch chan map[string]string) []map[string]string {
 }
 
 func TestJsonParser_ValidArray(t *testing.T) {
+	t.Parallel()
 	path := writeTempJSON(t, `[{"name":"Alice","age":"30"},{"name":"Bob","age":"25"}]`)
 	parser, pErr := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
@@ -76,6 +77,7 @@ func TestJsonParser_ValidArray(t *testing.T) {
 }
 
 func TestJsonParser_EmptyArray(t *testing.T) {
+	t.Parallel()
 	path := writeTempJSON(t, `[]`)
 	parser, pErr := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
@@ -98,6 +100,7 @@ func TestJsonParser_EmptyArray(t *testing.T) {
 }
 
 func TestJsonParser_InvalidJson(t *testing.T) {
+	t.Parallel()
 	path := writeTempJSON(t, `"not json"`)
 	parser, pErr := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
@@ -115,6 +118,7 @@ func TestJsonParser_InvalidJson(t *testing.T) {
 }
 
 func TestJsonParser_Base64Content(t *testing.T) {
+	t.Parallel()
 	jsonContent := `[{"city":"Berlin","pop":"3700000"}]`
 	encoded := base64.StdEncoding.EncodeToString([]byte(jsonContent))
 
@@ -146,6 +150,7 @@ func TestJsonParser_Base64Content(t *testing.T) {
 }
 
 func TestJsonParser_GetStrategy(t *testing.T) {
+	t.Parallel()
 	path := writeTempJSON(t, `[]`)
 	parser, pErr := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
@@ -163,6 +168,7 @@ func TestJsonParser_GetStrategy(t *testing.T) {
 }
 
 func TestJsonParser_CreateParsedDataStream(t *testing.T) {
+	t.Parallel()
 	path := writeTempJSON(t, `[{"x":"1","y":"2"},{"x":"3","y":"4"}]`)
 	parser, pErr := NewJsonParser[string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
@@ -199,6 +205,7 @@ func TestJsonParser_CreateParsedDataStream(t *testing.T) {
 }
 
 func TestJsonParser_CreateParsedDataStream_InvalidJson(t *testing.T) {
+	t.Parallel()
 	path := writeTempJSON(t, `not valid json at all`)
 	parser, pErr := NewJsonParser[string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
@@ -217,6 +224,7 @@ func TestJsonParser_CreateParsedDataStream_InvalidJson(t *testing.T) {
 }
 
 func TestJsonParser_CreateParsedDataStream_EmptyArray(t *testing.T) {
+	t.Parallel()
 	path := writeTempJSON(t, `[]`)
 	parser, pErr := NewJsonParser[string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
@@ -243,6 +251,7 @@ func TestJsonParser_CreateParsedDataStream_EmptyArray(t *testing.T) {
 }
 
 func TestJsonParser_WhenNonStringValues_ThenCoercesToString(t *testing.T) {
+	t.Parallel()
 	// Arrange — JSON with numeric, boolean, and nested object values
 	jsonContent := `[{"count":42,"active":true,"tags":["a","b"],"meta":{"k":"v"}}]`
 	path := writeTempJSON(t, jsonContent)
@@ -286,6 +295,7 @@ func TestJsonParser_WhenNonStringValues_ThenCoercesToString(t *testing.T) {
 }
 
 func TestJsonParser_Close_WhenValidFile_ThenReturnsNil(t *testing.T) {
+	t.Parallel()
 	// Arrange
 	path := writeTempJSON(t, `[]`)
 	parser, pErr := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
@@ -306,6 +316,7 @@ func TestJsonParser_Close_WhenValidFile_ThenReturnsNil(t *testing.T) {
 }
 
 func TestJsonParser_MalformedRecordSkip(t *testing.T) {
+	t.Parallel()
 	// In a JSON array, a malformed record corrupts the decoder state.
 	// With SKIP, the parser logs the error and breaks (can't skip individual
 	// records since the decoder can't find the next boundary).
@@ -342,6 +353,7 @@ func TestJsonParser_MalformedRecordSkip(t *testing.T) {
 }
 
 func TestJsonParser_NotAnArray(t *testing.T) {
+	t.Parallel()
 	path := writeTempJSON(t, `{"single":"object"}`)
 	parser, err := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
@@ -358,7 +370,36 @@ func TestJsonParser_NotAnArray(t *testing.T) {
 	}
 }
 
+func TestJsonParser_MalformedRecordStop(t *testing.T) {
+	t.Parallel()
+	path := writeTempJSON(t, `[{"name":"Alice"},{"broken:true},{"name":"Charlie"}]`)
+	parser, err := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.JSON,
+		FilePath: path,
+		OnError:  modelsEnums.OnErrorStop,
+	})
+	if err != nil {
+		t.Fatalf("NewJsonParser() error: %v", err)
+	}
+	defer func() { _ = parser.Close() }()
+
+	ch, err := parser.CreateRawDataStream()
+	if err != nil {
+		t.Fatalf("CreateRawDataStream() error: %v", err)
+	}
+
+	rows := drainChannel(t, ch)
+	if len(rows) != 1 {
+		t.Fatalf("expected 1 row (stopped at malformed record), got %d", len(rows))
+	}
+
+	if parser.Err() == nil {
+		t.Fatal("expected non-nil Err() with STOP")
+	}
+}
+
 func TestJsonParser_ErrReturnsNilOnSuccess(t *testing.T) {
+	t.Parallel()
 	path := writeTempJSON(t, `[{"a":"1"}]`)
 	parser, err := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.JSON,
@@ -378,6 +419,7 @@ func TestJsonParser_ErrReturnsNilOnSuccess(t *testing.T) {
 }
 
 func TestJsonParser_ContextCancellation(t *testing.T) {
+	t.Parallel()
 	// Many records
 	var content = "["
 	for i := range 100 {

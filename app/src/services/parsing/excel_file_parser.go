@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/xuri/excelize/v2"
@@ -18,6 +19,7 @@ type ExcelFileParser[T any] interface {
 
 type excelParser[T any] struct {
 	xlFile    *excelize.File
+	tempPath  string // non-empty for base64 uploads; removed on Close
 	sheetName string
 	onError   modelsEnums.OnErrorBehavior
 	parseErr  error
@@ -35,7 +37,7 @@ func NewExcelParser[T any](parserContext modelsDtoParsing.ParserContext) (ExcelF
 	}
 	_ = file.Close()
 
-	xlFile, err := excelize.OpenFile(path)
+	xlFile, err := excelize.OpenFile(path, excelize.Options{UnzipSizeLimit: MaxUploadSize})
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse Excel file: %w", err)
 	}
@@ -58,9 +60,15 @@ func NewExcelParser[T any](parserContext modelsDtoParsing.ParserContext) (ExcelF
 		onError = modelsEnums.OnErrorSkip
 	}
 
+	var tempPath string
+	if parserContext.FileContentB64 != "" {
+		tempPath = path
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	return &excelParser[T]{
 		xlFile:    xlFile,
+		tempPath:  tempPath,
 		sheetName: sheetName,
 		onError:   onError,
 		ctx:       ctx,
@@ -84,7 +92,13 @@ func (e *excelParser[T]) CreateRawDataStream() (chan map[string]string, error) {
 			return
 		}
 		headers, err := rows.Columns()
-		if err != nil || len(headers) == 0 {
+		if err != nil {
+			e.mu.Lock()
+			e.parseErr = fmt.Errorf("failed to read header row: %w", err)
+			e.mu.Unlock()
+			return
+		}
+		if len(headers) == 0 {
 			return
 		}
 
@@ -143,7 +157,13 @@ func (e *excelParser[T]) CreateParsedDataStream(mapper func(map[string]string) T
 
 func (e *excelParser[T]) Close() error {
 	e.cancel()
-	return e.xlFile.Close()
+	err := e.xlFile.Close()
+	if e.tempPath != "" {
+		if rmErr := os.Remove(e.tempPath); rmErr != nil && !os.IsNotExist(rmErr) {
+			zap.L().Error("Failed to remove temp file", zap.String("path", e.tempPath), zap.Error(rmErr))
+		}
+	}
+	return err
 }
 
 func (e *excelParser[T]) GetStrategy() modelsEnums.ParserStrategy {

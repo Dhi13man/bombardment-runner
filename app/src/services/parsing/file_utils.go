@@ -15,6 +15,9 @@ import (
 // allowedDataDir is the base directory for uploaded file storage.
 const allowedDataDir = "./data"
 
+// MaxUploadSize is the maximum decoded size for base64 file uploads (100MB).
+const MaxUploadSize = 100 * 1024 * 1024
+
 // ContainsPathTraversal checks if the given path contains directory traversal sequences.
 func ContainsPathTraversal(path string) bool {
 	return strings.Contains(path, "..")
@@ -58,6 +61,10 @@ func openFromBase64Content(filePath, fileContentB64 string) (*os.File, string, e
 		return nil, "", err
 	}
 
+	if len(data) > MaxUploadSize {
+		return nil, "", fmt.Errorf("decoded file size %d bytes exceeds maximum %d bytes", len(data), MaxUploadSize)
+	}
+
 	// Generate a safe filename: use sanitized base name from filePath, or UUID
 	fileName := generateSafeFilename(filePath)
 
@@ -97,15 +104,15 @@ func openFromPath(filePath string) (*os.File, string, error) {
 		return nil, "", fmt.Errorf("file path is required when no base64 content is provided")
 	}
 
-	// Resolve and validate the path to prevent traversal attacks
-	absPath, err := filepath.Abs(filePath)
-	if err != nil {
-		return nil, "", fmt.Errorf("invalid file path: %w", err)
-	}
-
 	// Ensure the path doesn't contain traversal sequences
 	if ContainsPathTraversal(filePath) {
 		return nil, "", fmt.Errorf("file path must not contain directory traversal sequences")
+	}
+
+	// Resolve to absolute path
+	absPath, err := filepath.Abs(filePath)
+	if err != nil {
+		return nil, "", fmt.Errorf("invalid file path: %w", err)
 	}
 
 	file, err := os.Open(absPath)

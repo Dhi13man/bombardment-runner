@@ -18,6 +18,7 @@ type JsonFileParser[T any] interface {
 
 type jsonParser[T any] struct {
 	file     *os.File
+	tempPath string // non-empty for base64 uploads; removed on Close
 	onError  modelsEnums.OnErrorBehavior
 	parseErr error
 	mu       sync.Mutex
@@ -26,7 +27,7 @@ type jsonParser[T any] struct {
 }
 
 func NewJsonParser[T any](parserContext modelsDtoParsing.ParserContext) (JsonFileParser[T], error) {
-	file, _, err := OpenFileFromPathOrContent(parserContext.FilePath, parserContext.FileContentB64)
+	file, path, err := OpenFileFromPathOrContent(parserContext.FilePath, parserContext.FileContentB64)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open JSON file: %w", err)
 	}
@@ -36,8 +37,13 @@ func NewJsonParser[T any](parserContext modelsDtoParsing.ParserContext) (JsonFil
 		onError = modelsEnums.OnErrorSkip
 	}
 
+	var tempPath string
+	if parserContext.FileContentB64 != "" {
+		tempPath = path
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
-	return &jsonParser[T]{file: file, onError: onError, ctx: ctx, cancel: cancel}, nil
+	return &jsonParser[T]{file: file, tempPath: tempPath, onError: onError, ctx: ctx, cancel: cancel}, nil
 }
 
 func (p *jsonParser[T]) CreateRawDataStream() (chan map[string]string, error) {
@@ -99,7 +105,13 @@ func (p *jsonParser[T]) CreateParsedDataStream(
 
 func (p *jsonParser[T]) Close() error {
 	p.cancel()
-	return p.file.Close()
+	err := p.file.Close()
+	if p.tempPath != "" {
+		if rmErr := os.Remove(p.tempPath); rmErr != nil && !os.IsNotExist(rmErr) {
+			zap.L().Error("Failed to remove temp file", zap.String("path", p.tempPath), zap.Error(rmErr))
+		}
+	}
+	return err
 }
 
 func (p *jsonParser[T]) GetStrategy() modelsEnums.ParserStrategy {

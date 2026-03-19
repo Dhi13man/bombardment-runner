@@ -1,8 +1,10 @@
 import type { ParserStrategy } from '../types/api';
 
-/** Strip UTF-8 BOM from decoded string. */
+/** Strip BOM from atob-decoded string (UTF-8: EF BB BF as 3 chars, UTF-16: FEFF as 1 char). */
 function stripBom(raw: string): string {
-  return raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw;
+  if (raw.charCodeAt(0) === 0xEF && raw.charCodeAt(1) === 0xBB && raw.charCodeAt(2) === 0xBF) return raw.slice(3);
+  if (raw.charCodeAt(0) === 0xFEFF) return raw.slice(1);
+  return raw;
 }
 
 /** Peek first non-whitespace char of base64 content to detect JSON vs NDJSON. */
