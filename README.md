@@ -29,7 +29,7 @@
 
 ## Features
 
-- **Streaming file parsing** - CSV and JSON files processed via Go channels, not loaded entirely into memory
+- **Streaming file parsing** - CSV, JSON, NDJSON, Excel, and Parquet files processed via Go channels, not loaded entirely into memory
 - **JSONata transformations** - Shape each record into an HTTP request using [JSONata](https://jsonata.org) expressions
 - **Concurrent batch processing** - Configurable batch sizes with goroutine-per-request parallelism
 - **Load balancing** - Round-robin and random strategies across multiple target URLs
@@ -45,12 +45,16 @@ Bombardment includes a guided 4-step wizard for configuring and monitoring jobs 
 
 | Source Configuration | Transform Rules | Target & Batching | Review & Submit |
 | --- | --- | --- | --- |
-| ![Source step — select format and provide file path](screenshots/02-source-step-filled.png) | ![Transform step — define JSONata expressions](screenshots/03-transform-step.png) | ![Target step — configure HTTP client, load balancing, and batching](screenshots/04-target-step.png) | ![Review step — verify config before launch](screenshots/05-review-step.png) |
+| ![Source step with CSV file uploaded and format auto-detected](screenshots/02-source-step-filled.png) | ![Transform step with JSONata expressions for method, endpoint, headers, body](screenshots/03-transform-step.png) | ![Target step with REST client, round-robin load balancer, and batch settings](screenshots/04-target-step.png) | ![Review step showing all-green validation before launch](screenshots/05-review-step.png) |
+
+| Job Progress | Job History |
+| --- | --- |
+| ![Completed bombardment job with pipeline visualization and throughput metrics](screenshots/06-job-complete.png) | ![Job history dashboard with success rate, duration, and per-job pipeline status](screenshots/07-job-history-light.png) |
 
 <details>
 <summary>Dark mode</summary>
 
-![Review step in dark mode](screenshots/08-review-step-dark.png)
+![Source step in dark mode showing all format cards](screenshots/08-source-step-dark.png)
 
 </details>
 
@@ -59,7 +63,7 @@ Bombardment includes a guided 4-step wizard for configuring and monitoring jobs 
 ```mermaid
 flowchart LR
     subgraph Input[Data Source]
-        File[/CSV or JSON File/]
+        File[/CSV, JSON, NDJSON,<br>Excel, or Parquet File/]
     end
 
     subgraph Pipeline[Processing Pipeline]
@@ -144,7 +148,7 @@ The `POST /v1/bombardment` payload accepts these configuration sections:
 
 | Section | Key Fields | Description |
 | --- | --- | --- |
-| `parser_context` | `strategy`, `file_path`, `file_content_b64` | Source data format (`CSV`, `JSON`) and location |
+| `parser_context` | `strategy`, `file_path`, `file_content_b64` | Source data format (`CSV`, `JSON`, `NDJSON`, `EXCEL`, `PARQUET`) and location |
 | `transformer_context` | `strategy`, `body_expression`, `method_expression`, `endpoint_expression`, `headers_expression` | JSONata expressions to shape each record into an HTTP request |
 | `client_context` | `channel`, `request_timeout`, `insecure_skip_verify` | HTTP client channel and timeout settings (nanoseconds) |
 | `load_balancer_context` | `strategy`, `urls` | Load balancing strategy (`ROUND_ROBIN`, `RANDOM`) and target URLs |
@@ -214,6 +218,9 @@ flowchart TD
     subgraph Parsers[File Parsers]
         CSV[CSV Parser]
         JSON_P[JSON Parser]
+        NDJSON[NDJSON Parser]
+        EXCEL[Excel Parser]
+        PARQUET[Parquet Parser]
     end
 
     subgraph Transformers[Transformers]
@@ -238,6 +245,9 @@ flowchart TD
 
     CSV:::implemented
     JSON_P:::implemented
+    NDJSON:::implemented
+    EXCEL:::implemented
+    PARQUET:::implemented
     JSONata:::implemented
     GoTpl:::planned
     RR:::implemented

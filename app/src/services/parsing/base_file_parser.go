@@ -1,10 +1,11 @@
 package parsing
 
 import (
+	"context"
 	"errors"
 
-	"github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
-	"github.dhi13man.com/bombardment-runner/src/models/enums"
+	modelsDtoParsing "github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
+	modelsEnums "github.dhi13man.com/bombardment-runner/src/models/enums"
 	"github.dhi13man.com/bombardment-runner/src/services"
 )
 
@@ -17,18 +18,27 @@ type BaseFileParser[T any] interface {
 	// CreateParsedDataStream gets a channel of parsed records.
 	CreateParsedDataStream(mapper func(map[string]string) T) (chan T, error)
 
-	// Close closes the file.
+	// Close cancels any in-flight goroutines and closes the underlying file.
 	Close() error
+
+	// Err returns the first parse error encountered when OnError is STOP.
+	// Returns nil if parsing completed without error (or all errors were skipped).
+	// Safe to call concurrently; follows the bufio.Scanner.Err() pattern.
+	Err() error
 }
 
 // mapRawStream transforms a raw data stream using the given mapper function.
-// Shared implementation for CreateParsedDataStream across parser types.
-func mapRawStream[T any](rawChannel chan map[string]string, mapper func(map[string]string) T) chan T {
+// The ctx parameter prevents goroutine leaks when the consumer stops reading.
+func mapRawStream[T any](ctx context.Context, rawChannel chan map[string]string, mapper func(map[string]string) T) chan T {
 	ch := make(chan T)
 	go func() {
 		defer close(ch)
 		for data := range rawChannel {
-			ch <- mapper(data)
+			select {
+			case ch <- mapper(data):
+			case <-ctx.Done():
+				return
+			}
 		}
 	}()
 	return ch
@@ -42,6 +52,12 @@ func CreateFileParser[T any](
 		return NewCsvParser[T](context)
 	case modelsEnums.JSON:
 		return NewJsonParser[T](context)
+	case modelsEnums.NDJSON:
+		return NewNdjsonParser[T](context)
+	case modelsEnums.EXCEL:
+		return NewExcelParser[T](context)
+	case modelsEnums.PARQUET:
+		return NewParquetParser[T](context)
 	default:
 		return nil, errors.New("invalid parser strategy: " + string(context.Strategy))
 	}

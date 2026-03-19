@@ -233,12 +233,13 @@
                             <button class="screenshot-tab" onclick="showScreenshot('ss-transform')" type="button">2. Transform</button>
                             <button class="screenshot-tab" onclick="showScreenshot('ss-target')" type="button">3. Target</button>
                             <button class="screenshot-tab" onclick="showScreenshot('ss-review')" type="button">4. Review</button>
+                            <button class="screenshot-tab" onclick="showScreenshot('ss-progress')" type="button">5. Progress</button>
                         </div>
                         <div id="ss-source" class="screenshot-content active">
                             <div class="screenshot-box">
-                                <img src="assets/ui-source-step.png" alt="Source configuration step — select CSV or JSON format and provide a file path">
+                                <img src="assets/ui-source-step.png" alt="Source configuration step — select format and upload a file">
                             </div>
-                            <p class="screenshot-description">Choose your data format (CSV, JSON) and upload a file or enter a server-side path.</p>
+                            <p class="screenshot-description">Choose your data format (CSV, JSON, NDJSON, Excel, Parquet) and upload a file or enter a server-side path.</p>
                         </div>
                         <div id="ss-transform" class="screenshot-content">
                             <div class="screenshot-box">
@@ -257,6 +258,12 @@
                                 <img src="assets/ui-review-step.png" alt="Review step — verify all configuration before running the bombardment">
                             </div>
                             <p class="screenshot-description">Review your full configuration with validation checks before launching the bombardment.</p>
+                        </div>
+                        <div id="ss-progress" class="screenshot-content">
+                            <div class="screenshot-box">
+                                <img src="assets/ui-job-progress.png" alt="Job progress view with pipeline visualization and throughput metrics">
+                            </div>
+                            <p class="screenshot-description">Real-time pipeline visualization with processed/failed counters and throughput metrics.</p>
                         </div>
                         <p class="screenshot-note">Dark mode included — automatically follows your system preference.</p>
                     </div>

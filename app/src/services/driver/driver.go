@@ -269,6 +269,12 @@ func (b *bombardmentDriver) executeBombardment(
 		responseWriter.Flush()
 	}
 
+	// Check if the parser stopped due to a malformed record (OnError=STOP)
+	if parseErr := parser.Err(); parseErr != nil {
+		failJob(fmt.Errorf("parser stopped: %w", parseErr))
+		return parseErr
+	}
+
 	completeJob()
 	return nil
 }

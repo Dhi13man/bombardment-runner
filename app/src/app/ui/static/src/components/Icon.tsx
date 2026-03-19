@@ -42,7 +42,8 @@ export type IconName =
   | 'menu'
   | 'panel-left'
   | 'check'
-  | 'search';
+  | 'search'
+  | 'database';
 
 export type IconSize = 'sm' | 'md' | 'lg' | 'xl';
 

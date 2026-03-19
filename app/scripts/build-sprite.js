@@ -44,6 +44,7 @@ const ICON_LIST = [
   'panel-left',
   'check',
   'search',
+  'database',
 ];
 
 const outDir = path.dirname(SPRITE_OUT);

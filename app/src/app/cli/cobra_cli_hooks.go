@@ -35,7 +35,7 @@ const (
 	ClientContextExampleJSON       string = `'{"channel":"REST","dial_keep_alive":10000000000,"dial_timeout":5000000000,"tls_handshake_timeout":5000000000,"response_header_timeout":5000000000,"expect_continue_timeout":500000,"request_timeout":30000000000,"insecure_skip_verify":false}'`
 	DriverContextExampleJSON       string = `'{"batch_size":100,"should_store_responses":false,"responses_storage_path":"./responses"}'`
 	LoadBalancerContextExampleJSON string = `'{"strategy":"ROUND_ROBIN","urls":["https://api.example.com","https://api-backup.example.com"]}'`
-	ParserContextExampleJSON       string = `'{"file_path":"./private/file_path.csv","strategy":"CSV"}'`
+	ParserContextExampleJSON       string = `'{"strategy":"CSV","file_path":"./data/records.csv"}'`
 	TransformerContextExampleJSON  string = `'{"strategy":"JSONATA","method_expression":"\"POST\"","endpoint_expression":"\"/api/v1/\" & resource","headers_expression":"{ \"Content-Type\": \"application/json\", \"X-Request-ID\": request_id }","body_expression":"{ \"id\": $number(id), \"timestamp\": $millis() }"}'`
 
 	DefaultServerBindAddr string = "127.0.0.1"
@@ -254,8 +254,19 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 		heredoc.Docf(
 			`The Context to use for Parsing the input data.
 			Parser Context is a JSON string that contains the following keys:
-				- strategy: The strategy to use for parsing the file. Possible values are {CSV, JSON}
-				- file_path: The path to the file to parse. Eg. ./private/gupi_sms_credit_card.csv (if the strategy is CSV)
+				- strategy: The strategy to use for parsing the file. Possible values are {CSV, JSON, NDJSON, EXCEL, PARQUET}
+				- file_path: The path to the file to parse.
+				- on_error: Error handling behavior. "SKIP" (default) skips malformed records, "STOP" halts on first error.
+				- options: Strategy-specific settings (JSON object).
+
+			Examples:
+				CSV:    -P '{"strategy":"CSV","file_path":"data.csv"}'
+				TSV:    -P '{"strategy":"CSV","file_path":"data.tsv","options":{"delimiter":"\\t"}}'
+				JSON:   -P '{"strategy":"JSON","file_path":"data.json"}'
+				NDJSON: -P '{"strategy":"NDJSON","file_path":"events.jsonl"}'
+				Excel:  -P '{"strategy":"EXCEL","file_path":"report.xlsx","options":{"sheet_name":"Sheet2"}}'
+				Parquet: -P '{"strategy":"PARQUET","file_path":"export.parquet"}'
+				Stop on error: add "on_error":"STOP" to any parser context
 			Eg. %s`,
 			ParserContextExampleJSON,
 		),

@@ -1,223 +1,230 @@
-import { useRef, useEffect, useCallback } from 'preact/hooks';
+import { useRef, useEffect, useCallback, useState } from 'preact/hooks';
 import { useJobForm } from '../../context/JobFormContext';
 import { useWizard } from '../../context/WizardContext';
 import { RadioCardGroup, type RadioOption } from '../primitives';
+import { useToast } from '../composites/Toast';
 import { Icon } from '../Icon';
 import { formatFileSize } from '../../utils/format';
+import { detectJsonMode, detectDelimiter, detectStrategyFromExt } from '../../utils/detect';
 import type { ParserStrategy } from '../../types/api';
 
-const PARSER_OPTIONS: RadioOption<ParserStrategy | 'XML' | 'YAML'>[] = [
-  { value: 'CSV', label: 'CSV', icon: 'file-input', description: 'Comma-separated values' },
-  { value: 'JSON', label: 'JSON', icon: 'file-code', description: 'JSON array of objects' },
-  { value: 'XML', label: 'XML', icon: 'file-code', description: 'XML documents', disabled: true, comingSoon: true },
-  { value: 'YAML', label: 'YAML', icon: 'file-code', description: 'YAML files', disabled: true, comingSoon: true },
+type FormatGroup = 'CSV' | 'JSON' | 'EXCEL' | 'PARQUET';
+
+const toFG = (s: ParserStrategy): FormatGroup => s === 'NDJSON' ? 'JSON' : s as FormatGroup;
+
+const FMT_OPTS: RadioOption<FormatGroup>[] = [
+  { value: 'CSV', label: 'CSV / Delimited', icon: 'file-input', description: 'Comma, tab, pipe, or custom delimiter' },
+  { value: 'JSON', label: 'JSON', icon: 'file-code', description: 'Array or line-delimited (auto-detected)' },
+  { value: 'EXCEL', label: 'Excel', icon: 'layers', description: '.xlsx spreadsheets' },
+  { value: 'PARQUET', label: 'Parquet', icon: 'database', description: 'Apache Parquet columnar files' },
 ];
 
-const FILE_PATH_REGEX = /^(\.[/\\])?([a-zA-Z0-9_\-./\\]+)\.([a-zA-Z0-9]+)$/;
-
+const PATH_RE = /^(\.[/\\])?([a-zA-Z0-9_\-./\\]+)\.([a-zA-Z0-9]+)$/;
+const ACCEPT = '.csv,.tsv,.json,.jsonl,.ndjson,.xlsx,.parquet';
+const WARN_B = 50 * 1024 * 1024;
+const BLOCK_B = 100 * 1024 * 1024;
 
 export function SourceStep() {
   const { form, update } = useJobForm();
   const { setValid } = useWizard();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { showToast } = useToast();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const [pathMode, setPathMode] = useState(!!form.filePath);
 
-  // Validate and update wizard step validity
   const validate = useCallback(() => {
     const hasFile = !!form.fileContentB64;
-    const path = form.filePath.trim();
-    const hasPath = !!path;
-
-    if (!hasFile && !hasPath) {
-      setValid(1, false);
-      return;
-    }
-    if (hasPath) {
-      if (path.includes('..') || !FILE_PATH_REGEX.test(path)) {
-        setValid(1, false);
-        return;
-      }
-    }
+    const p = form.filePath.trim();
+    if (!hasFile && !p) { setValid(1, false); return; }
+    if (p && (p.includes('..') || !PATH_RE.test(p))) { setValid(1, false); return; }
     setValid(1, true);
   }, [form.fileContentB64, form.filePath, setValid]);
 
-  useEffect(() => {
-    validate();
-  }, [validate]);
+  useEffect(() => { validate(); }, [validate]);
 
-  const fileAccept = form.parserStrategy === 'CSV' ? '.csv' : form.parserStrategy === 'JSON' ? '.json' : '.csv,.json';
+  function autoDetect(ext: string | undefined, b64?: string) {
+    const strat = detectStrategyFromExt(ext);
+    if (!strat) return;
+    update('parserStrategy', (strat === 'JSON' || strat === 'NDJSON') && b64 ? detectJsonMode(b64) : strat);
+    if (strat === 'CSV') update('delimiter', ext === 'tsv' ? '\t' : (b64 ? detectDelimiter(b64) : ','));
+  }
 
-  function handleFileSelect(e: Event) {
-    const input = e.target as HTMLInputElement;
-    const file = input.files?.[0];
+  function onFileSelect(e: Event) {
+    const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
-
     update('fileName', file.name);
     update('fileSize', file.size);
-    update('filePath', ''); // Mutual exclusion
-
+    update('filePath', '');
+    setPathMode(false);
+    if (file.size > BLOCK_B) { showToast('error', 'File exceeds 100MB. Use a server-side file path instead.'); return; }
+    if (file.size > WARN_B) showToast('warning', 'Large file. Consider using a server-side file path.');
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const result = (ev.target as FileReader).result as string;
-      update('fileContentB64', result.split(',')[1] || '');
+      const b64 = ((ev.target as FileReader).result as string).split(',')[1] || '';
+      update('fileContentB64', b64);
+      autoDetect(file.name.split('.').pop()?.toLowerCase(), b64);
     };
     reader.readAsDataURL(file);
   }
 
-  function handleClearFile() {
+  function clearFile() {
     update('fileName', '');
     update('fileSize', 0);
     update('fileContentB64', '');
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (fileRef.current) fileRef.current.value = '';
   }
 
-  function handlePathChange(e: Event) {
-    const value = (e.target as HTMLInputElement).value;
-    update('filePath', value);
-    // Clear uploaded file when typing a path
-    if (value && form.fileContentB64) {
-      handleClearFile();
-    }
+  function onPathInput(e: Event) {
+    const v = (e.target as HTMLInputElement).value;
+    update('filePath', v);
+    if (v && form.fileContentB64) clearFile();
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => autoDetect(v.split('.').pop()?.toLowerCase()), 300);
   }
 
-  // Path validation error message
   const path = form.filePath.trim();
-  let pathError = '';
+  let pathErr = '';
   if (path) {
-    if (path.includes('..')) {
-      pathError = 'Path traversal (..) is not allowed';
-    } else if (!FILE_PATH_REGEX.test(path)) {
-      pathError = 'Invalid file path format';
-    }
+    if (path.includes('..')) pathErr = 'Path traversal (..) is not allowed';
+    else if (!PATH_RE.test(path)) pathErr = 'Invalid file path format';
   }
 
   const hasFile = !!form.fileContentB64;
-  const hasPath = !!path;
-  const showNoSourceError = !hasFile && !hasPath;
+  const fg = toFG(form.parserStrategy);
 
   return (
     <div>
-      {/* Section Header */}
       <div class="flex items-center gap-3 mb-6">
-        <div class="config-card-icon source">
-          <Icon name="file-input" size="md" />
-        </div>
+        <div class="config-card-icon source"><Icon name="file-input" size="md" /></div>
         <div>
           <h2 class="text-lg font-semibold">Source Configuration</h2>
-          <p class="text-sm text-text-secondary">Choose your data format and upload a file</p>
+          <p class="text-sm text-text-secondary">Upload your data file - format is auto-detected</p>
         </div>
       </div>
 
-      {/* Parser Strategy */}
-      <div class="mb-6">
-        <RadioCardGroup
-          name="parser_strategy"
-          label="Parser Strategy"
-          options={PARSER_OPTIONS}
-          value={form.parserStrategy}
-          onChange={(v) => update('parserStrategy', v as ParserStrategy)}
-        />
-      </div>
-
-      {/* File Upload */}
-      <div class="mb-6">
-        <label for="data-file" class="label">Data File</label>
-        <div class="flex gap-3 file-upload-row">
-          <div class="flex-1">
-            <button
-              id="data-file"
-              type="button"
-              class="input"
-              style={{ textAlign: 'left', cursor: 'pointer' }}
-              onClick={() => fileInputRef.current?.click()}
-              aria-describedby="file-help"
-            >
+      {!pathMode ? (
+        <>
+          <div class="mb-6">
+            <label for="data-file" class="label">Data File</label>
+            <button id="data-file" type="button"
+              class="input flex items-center gap-3 text-left cursor-pointer w-full"
+              onClick={() => fileRef.current?.click()} aria-describedby="file-help">
+              <Icon name="upload" size="sm" class="text-text-secondary" />
               <span class={form.fileName ? '' : 'custom-select-placeholder'}>
-                {form.fileName || 'Click to select a file or enter a server path'}
+                {form.fileName || 'Click to select a file'}
               </span>
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={fileAccept}
-              class="hidden"
-              aria-label="Upload data file"
-              onChange={handleFileSelect}
-            />
+            <input ref={fileRef} type="file" accept={ACCEPT} class="hidden"
+              aria-label="Upload data file" onChange={onFileSelect} />
+            <p id="file-help" class="field-help">
+              <Icon name="info" class="w-3 h-3" />Supported: CSV, TSV, JSON, NDJSON, Excel, Parquet
+            </p>
           </div>
-          <button
-            type="button"
-            class="btn btn-secondary"
-            aria-label="Browse files"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Icon name="upload" size="sm" />
-            Browse
-          </button>
-        </div>
-        <p id="file-help" class="field-help">
-          <Icon name="info" class="w-3 h-3" />
-          Upload a local file or enter a server-side file path
-        </p>
-      </div>
-
-      {/* Screen reader file selection announcement */}
-      <div aria-live="polite" class="sr-only">
-        {form.fileName ? `File selected: ${form.fileName}` : ''}
-      </div>
-
-      {/* File Details */}
-      {hasFile && (
-        <div class="card-flat mb-6">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <Icon name="file-code" size="md" class="text-text-secondary" />
-              <div>
-                <p class="text-sm font-medium">{form.fileName}</p>
-                <p class="text-xs text-text-tertiary">{formatFileSize(form.fileSize)}</p>
+          <div aria-live="polite" class="sr-only">
+            {form.fileName ? `File selected: ${form.fileName}` : ''}
+          </div>
+          {hasFile && (
+            <div class="card-flat mb-6">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <Icon name="file-code" size="md" class="text-text-secondary" />
+                  <div>
+                    <p class="text-sm font-medium">{form.fileName}</p>
+                    <p class="text-xs text-text-tertiary" aria-label={`File size: ${formatFileSize(form.fileSize)}`}>
+                      {formatFileSize(form.fileSize)}
+                    </p>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-ghost btn-sm" aria-label="Remove file" onClick={clearFile}>
+                  <Icon name="x" size="sm" />
+                </button>
               </div>
             </div>
-            <button
-              type="button"
-              class="btn btn-ghost btn-sm"
-              aria-label="Remove file"
-              onClick={handleClearFile}
-            >
-              <Icon name="x" size="sm" />
+          )}
+          <div class="mb-6">
+            <button type="button" class="text-sm text-accent-primary underline"
+              onClick={() => { clearFile(); setPathMode(true); }}>
+              Use server-side file path instead
             </button>
+            {!hasFile && (
+              <p class="field-error mt-2" role="alert">Please upload a file or enter a server-side file path</p>
+            )}
           </div>
+        </>
+      ) : (
+        <div class="mb-6">
+          <label for="file-path" class="label">Server-side file path</label>
+          <input id="file-path" class={`input input-code${pathErr ? ' input-error' : ''}`}
+            type="text" placeholder="./data/records.csv" value={form.filePath}
+            onInput={onPathInput} aria-describedby="fp-help fp-err" {...(pathErr ? { 'aria-invalid': 'true' } : {})} />
+          <p id="fp-help" class="field-help">
+            <Icon name="folder" class="w-3 h-3" />Path relative to the server working directory
+          </p>
+          {pathErr && <p id="fp-err" class="field-error" role="alert">{pathErr}</p>}
+          {!path && <p class="field-error mt-1" role="alert">Please enter a file path</p>}
+          <button type="button" class="text-sm text-accent-primary underline mt-2"
+            onClick={() => { update('filePath', ''); setPathMode(false); }}>
+            Upload a file instead
+          </button>
         </div>
       )}
 
-      {/* Divider */}
-      <div class="input-divider"><span>or</span></div>
+      <div class="mb-6">
+        <RadioCardGroup name="parser_strategy" label="Format" options={FMT_OPTS} value={fg}
+          onChange={(v) => update('parserStrategy', v === 'JSON' ? 'JSON' : v as ParserStrategy)} />
+      </div>
 
-      {/* Server-side File Path */}
-      <div class="mb-4">
-        <label for="file-path" class="label">Or enter server-side file path</label>
-        <input
-          id="file-path"
-          class={`input input-code${pathError ? ' input-error' : ''}`}
-          type="text"
-          placeholder="./data/records.csv"
-          value={form.filePath}
-          onInput={handlePathChange}
-          aria-describedby="file-path-help file-path-error"
-          aria-invalid={pathError ? 'true' : undefined}
-        />
-        <p id="file-path-help" class="field-help">
-          <Icon name="folder" class="w-3 h-3" />
-          Path relative to the server working directory
+      <div aria-live="polite">
+        {fg === 'CSV' && (
+          <div class="mb-6">
+            <label for="delimiter" class="label">Delimiter</label>
+            <input id="delimiter" class="input" type="text" maxLength={2}
+              value={form.delimiter === '\t' ? '\\t' : form.delimiter}
+              onInput={(e) => { const v = (e.target as HTMLInputElement).value; update('delimiter', v === '\\t' ? '\t' : v); }}
+              aria-describedby="delim-help" />
+            <p id="delim-help" class="field-help">
+              <Icon name="info" class="w-3 h-3" />Auto-detected from file. Override if incorrect. Use \t for tab.
+            </p>
+          </div>
+        )}
+        {fg === 'JSON' && (
+          <div class="mb-6">
+            <p class="field-help">
+              <Icon name="info" class="w-3 h-3" />
+              {form.parserStrategy === 'NDJSON'
+                ? 'Detected: Line-delimited JSON (NDJSON). One object per line.'
+                : 'Detected: JSON array. Expects [{...}, {...}].'}
+            </p>
+            <button type="button" class="text-sm text-accent-primary underline mt-1 py-1 px-2 -ml-2 rounded"
+              onClick={() => update('parserStrategy', form.parserStrategy === 'JSON' ? 'NDJSON' : 'JSON')}>
+              {form.parserStrategy === 'JSON' ? 'Not an array? Switch to line-delimited.' : 'Actually an array? Switch to JSON array.'}
+            </button>
+          </div>
+        )}
+        {fg === 'EXCEL' && (
+          <div class="mb-6">
+            <label for="sheet-name" class="label">Sheet Name (optional)</label>
+            <input id="sheet-name" class="input" type="text" placeholder="Leave blank for first sheet"
+              value={form.sheetName} onInput={(e) => update('sheetName', (e.target as HTMLInputElement).value)}
+              aria-describedby="sheet-help" />
+            <p id="sheet-help" class="field-help">
+              <Icon name="info" class="w-3 h-3" />Leave blank to use the first sheet
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div class="mb-6">
+        <label for="on-error-cb" class="flex items-center gap-2 cursor-pointer">
+          <input id="on-error-cb" type="checkbox" checked={form.onError === 'STOP'}
+            onChange={(e) => update('onError', (e.target as HTMLInputElement).checked ? 'STOP' : 'SKIP')}
+            aria-describedby="on-error-help" />
+          <span class="text-sm">Stop on first malformed record</span>
+        </label>
+        <p id="on-error-help" class="field-help">
+          <Icon name="info" class="w-3 h-3" />
+          {form.onError === 'STOP' ? 'Parsing will halt at the first error' : 'Malformed records are logged and skipped'}
         </p>
-        {pathError && (
-          <p id="file-path-error" class="field-error" role="alert">
-            {pathError}
-          </p>
-        )}
-        {showNoSourceError && (
-          <p class="field-error" role="alert">
-            Please upload a file or enter a server-side file path
-          </p>
-        )}
       </div>
     </div>
   );

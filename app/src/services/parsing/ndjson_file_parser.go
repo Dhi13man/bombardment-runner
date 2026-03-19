@@ -1,10 +1,12 @@
 package parsing
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 
 	modelsDtoParsing "github.dhi13man.com/bombardment-runner/src/models/dto/parsing"
@@ -12,11 +14,11 @@ import (
 	"go.uber.org/zap"
 )
 
-type JsonFileParser[T any] interface {
+type NdjsonFileParser[T any] interface {
 	BaseFileParser[T]
 }
 
-type jsonParser[T any] struct {
+type ndjsonParser[T any] struct {
 	file     *os.File
 	tempPath string // non-empty for base64 uploads; removed on Close
 	onError  modelsEnums.OnErrorBehavior
@@ -26,10 +28,10 @@ type jsonParser[T any] struct {
 	cancel   context.CancelFunc
 }
 
-func NewJsonParser[T any](parserContext modelsDtoParsing.ParserContext) (JsonFileParser[T], error) {
+func NewNdjsonParser[T any](parserContext modelsDtoParsing.ParserContext) (NdjsonFileParser[T], error) {
 	file, path, err := OpenFileFromPathOrContent(parserContext.FilePath, parserContext.FileContentB64)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open JSON file: %w", err)
+		return nil, fmt.Errorf("failed to open NDJSON file: %w", err)
 	}
 
 	onError := parserContext.OnError
@@ -43,38 +45,32 @@ func NewJsonParser[T any](parserContext modelsDtoParsing.ParserContext) (JsonFil
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	return &jsonParser[T]{file: file, tempPath: tempPath, onError: onError, ctx: ctx, cancel: cancel}, nil
+	return &ndjsonParser[T]{file: file, tempPath: tempPath, onError: onError, ctx: ctx, cancel: cancel}, nil
 }
 
-func (p *jsonParser[T]) CreateRawDataStream() (chan map[string]string, error) {
-	decoder := json.NewDecoder(p.file)
-
-	// Expect opening '['
-	tok, err := decoder.Token()
-	if err != nil {
-		return nil, fmt.Errorf("failed to read JSON: %w", err)
-	}
-	if delim, ok := tok.(json.Delim); !ok || delim != '[' {
-		return nil, fmt.Errorf("expected JSON array, got %v", tok)
-	}
-
+func (p *ndjsonParser[T]) CreateRawDataStream() (chan map[string]string, error) {
 	ch := make(chan map[string]string)
 	go func() {
 		defer close(ch)
+		scanner := bufio.NewScanner(p.file)
+		scanner.Buffer(make([]byte, 64*1024), 10*1024*1024) // up to 10MB per line
 		var lineNum int
-		for decoder.More() {
+		for scanner.Scan() {
 			lineNum++
+			line := strings.TrimSpace(scanner.Text())
+			if line == "" {
+				continue
+			}
 			var record map[string]interface{}
-			if err := decoder.Decode(&record); err != nil {
+			if err := json.Unmarshal([]byte(line), &record); err != nil {
 				if p.onError == modelsEnums.OnErrorStop {
 					p.mu.Lock()
-					p.parseErr = fmt.Errorf("record %d: %w", lineNum, err)
+					p.parseErr = fmt.Errorf("line %d: %w", lineNum, err)
 					p.mu.Unlock()
 					return
 				}
-				zap.L().Warn("Skipping malformed JSON record", zap.Int("record", lineNum), zap.Error(err))
-				zap.L().Warn("Remaining records in JSON array skipped: decoder state is unrecoverable after a malformed record")
-				break
+				zap.L().Error("Skipping malformed NDJSON line", zap.Int("line", lineNum), zap.Error(err))
+				continue
 			}
 			row := make(map[string]string)
 			for key, value := range record {
@@ -86,15 +82,21 @@ func (p *jsonParser[T]) CreateRawDataStream() (chan map[string]string, error) {
 				return
 			}
 		}
-		// Consume closing ']'
-		_, _ = decoder.Token()
+		// Check for scanner I/O errors (without this, truncated reads are silent)
+		if err := scanner.Err(); err != nil {
+			if p.onError == modelsEnums.OnErrorStop {
+				p.mu.Lock()
+				p.parseErr = fmt.Errorf("scanner error at line %d: %w", lineNum, err)
+				p.mu.Unlock()
+			} else {
+				zap.L().Error("NDJSON scanner error", zap.Error(err))
+			}
+		}
 	}()
 	return ch, nil
 }
 
-func (p *jsonParser[T]) CreateParsedDataStream(
-	mapper func(map[string]string) T,
-) (chan T, error) {
+func (p *ndjsonParser[T]) CreateParsedDataStream(mapper func(map[string]string) T) (chan T, error) {
 	rawChannel, err := p.CreateRawDataStream()
 	if err != nil {
 		return nil, err
@@ -102,18 +104,18 @@ func (p *jsonParser[T]) CreateParsedDataStream(
 	return mapRawStream(p.ctx, rawChannel, mapper), nil
 }
 
-func (p *jsonParser[T]) Close() error {
+func (p *ndjsonParser[T]) Close() error {
 	p.cancel()
 	err := p.file.Close()
 	removeTempFile(p.tempPath)
 	return err
 }
 
-func (p *jsonParser[T]) GetStrategy() modelsEnums.ParserStrategy {
-	return modelsEnums.JSON
+func (p *ndjsonParser[T]) GetStrategy() modelsEnums.ParserStrategy {
+	return modelsEnums.NDJSON
 }
 
-func (p *jsonParser[T]) Err() error {
+func (p *ndjsonParser[T]) Err() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.parseErr

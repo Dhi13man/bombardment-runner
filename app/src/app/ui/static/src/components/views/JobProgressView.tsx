@@ -5,6 +5,7 @@ import { PageHeader } from '../PageHeader';
 import { ProgressBar } from '../composites/ProgressBar';
 import { StatCard } from '../composites/StatCard';
 import { StatusBadge } from '../composites/StatusBadge';
+import { ConfigCard } from '../composites/ConfigCard';
 import { PipelineStrip, deriveStages } from '../composites/PipelineStrip';
 import { Icon } from '../Icon';
 import { Button } from '../primitives';
@@ -27,6 +28,14 @@ function subtitle(status: JobStatus): string {
   if (status === 'COMPLETED') return 'Bombardment completed successfully';
   if (status === 'FAILED') return 'Bombardment failed';
   return 'Monitoring bombardment execution';
+}
+
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
+  const mins = Math.floor(ms / 60_000);
+  const secs = Math.round((ms % 60_000) / 1000);
+  return `${mins}m ${secs}s`;
 }
 
 /* ---------- Component ---------- */
@@ -138,17 +147,22 @@ export function JobProgressView() {
   const pct = Math.min(100, Math.max(0, job?.progress_percent ?? 0));
   const done = isTerminal(status);
 
-  const throughput = useMemo(() => {
-    if (!job || !job.processed_rows) return '-';
+  const elapsedMs = useMemo(() => {
+    if (!job) return 0;
     const start = new Date(job.created_at).getTime();
     const end = done && job.completed_at
       ? new Date(job.completed_at).getTime()
       : Date.now();
-    const elapsedSec = (end - start) / 1000;
-    if (elapsedSec <= 0) return '-';
-    const rps = job.processed_rows / elapsedSec;
-    return rps >= 1 ? `${Math.round(rps)}/s` : `${rps.toFixed(2)}/s`;
+    return Math.max(0, end - start);
   }, [job, done]);
+
+  const throughput = useMemo(() => {
+    if (!job || !job.processed_rows || elapsedMs <= 0) return '-';
+    const rps = job.processed_rows / (elapsedMs / 1000);
+    return rps >= 1 ? `${Math.round(rps)}/s` : `${rps.toFixed(2)}/s`;
+  }, [job, elapsedMs]);
+
+  const req = job?.original_request;
 
   return (
     <div id="view-job-progress">
@@ -178,19 +192,17 @@ export function JobProgressView() {
           </div>
         </div>
 
-        {/* Pipeline Strip */}
-        {job && (
-          <div class="mb-6">
-            <PipelineStrip stages={deriveStages(job)} />
-          </div>
-        )}
+        {/* Pipeline Strip (reuses wizard step indicator design) */}
+        {job && <PipelineStrip stages={deriveStages(job)} />}
 
-        {/* Progress Bar */}
-        <ProgressBar
-          value={pct}
-          status={progressStatus(status)}
-          label={`${pct.toFixed(1)}%`}
-        />
+        {/* Progress Bar (visible only while running) */}
+        {!done && (
+          <ProgressBar
+            value={pct}
+            status={progressStatus(status)}
+            label={`${pct.toFixed(1)}%`}
+          />
+        )}
 
         {/* Stat Cards Grid */}
         <div class="progress-stats">
@@ -215,18 +227,59 @@ export function JobProgressView() {
           />
         </div>
 
+        {/* Success / Failure Banner */}
+        {status === 'COMPLETED' && !job?.error_message && (
+          <div class="progress-banner progress-banner-success">
+            <Icon name="check-circle-2" size="md" />
+            <div>
+              <p class="text-sm font-semibold">All records processed successfully</p>
+              <p class="text-xs text-text-secondary">
+                {job?.total_rows ?? 0} records in {formatDuration(elapsedMs)} &middot; {throughput} throughput
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Error Message */}
         {job?.error_message && (
-          <div class="mb-4">
-            <div class="card-flat progress-error-card">
-              <div class="flex items-start gap-3">
-                <Icon name="alert-triangle" size="md" class="progress-error-icon" />
-                <div>
-                  <p class="text-sm font-medium progress-error-title">Error</p>
-                  <p class="text-sm mt-1">{job.error_message}</p>
-                </div>
-              </div>
+          <div class="progress-banner progress-banner-error">
+            <Icon name="alert-triangle" size="md" />
+            <div>
+              <p class="text-sm font-semibold">Bombardment failed</p>
+              <p class="text-xs mt-0.5">{job.error_message}</p>
             </div>
+          </div>
+        )}
+
+        {/* Job Details (from original request) */}
+        {done && req && (
+          <div class="progress-details">
+            <ConfigCard
+              section="source"
+              title="Source"
+              icon="file-input"
+              rows={[
+                { label: 'Format', value: req.parser_context.strategy },
+                ...(req.parser_context.file_path
+                  ? [{ label: 'File', value: req.parser_context.file_path, mono: true }]
+                  : []),
+                { label: 'Duration', value: formatDuration(elapsedMs) },
+              ]}
+            />
+            <ConfigCard
+              section="target"
+              title="Target"
+              icon="target"
+              rows={[
+                { label: 'Channel', value: req.client_context.channel },
+                { label: 'Load Balancer', value: req.load_balancer_context.strategy.replace(/_/g, ' ') },
+                ...req.load_balancer_context.urls.map((u, i) => ({
+                  label: `URL ${i + 1}`,
+                  value: u,
+                  mono: true,
+                })),
+              ]}
+            />
           </div>
         )}
 

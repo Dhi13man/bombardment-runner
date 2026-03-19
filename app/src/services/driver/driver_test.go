@@ -1066,6 +1066,179 @@ func TestCreateBombardment_PathTraversal_ReturnsError(t *testing.T) {
 	}
 }
 
+func TestExecuteBombardment_FullPipeline_NDJSON(t *testing.T) {
+	t.Parallel()
+
+	// Arrange: create a temporary NDJSON input file
+	tmpDir := t.TempDir()
+	ndjsonPath := tmpDir + "/input.jsonl"
+	ndjsonContent := "{\"request_id\":\"req_001\",\"name\":\"Alice\",\"age\":\"30\"}\n{\"request_id\":\"req_002\",\"name\":\"Bob\",\"age\":\"25\"}\n"
+	if err := os.WriteFile(ndjsonPath, []byte(ndjsonContent), 0644); err != nil {
+		t.Fatalf("failed to write test NDJSON: %v", err)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"status":"ok"}`))
+	}))
+	defer server.Close()
+
+	store := services.NewJobStore()
+	driver := NewBombardmentDriver(store)
+	job := store.Create(nil)
+
+	req := dto.BombardmentRequest{
+		Driver: driverDto.DriverContext{BatchSize: 2},
+		Parser: parserDto.ParserContext{
+			Strategy: "NDJSON",
+			FilePath: ndjsonPath,
+		},
+		Client: clientDto.ClientContext{
+			Channel:            modelsEnums.REST,
+			RequestTimeout:     5 * time.Second,
+			InsecureSkipVerify: true,
+		},
+		Transformer: transformerDto.TransformerContext{
+			Strategy:           "JSONATA",
+			BodyExpression:     `{"name": name, "age": age}`,
+			EndpointExpression: `"/api/users"`,
+			MethodExpression:   `"POST"`,
+		},
+		LoadBalancer: loadBalancerDto.LoadBalancerContext{
+			Strategy: modelsEnums.ROUND_ROBIN,
+			Urls:     []string{server.URL},
+		},
+	}
+
+	// Act
+	jobID := driver.CreateBombardmentAsync(req, job)
+	waitForJobCompletion(t, store, jobID, 10*time.Second)
+
+	// Assert
+	snap, ok := store.Get(jobID)
+	if !ok {
+		t.Fatal("job not found in store")
+	}
+	if snap.Status != services.JobStatusCompleted {
+		t.Errorf("expected status %q, got %q (error: %s)", services.JobStatusCompleted, snap.Status, snap.ErrorMessage)
+	}
+	if snap.TotalRows != 2 {
+		t.Errorf("TotalRows = %d, want 2", snap.TotalRows)
+	}
+}
+
+func TestExecuteBombardment_FullPipeline_JSON(t *testing.T) {
+	t.Parallel()
+
+	// Arrange: create a temporary JSON array input file
+	tmpDir := t.TempDir()
+	jsonPath := tmpDir + "/input.json"
+	jsonContent := `[{"request_id":"req_001","name":"Alice"},{"request_id":"req_002","name":"Bob"}]`
+	if err := os.WriteFile(jsonPath, []byte(jsonContent), 0644); err != nil {
+		t.Fatalf("failed to write test JSON: %v", err)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+	}))
+	defer server.Close()
+
+	store := services.NewJobStore()
+	driver := NewBombardmentDriver(store)
+
+	req := dto.BombardmentRequest{
+		Driver: driverDto.DriverContext{BatchSize: 2},
+		Parser: parserDto.ParserContext{
+			Strategy: "JSON",
+			FilePath: jsonPath,
+		},
+		Client: clientDto.ClientContext{
+			Channel:            modelsEnums.REST,
+			RequestTimeout:     5 * time.Second,
+			InsecureSkipVerify: true,
+		},
+		Transformer: transformerDto.TransformerContext{
+			Strategy:           "JSONATA",
+			BodyExpression:     `{"name": name}`,
+			EndpointExpression: `"/api/users"`,
+			MethodExpression:   `"POST"`,
+		},
+		LoadBalancer: loadBalancerDto.LoadBalancerContext{
+			Strategy: modelsEnums.ROUND_ROBIN,
+			Urls:     []string{server.URL},
+		},
+	}
+
+	// Act: synchronous CLI mode
+	err := driver.CreateBombardment(req)
+
+	// Assert
+	if err != nil {
+		t.Fatalf("CreateBombardment() error: %v", err)
+	}
+}
+
+func TestExecuteBombardment_ParserOnErrorStop_FailsJob(t *testing.T) {
+	t.Parallel()
+
+	// Arrange: CSV with a malformed row (4 fields instead of 3)
+	tmpDir := t.TempDir()
+	csvPath := tmpDir + "/malformed.csv"
+	csvContent := "name,age,city\nAlice,30,London\nBob,25,Paris,EXTRA\nCharlie,35,Berlin\n"
+	if err := os.WriteFile(csvPath, []byte(csvContent), 0644); err != nil {
+		t.Fatalf("failed to write test CSV: %v", err)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	store := services.NewJobStore()
+	driver := NewBombardmentDriver(store)
+	job := store.Create(nil)
+
+	req := dto.BombardmentRequest{
+		Driver: driverDto.DriverContext{BatchSize: 1},
+		Parser: parserDto.ParserContext{
+			Strategy: "CSV",
+			FilePath: csvPath,
+			OnError:  modelsEnums.OnErrorStop,
+		},
+		Client: clientDto.ClientContext{
+			Channel:            modelsEnums.REST,
+			RequestTimeout:     5 * time.Second,
+			InsecureSkipVerify: true,
+		},
+		Transformer: transformerDto.TransformerContext{
+			Strategy:           "JSONATA",
+			BodyExpression:     `{"name": name}`,
+			EndpointExpression: `"/api"`,
+			MethodExpression:   `"POST"`,
+		},
+		LoadBalancer: loadBalancerDto.LoadBalancerContext{
+			Strategy: modelsEnums.ROUND_ROBIN,
+			Urls:     []string{server.URL},
+		},
+	}
+
+	// Act
+	jobID := driver.CreateBombardmentAsync(req, job)
+	waitForJobCompletion(t, store, jobID, 10*time.Second)
+
+	// Assert: job should FAIL because parser.Err() is non-nil with STOP
+	snap, ok := store.Get(jobID)
+	if !ok {
+		t.Fatal("job not found in store")
+	}
+	if snap.Status != services.JobStatusFailed {
+		t.Errorf("expected status %q, got %q (error: %s)", services.JobStatusFailed, snap.Status, snap.ErrorMessage)
+	}
+	if snap.ErrorMessage == "" {
+		t.Error("expected non-empty error message for parser STOP")
+	}
+}
+
 func buildMinimalBombardmentRequest() dto.BombardmentRequest {
 	return dto.BombardmentRequest{
 		Driver: driverDto.DriverContext{

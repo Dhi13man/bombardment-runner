@@ -6,18 +6,29 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
+// safeFilenameRe keeps only alphanumeric, dash, underscore, and dot characters.
+var safeFilenameRe = regexp.MustCompile(`[^a-zA-Z0-9._-]`)
+
 // allowedDataDir is the base directory for uploaded file storage.
 const allowedDataDir = "./data"
 
-// ContainsPathTraversal checks if the given path contains directory traversal sequences.
+// MaxUploadSize is the maximum decoded size for base64 file uploads (100MB).
+const MaxUploadSize = 100 * 1024 * 1024
+
+// ContainsPathTraversal checks if the cleaned path contains a ".." component,
+// indicating an attempt to escape the current directory. It uses filepath.Clean
+// first so that benign substrings like "file..txt" are not falsely rejected.
 func ContainsPathTraversal(path string) bool {
-	return strings.Contains(path, "..")
+	cleaned := filepath.Clean(path)
+	return slices.Contains(strings.Split(cleaned, string(filepath.Separator)), "..")
 }
 
 // OpenFileFromPathOrContent opens a file from either a file path or base64 encoded content.
@@ -25,7 +36,7 @@ func ContainsPathTraversal(path string) bool {
 // and return the file handle and the path to the temporary file.
 // If fileContentB64 is empty, it will try to open the file at filePath.
 func OpenFileFromPathOrContent(filePath, fileContentB64 string) (*os.File, string, error) {
-	// If base64 content is provided, decode and save to a temp file
+	// Base64 content provided: decode and save to a temp file
 	if fileContentB64 != "" {
 		file, path, err := openFromBase64Content(filePath, fileContentB64)
 		if err != nil {
@@ -35,7 +46,7 @@ func OpenFileFromPathOrContent(filePath, fileContentB64 string) (*os.File, strin
 		return file, path, nil
 	}
 
-	// If no content provided, open the file at a validated path
+	// No content provided: open from validated path
 	file, path, err := openFromPath(filePath)
 	if err != nil {
 		return nil, "", err
@@ -44,24 +55,29 @@ func OpenFileFromPathOrContent(filePath, fileContentB64 string) (*os.File, strin
 	return file, path, nil
 }
 
-func openFromBase64Content(filePath, fileContentB64 string) (*os.File, string, error) {
-	// Create an uploads directory if it doesn't exist
+func openFromBase64Content(originalFilename, fileContentB64 string) (*os.File, string, error) {
 	if err := os.MkdirAll(allowedDataDir, 0755); err != nil {
 		zap.L().Error("Failed to create data directory", zap.Error(err))
 		return nil, "", err
 	}
 
-	// Decode base64 content
+	// Reject obviously oversized payloads before allocating the decoded slice.
+	if len(fileContentB64) > base64.StdEncoding.EncodedLen(MaxUploadSize) {
+		return nil, "", fmt.Errorf("encoded payload too large (%d bytes)", len(fileContentB64))
+	}
+
 	data, err := base64.StdEncoding.DecodeString(fileContentB64)
 	if err != nil {
 		zap.L().Error("Failed to decode base64 content", zap.Error(err))
 		return nil, "", err
 	}
 
-	// Generate a safe filename: use sanitized base name from filePath, or UUID
-	fileName := generateSafeFilename(filePath)
+	if len(data) > MaxUploadSize {
+		return nil, "", fmt.Errorf("decoded file size %d bytes exceeds maximum %d bytes", len(data), MaxUploadSize)
+	}
 
-	// Create a temporary file with the content
+	fileName := generateSafeFilename(originalFilename)
+
 	tempFilePath := filepath.Join(allowedDataDir, fileName)
 	tempFile, err := os.Create(tempFilePath)
 	if err != nil {
@@ -69,22 +85,16 @@ func openFromBase64Content(filePath, fileContentB64 string) (*os.File, string, e
 		return nil, "", err
 	}
 
-	// Write decoded content to a file
+	cleanup := func() { _ = tempFile.Close(); removeTempFile(tempFilePath) }
+
 	if _, writeErr := tempFile.Write(data); writeErr != nil {
-		closeErr := tempFile.Close()
-		if closeErr != nil {
-			zap.L().Error("Failed to close temporary file after write error", zap.Error(closeErr))
-		}
+		cleanup()
 		zap.L().Error("Failed to write content to file", zap.Error(writeErr))
 		return nil, "", writeErr
 	}
 
-	// Reset a file pointer to the beginning
 	if _, seekErr := tempFile.Seek(0, io.SeekStart); seekErr != nil {
-		closeErr := tempFile.Close()
-		if closeErr != nil {
-			zap.L().Error("Failed to close temporary file after seek error", zap.Error(closeErr))
-		}
+		cleanup()
 		zap.L().Error("Failed to reset file pointer", zap.Error(seekErr))
 		return nil, "", seekErr
 	}
@@ -97,15 +107,14 @@ func openFromPath(filePath string) (*os.File, string, error) {
 		return nil, "", fmt.Errorf("file path is required when no base64 content is provided")
 	}
 
-	// Resolve and validate the path to prevent traversal attacks
+	if ContainsPathTraversal(filePath) {
+		return nil, "", fmt.Errorf("file path must not contain directory traversal sequences")
+	}
+
+	// Resolve to absolute path
 	absPath, err := filepath.Abs(filePath)
 	if err != nil {
 		return nil, "", fmt.Errorf("invalid file path: %w", err)
-	}
-
-	// Ensure the path doesn't contain traversal sequences
-	if ContainsPathTraversal(filePath) {
-		return nil, "", fmt.Errorf("file path must not contain directory traversal sequences")
 	}
 
 	file, err := os.Open(absPath)
@@ -117,16 +126,28 @@ func openFromPath(filePath string) (*os.File, string, error) {
 	return file, absPath, nil
 }
 
+// removeTempFile removes a temporary file at the given path if non-empty.
+// Used by parser constructors to clean up base64-uploaded temp files on error.
+func removeTempFile(path string) {
+	if path == "" {
+		return
+	}
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		zap.L().Error("Failed to remove temp file", zap.String("path", path), zap.Error(err))
+	}
+}
+
 // generateSafeFilename creates a sanitized filename from the given path,
 // or generates a UUID-based filename if the path is empty.
+// Uses an allowlist (alphanumeric, dash, underscore, dot) to strip
+// potentially dangerous characters like null bytes or unicode overrides.
 func generateSafeFilename(filePath string) string {
 	if filePath == "" {
 		return "upload_" + uuid.New().String()
 	}
 
 	base := filepath.Base(filePath)
-	// Replace any problematic characters
-	safe := strings.ReplaceAll(base, " ", "_")
+	safe := safeFilenameRe.ReplaceAllString(base, "_")
 	// Prefix with a UUID to avoid collisions
 	return uuid.New().String() + "_" + safe
 }

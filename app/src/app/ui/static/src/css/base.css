@@ -742,7 +742,7 @@
   .stat-card-info { border-left: 3px solid var(--status-info); }
 
   .stat-value {
-    @apply text-2xl font-semibold;
+    @apply text-3xl font-semibold;
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
@@ -788,6 +788,26 @@
   }
   .progress-actions {
     @apply flex items-center justify-end gap-3 mt-6;
+  }
+  .progress-banner {
+    @apply flex items-start gap-3 mt-6;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 1px solid;
+  }
+  .progress-banner-success {
+    background: var(--status-success-muted);
+    border-color: var(--status-success);
+    color: var(--status-success-text);
+  }
+  .progress-banner-error {
+    background: var(--status-error-muted);
+    border-color: var(--status-error);
+    color: var(--status-error-text);
+  }
+  .progress-details {
+    @apply grid gap-4 mt-6;
+    grid-template-columns: repeat(2, 1fr);
   }
   .progress-error-card {
     background: var(--status-error-muted);
@@ -991,6 +1011,15 @@
   }
   .step.completed .step-label {
     color: var(--status-success-text);
+  }
+  .step.error .step-circle {
+    background: var(--status-error);
+    color: white;
+    border-color: var(--status-error);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--status-error) 15%, transparent);
+  }
+  .step.error .step-label {
+    color: var(--status-error-text);
   }
 
   .step-panels-container {
@@ -1313,8 +1342,8 @@
     height: 16px;
   }
   .pipeline-strip.expanded .pipeline-node {
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
   }
 
   .pipeline-node.pending {
@@ -1345,7 +1374,8 @@
     width: 12px;
   }
   .pipeline-strip.expanded .pipeline-connector {
-    width: 32px;
+    width: 40px;
+    height: 3px;
   }
   .pipeline-connector.filled {
     background: var(--status-success);
@@ -1613,6 +1643,9 @@
     grid-template-columns: 1fr;
   }
   .progress-stats {
+    grid-template-columns: 1fr;
+  }
+  .progress-details {
     grid-template-columns: 1fr;
   }
   .history-filters {
