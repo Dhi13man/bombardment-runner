@@ -37,8 +37,14 @@ func NewExcelParser[T any](parserContext modelsDtoParsing.ParserContext) (ExcelF
 	}
 	_ = file.Close()
 
+	var tempPath string
+	if parserContext.FileContentB64 != "" {
+		tempPath = path
+	}
+
 	xlFile, err := excelize.OpenFile(path, excelize.Options{UnzipSizeLimit: MaxUploadSize})
 	if err != nil {
+		removeTempFile(tempPath)
 		return nil, fmt.Errorf("failed to parse Excel file: %w", err)
 	}
 
@@ -47,6 +53,7 @@ func NewExcelParser[T any](parserContext modelsDtoParsing.ParserContext) (ExcelF
 		var opts modelsDtoParsing.ExcelParserOptions
 		if err := json.Unmarshal(parserContext.Options, &opts); err != nil {
 			_ = xlFile.Close()
+			removeTempFile(tempPath)
 			return nil, fmt.Errorf("invalid Excel options: %w", err)
 		}
 		sheetName = opts.SheetName
@@ -58,11 +65,6 @@ func NewExcelParser[T any](parserContext modelsDtoParsing.ParserContext) (ExcelF
 	onError := parserContext.OnError
 	if onError == "" {
 		onError = modelsEnums.OnErrorSkip
-	}
-
-	var tempPath string
-	if parserContext.FileContentB64 != "" {
-		tempPath = path
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -176,7 +178,4 @@ func (e *excelParser[T]) Err() error {
 	return e.parseErr
 }
 
-// Ensure excelParser can also work when file handle is provided via os.File.
-// For base64 uploads, OpenFileFromPathOrContent writes the content to a temp file,
-// so we always have a valid path for excelize to open.
 var _ ExcelFileParser[any] = (*excelParser[any])(nil)
