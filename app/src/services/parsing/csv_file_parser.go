@@ -134,11 +134,7 @@ func (c *csvParser[T]) CreateParsedDataStream(
 func (c *csvParser[T]) Close() error {
 	c.cancel()
 	err := c.file.Close()
-	if c.tempPath != "" {
-		if rmErr := os.Remove(c.tempPath); rmErr != nil && !os.IsNotExist(rmErr) {
-			zap.L().Error("Failed to remove temp file", zap.String("path", c.tempPath), zap.Error(rmErr))
-		}
-	}
+	removeTempFile(c.tempPath)
 	return err
 }
 

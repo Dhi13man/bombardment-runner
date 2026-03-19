@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/google/uuid"
@@ -27,12 +28,7 @@ const MaxUploadSize = 100 * 1024 * 1024
 // first so that benign substrings like "file..txt" are not falsely rejected.
 func ContainsPathTraversal(path string) bool {
 	cleaned := filepath.Clean(path)
-	for _, part := range strings.Split(cleaned, string(filepath.Separator)) {
-		if part == ".." {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(strings.Split(cleaned, string(filepath.Separator)), "..")
 }
 
 // OpenFileFromPathOrContent opens a file from either a file path or base64 encoded content.
@@ -59,10 +55,15 @@ func OpenFileFromPathOrContent(filePath, fileContentB64 string) (*os.File, strin
 	return file, path, nil
 }
 
-func openFromBase64Content(filePath, fileContentB64 string) (*os.File, string, error) {
+func openFromBase64Content(originalFilename, fileContentB64 string) (*os.File, string, error) {
 	if err := os.MkdirAll(allowedDataDir, 0755); err != nil {
 		zap.L().Error("Failed to create data directory", zap.Error(err))
 		return nil, "", err
+	}
+
+	// Reject obviously oversized payloads before allocating the decoded slice.
+	if len(fileContentB64) > base64.StdEncoding.EncodedLen(MaxUploadSize) {
+		return nil, "", fmt.Errorf("encoded payload too large (%d bytes)", len(fileContentB64))
 	}
 
 	data, err := base64.StdEncoding.DecodeString(fileContentB64)
@@ -75,7 +76,7 @@ func openFromBase64Content(filePath, fileContentB64 string) (*os.File, string, e
 		return nil, "", fmt.Errorf("decoded file size %d bytes exceeds maximum %d bytes", len(data), MaxUploadSize)
 	}
 
-	fileName := generateSafeFilename(filePath)
+	fileName := generateSafeFilename(originalFilename)
 
 	tempFilePath := filepath.Join(allowedDataDir, fileName)
 	tempFile, err := os.Create(tempFilePath)
@@ -84,16 +85,16 @@ func openFromBase64Content(filePath, fileContentB64 string) (*os.File, string, e
 		return nil, "", err
 	}
 
+	cleanup := func() { _ = tempFile.Close(); removeTempFile(tempFilePath) }
+
 	if _, writeErr := tempFile.Write(data); writeErr != nil {
-		_ = tempFile.Close()
-		removeTempFile(tempFilePath)
+		cleanup()
 		zap.L().Error("Failed to write content to file", zap.Error(writeErr))
 		return nil, "", writeErr
 	}
 
 	if _, seekErr := tempFile.Seek(0, io.SeekStart); seekErr != nil {
-		_ = tempFile.Close()
-		removeTempFile(tempFilePath)
+		cleanup()
 		zap.L().Error("Failed to reset file pointer", zap.Error(seekErr))
 		return nil, "", seekErr
 	}

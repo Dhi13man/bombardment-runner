@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/xuri/excelize/v2"
@@ -160,11 +159,7 @@ func (e *excelParser[T]) CreateParsedDataStream(mapper func(map[string]string) T
 func (e *excelParser[T]) Close() error {
 	e.cancel()
 	err := e.xlFile.Close()
-	if e.tempPath != "" {
-		if rmErr := os.Remove(e.tempPath); rmErr != nil && !os.IsNotExist(rmErr) {
-			zap.L().Error("Failed to remove temp file", zap.String("path", e.tempPath), zap.Error(rmErr))
-		}
-	}
+	removeTempFile(e.tempPath)
 	return err
 }
 

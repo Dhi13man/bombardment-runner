@@ -107,11 +107,7 @@ func (p *ndjsonParser[T]) CreateParsedDataStream(mapper func(map[string]string) 
 func (p *ndjsonParser[T]) Close() error {
 	p.cancel()
 	err := p.file.Close()
-	if p.tempPath != "" {
-		if rmErr := os.Remove(p.tempPath); rmErr != nil && !os.IsNotExist(rmErr) {
-			zap.L().Error("Failed to remove temp file", zap.String("path", p.tempPath), zap.Error(rmErr))
-		}
-	}
+	removeTempFile(p.tempPath)
 	return err
 }
 

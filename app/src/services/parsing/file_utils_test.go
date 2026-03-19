@@ -338,9 +338,15 @@ func TestRemoveTempFile_WhenFileNotExists_ThenNoError(t *testing.T) {
 // --- MaxUploadSize enforcement ---
 
 func TestOpenFileFromPathOrContent_WhenBase64ExceedsMaxSize_ThenReturnsError(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping large-allocation test in short mode")
+	}
 	t.Parallel()
 
-	// Arrange - create data slightly over MaxUploadSize
+	// Arrange - the pre-decode guard rejects payloads whose encoded length
+	// exceeds the threshold, so we only need a valid base64 string longer
+	// than base64.StdEncoding.EncodedLen(MaxUploadSize). Allocating ~100MB
+	// of zeros and encoding them is the cheapest way to hit this path.
 	oversized := make([]byte, MaxUploadSize+1)
 	encoded := base64.StdEncoding.EncodeToString(oversized)
 
@@ -352,7 +358,8 @@ func TestOpenFileFromPathOrContent_WhenBase64ExceedsMaxSize_ThenReturnsError(t *
 		_ = file.Close()
 		t.Fatal("expected error for oversized upload, got nil")
 	}
-	if !strings.Contains(err.Error(), "exceeds maximum") {
-		t.Errorf("expected error to mention size limit, got: %v", err)
+	errMsg := err.Error()
+	if !strings.Contains(errMsg, "too large") && !strings.Contains(errMsg, "exceeds maximum") {
+		t.Errorf("expected size-limit error, got: %v", err)
 	}
 }
