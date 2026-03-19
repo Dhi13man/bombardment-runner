@@ -6,11 +6,15 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
+
+// safeFilenameRe keeps only alphanumeric, dash, underscore, and dot characters.
+var safeFilenameRe = regexp.MustCompile(`[^a-zA-Z0-9._-]`)
 
 // allowedDataDir is the base directory for uploaded file storage.
 const allowedDataDir = "./data"
@@ -78,20 +82,16 @@ func openFromBase64Content(filePath, fileContentB64 string) (*os.File, string, e
 
 	// Write decoded content to a file
 	if _, writeErr := tempFile.Write(data); writeErr != nil {
-		closeErr := tempFile.Close()
-		if closeErr != nil {
-			zap.L().Error("Failed to close temporary file after write error", zap.Error(closeErr))
-		}
+		_ = tempFile.Close()
+		removeTempFile(tempFilePath)
 		zap.L().Error("Failed to write content to file", zap.Error(writeErr))
 		return nil, "", writeErr
 	}
 
 	// Reset a file pointer to the beginning
 	if _, seekErr := tempFile.Seek(0, io.SeekStart); seekErr != nil {
-		closeErr := tempFile.Close()
-		if closeErr != nil {
-			zap.L().Error("Failed to close temporary file after seek error", zap.Error(closeErr))
-		}
+		_ = tempFile.Close()
+		removeTempFile(tempFilePath)
 		zap.L().Error("Failed to reset file pointer", zap.Error(seekErr))
 		return nil, "", seekErr
 	}
@@ -137,14 +137,15 @@ func removeTempFile(path string) {
 
 // generateSafeFilename creates a sanitized filename from the given path,
 // or generates a UUID-based filename if the path is empty.
+// Uses an allowlist (alphanumeric, dash, underscore, dot) to strip
+// potentially dangerous characters like null bytes or unicode overrides.
 func generateSafeFilename(filePath string) string {
 	if filePath == "" {
 		return "upload_" + uuid.New().String()
 	}
 
 	base := filepath.Base(filePath)
-	// Replace any problematic characters
-	safe := strings.ReplaceAll(base, " ", "_")
+	safe := safeFilenameRe.ReplaceAllString(base, "_")
 	// Prefix with a UUID to avoid collisions
 	return uuid.New().String() + "_" + safe
 }

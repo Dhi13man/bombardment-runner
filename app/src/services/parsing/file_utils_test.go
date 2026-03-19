@@ -231,3 +231,28 @@ func TestGenerateSafeFilename_WhenCalledTwice_ThenReturnsDifferentNames(t *testi
 		t.Error("expected unique filenames on each call due to UUID, got identical")
 	}
 }
+
+func TestGenerateSafeFilename_WhenSpecialChars_ThenStripsToAllowlist(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		input    string
+		wantSafe string
+	}{
+		{"null byte", "file\x00.csv", "file_.csv"},
+		{"unicode", "caf\u00e9.csv", "caf_.csv"},
+		{"slashes after base", "dir/sub/my@file#1.csv", "my_file_1.csv"},
+		{"rtl override", "file\u202e.csv", "file_.csv"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := generateSafeFilename(tt.input)
+			if !strings.HasSuffix(got, "_"+tt.wantSafe) {
+				t.Errorf("generateSafeFilename(%q): got %q, want suffix %q", tt.input, got, "_"+tt.wantSafe)
+			}
+		})
+	}
+}
