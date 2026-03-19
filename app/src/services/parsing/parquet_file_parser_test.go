@@ -283,6 +283,22 @@ func TestParquetParser_InvalidFile(t *testing.T) {
 	}
 }
 
+func TestParquetParser_CorruptFile(t *testing.T) {
+	t.Parallel()
+	path := t.TempDir() + "/corrupt.parquet"
+	if err := os.WriteFile(path, []byte("this is not a parquet file"), 0644); err != nil {
+		t.Fatalf("failed to write corrupt file: %v", err)
+	}
+
+	_, err := NewParquetParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.PARQUET,
+		FilePath: path,
+	})
+	if err == nil {
+		t.Fatal("expected error for corrupt Parquet file, got nil")
+	}
+}
+
 func TestParquetParser_ExcessiveColumnsRejected(t *testing.T) {
 	t.Parallel()
 

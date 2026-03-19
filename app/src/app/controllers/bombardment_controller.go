@@ -88,8 +88,8 @@ func validateBombardmentRequest(req dto.BombardmentRequest) []string {
 		errs = append(errs, "at least one target URL is required")
 	}
 
-	if req.Parser.FilePath == "" && req.Parser.FileContentB64 == "" {
-		errs = append(errs, "either file_path or file_content_b64 is required")
+	if req.Parser.FileContentB64 == "" {
+		errs = append(errs, "file_content_b64 is required (use base64-encoded file content for API requests)")
 	}
 
 	// Validate ResponsesStoragePath doesn't contain traversal sequences

@@ -92,7 +92,7 @@ func (c *csvParser[T]) CreateRawDataStream() (chan map[string]string, error) {
 		for {
 			rec, err := r.Read()
 			if err == io.EOF {
-				zap.L().Debug("End of file " + c.file.Name())
+				zap.L().Debug("End of file", zap.String("file", c.file.Name()))
 				break
 			}
 			lineNum++

@@ -44,6 +44,12 @@ func NewParquetParser[T any](parserContext modelsDtoParsing.ParserContext) (Parq
 		tempPath = path
 	}
 
+	if err := validateParquetFile(file); err != nil {
+		_ = file.Close()
+		removeTempFile(tempPath)
+		return nil, err
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	return &parquetParser[T]{file: file, tempPath: tempPath, onError: onError, ctx: ctx, cancel: cancel}, nil
 }
@@ -52,15 +58,35 @@ func NewParquetParser[T any](parserContext modelsDtoParsing.ParserContext) (Parq
 // that would cause large per-row map allocations.
 const maxParquetColumns = 10_000
 
+// validateParquetFile probes the file's Parquet footer to verify it is valid
+// and that its schema does not exceed the column limit. The file position is
+// reset to the start afterward so CreateRawDataStream can create its own reader.
+func validateParquetFile(file *os.File) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("corrupt or unreadable Parquet file: %v", r)
+		}
+	}()
+
+	reader := parquet.NewReader(file)
+	cols := reader.Schema().Columns()
+	_ = reader.Close()
+
+	if len(cols) > maxParquetColumns {
+		return fmt.Errorf("parquet schema has %d columns, exceeds limit of %d", len(cols), maxParquetColumns)
+	}
+
+	if _, seekErr := file.Seek(0, io.SeekStart); seekErr != nil {
+		return fmt.Errorf("failed to reset file after validation: %w", seekErr)
+	}
+
+	return nil
+}
+
 func (p *parquetParser[T]) CreateRawDataStream() (chan map[string]string, error) {
 	reader := parquet.NewReader(p.file)
 	schema := reader.Schema()
 	columnPaths := schema.Columns()
-
-	if len(columnPaths) > maxParquetColumns {
-		_ = reader.Close()
-		return nil, fmt.Errorf("parquet schema has %d columns, exceeds limit of %d", len(columnPaths), maxParquetColumns)
-	}
 
 	colNames := make(map[int]string, len(columnPaths))
 	for i, path := range columnPaths {

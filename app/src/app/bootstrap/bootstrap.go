@@ -97,6 +97,13 @@ func (s *bootstrapImpl) RunServer(bindAddr string, port int) {
 		c.Next()
 	})
 
+	// Request body size limit to prevent OOM from oversized payloads.
+	// 150MB accommodates base64-encoded 100MB files plus JSON overhead.
+	r.Use(func(c *gin.Context) {
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 150*1024*1024)
+		c.Next()
+	})
+
 	// CORS middleware -- configurable via CORS_ORIGINS env var (comma-separated)
 	allowedOrigins := []string{"*"}
 	if envOrigins := os.Getenv("CORS_ORIGINS"); envOrigins != "" {

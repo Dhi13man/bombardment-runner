@@ -72,9 +72,8 @@ func (p *jsonParser[T]) CreateRawDataStream() (chan map[string]string, error) {
 					p.mu.Unlock()
 					return
 				}
-				zap.L().Error("Skipping malformed JSON record", zap.Int("record", lineNum), zap.Error(err))
-				// In a JSON array, a failed Decode may not advance the decoder
-				// past the bad token. Break to avoid an infinite loop.
+				zap.L().Warn("Skipping malformed JSON record", zap.Int("record", lineNum), zap.Error(err))
+				zap.L().Warn("Remaining records in JSON array skipped: decoder state is unrecoverable after a malformed record")
 				break
 			}
 			row := make(map[string]string)

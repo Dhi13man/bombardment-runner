@@ -64,7 +64,7 @@ func TestBombardmentController_Bombard_Success(t *testing.T) {
 	reqBody := dto.BombardmentRequest{}
 	reqBody.Driver.BatchSize = 10
 	reqBody.LoadBalancer.Urls = []string{"http://example.com"}
-	reqBody.Parser.FilePath = "/tmp/test.csv"
+	reqBody.Parser.FileContentB64 = "dGVzdA==" // base64("test")
 	body, _ := json.Marshal(reqBody)
 
 	w := httptest.NewRecorder()
@@ -397,7 +397,7 @@ func TestValidateBombardmentRequest_TableDriven(t *testing.T) {
 				r := dto.BombardmentRequest{}
 				r.Driver.BatchSize = 10
 				r.LoadBalancer.Urls = []string{"http://example.com"}
-				r.Parser.FilePath = "/tmp/test.csv"
+				r.Parser.FileContentB64 = "dGVzdA=="
 				return r
 			}(),
 			wantCount: 0,
@@ -408,7 +408,7 @@ func TestValidateBombardmentRequest_TableDriven(t *testing.T) {
 				r := dto.BombardmentRequest{}
 				r.Driver.BatchSize = 0
 				r.LoadBalancer.Urls = []string{"http://example.com"}
-				r.Parser.FilePath = "/tmp/test.csv"
+				r.Parser.FileContentB64 = "dGVzdA=="
 				return r
 			}(),
 			wantCount: 1,
@@ -419,7 +419,7 @@ func TestValidateBombardmentRequest_TableDriven(t *testing.T) {
 				r := dto.BombardmentRequest{}
 				r.Driver.BatchSize = -5
 				r.LoadBalancer.Urls = []string{"http://example.com"}
-				r.Parser.FilePath = "/tmp/test.csv"
+				r.Parser.FileContentB64 = "dGVzdA=="
 				return r
 			}(),
 			wantCount: 1,
@@ -429,17 +429,28 @@ func TestValidateBombardmentRequest_TableDriven(t *testing.T) {
 			req: func() dto.BombardmentRequest {
 				r := dto.BombardmentRequest{}
 				r.Driver.BatchSize = 10
-				r.Parser.FilePath = "/tmp/test.csv"
+				r.Parser.FileContentB64 = "dGVzdA=="
 				return r
 			}(),
 			wantCount: 1,
 		},
 		{
-			name: "no file source",
+			name: "no file content",
 			req: func() dto.BombardmentRequest {
 				r := dto.BombardmentRequest{}
 				r.Driver.BatchSize = 10
 				r.LoadBalancer.Urls = []string{"http://example.com"}
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "bare file_path without base64 rejected",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FilePath = "/tmp/test.csv"
 				return r
 			}(),
 			wantCount: 1,
@@ -462,7 +473,7 @@ func TestValidateBombardmentRequest_TableDriven(t *testing.T) {
 				r.Driver.BatchSize = 10
 				r.Driver.ResponsesStoragePath = "../evil"
 				r.LoadBalancer.Urls = []string{"http://example.com"}
-				r.Parser.FilePath = "/tmp/test.csv"
+				r.Parser.FileContentB64 = "dGVzdA=="
 				return r
 			}(),
 			wantCount: 1,
@@ -470,7 +481,7 @@ func TestValidateBombardmentRequest_TableDriven(t *testing.T) {
 		{
 			name: "all validations fail simultaneously",
 			req:  dto.BombardmentRequest{},
-			// BatchSize=0, no URLs, no file source = 3 errors
+			// BatchSize=0, no URLs, no file_content_b64 = 3 errors
 			wantCount: 3,
 		},
 	}
