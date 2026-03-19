@@ -6,7 +6,11 @@ import type {
   TransformerStrategy,
   ClientChannel,
   LoadBalancerStrategy,
+  OnErrorBehavior,
   BombardmentRequest,
+  CsvParserOptions,
+  ExcelParserOptions,
+  ProtobufParserOptions,
 } from '../types/api';
 import { msToNs, nsToMs } from '../types/api';
 
@@ -21,6 +25,13 @@ interface JobFormState {
   fileName: string;
   /** Display-only: file size in bytes. */
   fileSize: number;
+
+  // Step 1: Source (strategy-specific)
+  delimiter: string;
+  sheetName: string;
+  descriptorSetPath: string;
+  messageType: string;
+  onError: OnErrorBehavior;
 
   // Step 2: Transform
   transformerStrategy: TransformerStrategy;
@@ -55,6 +66,11 @@ const DEFAULT_STATE: JobFormState = {
   fileContentB64: '',
   fileName: '',
   fileSize: 0,
+  delimiter: ',',
+  sheetName: '',
+  descriptorSetPath: '',
+  messageType: '',
+  onError: 'SKIP' as OnErrorBehavior,
   transformerStrategy: 'JSONATA',
   methodExpression: '"POST"',
   endpointExpression: '"/api/v1/" & resource',
@@ -107,12 +123,18 @@ export function JobFormProvider({ children }: { children: ComponentChildren }) {
   }, []);
 
   const fromRequest = useCallback((req: BombardmentRequest) => {
+    const opts = req.parser_context.options;
     setForm({
       parserStrategy: req.parser_context.strategy,
       filePath: req.parser_context.file_path ?? '',
       fileContentB64: req.parser_context.file_content_b64 ?? '',
       fileName: '',
       fileSize: 0,
+      onError: (req.parser_context.on_error ?? 'SKIP') as OnErrorBehavior,
+      delimiter: (opts as CsvParserOptions)?.delimiter ?? ',',
+      sheetName: (opts as ExcelParserOptions)?.sheet_name ?? '',
+      descriptorSetPath: (opts as ProtobufParserOptions)?.descriptor_set_path ?? '',
+      messageType: (opts as ProtobufParserOptions)?.message_type ?? '',
       transformerStrategy: req.transformer_context.strategy,
       methodExpression: req.transformer_context.method_expression,
       endpointExpression: req.transformer_context.endpoint_expression,
@@ -136,11 +158,27 @@ export function JobFormProvider({ children }: { children: ComponentChildren }) {
 
   const toRequest = useCallback((): BombardmentRequest => {
     const f = formRef.current;
+
+    // Build strategy-specific options
+    let parserOptions: CsvParserOptions | ExcelParserOptions | ProtobufParserOptions | undefined;
+    if (f.parserStrategy === 'CSV' && f.delimiter !== ',') {
+      parserOptions = { delimiter: f.delimiter } as CsvParserOptions;
+    } else if (f.parserStrategy === 'EXCEL' && f.sheetName) {
+      parserOptions = { sheet_name: f.sheetName } as ExcelParserOptions;
+    } else if (f.parserStrategy === 'PROTOBUF') {
+      parserOptions = {
+        descriptor_set_path: f.descriptorSetPath,
+        message_type: f.messageType,
+      } as ProtobufParserOptions;
+    }
+
     return {
       parser_context: {
         strategy: f.parserStrategy,
         file_path: f.filePath || undefined,
         file_content_b64: f.fileContentB64 || undefined,
+        on_error: f.onError !== 'SKIP' ? f.onError : undefined,
+        options: parserOptions,
       },
       transformer_context: {
         strategy: f.transformerStrategy,

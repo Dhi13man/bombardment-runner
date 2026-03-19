@@ -4,6 +4,7 @@
  * Source of truth:
  *   - app/src/models/dto/bombardment_request.go
  *   - app/src/models/dto/parsing/parser_context.go
+ *   - app/src/models/dto/parsing/parser_options.go
  *   - app/src/models/dto/transforming/transformer_context.go
  *   - app/src/models/dto/clients/client_context.go
  *   - app/src/models/dto/load_balancing/load_balancer_context.go
@@ -13,7 +14,9 @@
 
 // --- Enums (must stay in sync with app/src/models/enums/) ---
 
-export type ParserStrategy = 'CSV' | 'JSON';
+export type ParserStrategy = 'CSV' | 'JSON' | 'NDJSON' | 'EXCEL' | 'PROTOBUF';
+
+export type OnErrorBehavior = 'SKIP' | 'STOP';
 
 export type TransformerStrategy = 'JSONATA' | 'GOTEMPLATE' | 'PASSTHROUGH';
 
@@ -23,12 +26,29 @@ export type LoadBalancerStrategy = 'RANDOM' | 'ROUND_ROBIN' | 'LEAST_CONNECTION'
 
 export type JobStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
 
+// --- Parser Options (strategy-specific) ---
+
+export interface CsvParserOptions {
+  delimiter?: string;
+}
+
+export interface ExcelParserOptions {
+  sheet_name?: string;
+}
+
+export interface ProtobufParserOptions {
+  descriptor_set_path: string;
+  message_type: string;
+}
+
 // --- Request DTOs ---
 
 export interface ParserContext {
   strategy: ParserStrategy;
   file_path?: string;
   file_content_b64?: string;
+  on_error?: OnErrorBehavior;
+  options?: CsvParserOptions | ExcelParserOptions | ProtobufParserOptions;
 }
 
 export interface TransformerContext {

@@ -49,10 +49,26 @@ export function ReviewStep() {
 
   // Source summary
   const fileName = form.fileName || form.filePath || '(none)';
-  const sourceRows = [
-    { label: 'Format', value: form.parserStrategy },
+
+  let formatLabel = form.parserStrategy as string;
+  if (form.parserStrategy === 'CSV' && form.delimiter !== ',') {
+    const delimName = form.delimiter === '\t' ? 'tab' : form.delimiter;
+    formatLabel = `CSV (${delimName}-delimited)`;
+  } else if (form.parserStrategy === 'NDJSON') {
+    formatLabel = 'JSON (line-delimited)';
+  }
+
+  const sourceRows: { label: string; value: string; mono?: boolean }[] = [
+    { label: 'Format', value: formatLabel },
     { label: 'File', value: fileName, mono: true },
+    { label: 'On error', value: form.onError === 'STOP' ? 'Stop on first error' : 'Skip malformed' },
   ];
+  if (form.parserStrategy === 'EXCEL' && form.sheetName) {
+    sourceRows.push({ label: 'Sheet', value: form.sheetName });
+  }
+  if (form.parserStrategy === 'PROTOBUF' && form.messageType) {
+    sourceRows.push({ label: 'Message type', value: form.messageType, mono: true });
+  }
 
   // Transform summary
   const transformRows = [

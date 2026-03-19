@@ -1,6 +1,7 @@
 package parsing
 
 import (
+	"encoding/json"
 	"os"
 	"sort"
 	"testing"
@@ -256,5 +257,159 @@ func TestCsvParser_GetStrategy(t *testing.T) {
 
 	if got := parser.GetStrategy(); got != modelsEnums.CSV {
 		t.Errorf("GetStrategy() = %v, want %v", got, modelsEnums.CSV)
+	}
+}
+
+func TestCsvParser_TabDelimiter(t *testing.T) {
+	t.Parallel()
+	tsvContent := "name\tage\nAlice\t30\nBob\t25\n"
+	filePath := writeTempCSV(t, tsvContent)
+
+	opts, _ := json.Marshal(modelsDtoParsing.CsvParserOptions{Delimiter: "\t"})
+	parser, err := NewCsvParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.CSV,
+		FilePath: filePath,
+		Options:  opts,
+	})
+	if err != nil {
+		t.Fatalf("NewCsvParser() error: %v", err)
+	}
+	defer func() { _ = parser.Close() }()
+
+	ch, err := parser.CreateRawDataStream()
+	if err != nil {
+		t.Fatalf("CreateRawDataStream() error: %v", err)
+	}
+
+	rows := drainChannel(t, ch)
+	if len(rows) != 2 {
+		t.Fatalf("expected 2 rows, got %d", len(rows))
+	}
+	if rows[0]["name"] != "Alice" || rows[0]["age"] != "30" {
+		t.Errorf("row 0 mismatch: %v", rows[0])
+	}
+}
+
+func TestCsvParser_PipeDelimiter(t *testing.T) {
+	t.Parallel()
+	content := "name|age\nAlice|30\n"
+	filePath := writeTempCSV(t, content)
+
+	opts, _ := json.Marshal(modelsDtoParsing.CsvParserOptions{Delimiter: "|"})
+	parser, err := NewCsvParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.CSV,
+		FilePath: filePath,
+		Options:  opts,
+	})
+	if err != nil {
+		t.Fatalf("NewCsvParser() error: %v", err)
+	}
+	defer func() { _ = parser.Close() }()
+
+	ch, err := parser.CreateRawDataStream()
+	if err != nil {
+		t.Fatalf("CreateRawDataStream() error: %v", err)
+	}
+
+	rows := drainChannel(t, ch)
+	if len(rows) != 1 {
+		t.Fatalf("expected 1 row, got %d", len(rows))
+	}
+	if rows[0]["name"] != "Alice" || rows[0]["age"] != "30" {
+		t.Errorf("row mismatch: %v", rows[0])
+	}
+}
+
+func TestCsvParser_InvalidDelimiterMultiChar(t *testing.T) {
+	t.Parallel()
+	filePath := writeTempCSV(t, "a,b\n1,2\n")
+
+	opts, _ := json.Marshal(modelsDtoParsing.CsvParserOptions{Delimiter: "||"})
+	_, err := NewCsvParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.CSV,
+		FilePath: filePath,
+		Options:  opts,
+	})
+	if err == nil {
+		t.Fatal("expected error for multi-char delimiter, got nil")
+	}
+}
+
+func TestCsvParser_DefaultDelimiterNoOptions(t *testing.T) {
+	t.Parallel()
+	csvContent := "name,age\nAlice,30\n"
+	filePath := writeTempCSV(t, csvContent)
+
+	parser, err := NewCsvParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.CSV,
+		FilePath: filePath,
+	})
+	if err != nil {
+		t.Fatalf("NewCsvParser() error: %v", err)
+	}
+	defer func() { _ = parser.Close() }()
+
+	ch, err := parser.CreateRawDataStream()
+	if err != nil {
+		t.Fatalf("CreateRawDataStream() error: %v", err)
+	}
+
+	rows := drainChannel(t, ch)
+	if len(rows) != 1 {
+		t.Fatalf("expected 1 row, got %d", len(rows))
+	}
+	if rows[0]["name"] != "Alice" {
+		t.Errorf("expected name Alice, got %q", rows[0]["name"])
+	}
+}
+
+func TestCsvParser_ErrReturnsNilOnSuccess(t *testing.T) {
+	t.Parallel()
+	filePath := writeTempCSV(t, "a\n1\n")
+
+	parser, err := NewCsvParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.CSV,
+		FilePath: filePath,
+	})
+	if err != nil {
+		t.Fatalf("NewCsvParser() error: %v", err)
+	}
+	defer func() { _ = parser.Close() }()
+
+	ch, _ := parser.CreateRawDataStream()
+	for range ch {
+	}
+
+	if parser.Err() != nil {
+		t.Errorf("expected nil Err(), got %v", parser.Err())
+	}
+}
+
+func TestCsvParser_ContextCancellation(t *testing.T) {
+	t.Parallel()
+	var csvContent = "id\n"
+	for i := range 200 {
+		csvContent += string(rune('A'+i%26)) + "\n"
+	}
+	filePath := writeTempCSV(t, csvContent)
+
+	parser, err := NewCsvParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.CSV,
+		FilePath: filePath,
+	})
+	if err != nil {
+		t.Fatalf("NewCsvParser() error: %v", err)
+	}
+
+	ch, err := parser.CreateRawDataStream()
+	if err != nil {
+		t.Fatalf("CreateRawDataStream() error: %v", err)
+	}
+
+	<-ch
+	<-ch
+	_ = parser.Close()
+
+	for range ch {
 	}
 }

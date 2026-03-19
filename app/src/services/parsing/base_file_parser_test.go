@@ -39,6 +39,38 @@ func TestCreateFileParser_CSV(t *testing.T) {
 	}
 }
 
+func TestCreateFileParser_NDJSON(t *testing.T) {
+	path := writeTempNDJSON(t, `{"a":"1"}`)
+	parser, err := CreateFileParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.NDJSON,
+		FilePath: path,
+	})
+	if err != nil {
+		t.Fatalf("CreateFileParser(NDJSON) returned error: %v", err)
+	}
+	defer func() { _ = parser.Close() }()
+
+	if got := parser.GetStrategy(); got != modelsEnums.NDJSON {
+		t.Errorf("strategy: got %q, want %q", got, modelsEnums.NDJSON)
+	}
+}
+
+func TestCreateFileParser_EXCEL(t *testing.T) {
+	path := writeTempExcel(t, "", []string{"a"}, [][]string{{"1"}})
+	parser, err := CreateFileParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.EXCEL,
+		FilePath: path,
+	})
+	if err != nil {
+		t.Fatalf("CreateFileParser(EXCEL) returned error: %v", err)
+	}
+	defer func() { _ = parser.Close() }()
+
+	if got := parser.GetStrategy(); got != modelsEnums.EXCEL {
+		t.Errorf("strategy: got %q, want %q", got, modelsEnums.EXCEL)
+	}
+}
+
 func TestCreateFileParser_InvalidStrategy(t *testing.T) {
 	_, err := CreateFileParser[map[string]string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.ParserStrategy("UNKNOWN"),

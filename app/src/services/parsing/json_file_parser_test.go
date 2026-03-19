@@ -304,3 +304,108 @@ func TestJsonParser_Close_WhenValidFile_ThenReturnsNil(t *testing.T) {
 		t.Errorf("Close returned unexpected error: %v", err)
 	}
 }
+
+func TestJsonParser_MalformedRecordSkip(t *testing.T) {
+	// In a JSON array, a malformed record corrupts the decoder state.
+	// With SKIP, the parser logs the error and breaks (can't skip individual
+	// records since the decoder can't find the next boundary).
+	// Records before the bad one are still emitted.
+	path := writeTempJSON(t, `[{"name":"Alice"},{"broken:true},{"name":"Charlie"}]`)
+	parser, err := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.JSON,
+		FilePath: path,
+		OnError: modelsEnums.OnErrorSkip,
+	})
+	if err != nil {
+		t.Fatalf("NewJsonParser() error: %v", err)
+	}
+	defer func() { _ = parser.Close() }()
+
+	ch, err := parser.CreateRawDataStream()
+	if err != nil {
+		t.Fatalf("CreateRawDataStream() error: %v", err)
+	}
+
+	rows := drainChannel(t, ch)
+	// Only the first record (before the malformed one) should come through
+	if len(rows) != 1 {
+		t.Fatalf("expected 1 row (stopped at malformed record), got %d", len(rows))
+	}
+	if rows[0]["name"] != "Alice" {
+		t.Errorf("row 0: got %q, want %q", rows[0]["name"], "Alice")
+	}
+
+	// Err() is nil because we were in SKIP mode (error was logged, not stored)
+	if parser.Err() != nil {
+		t.Errorf("expected nil Err() with SKIP, got %v", parser.Err())
+	}
+}
+
+func TestJsonParser_NotAnArray(t *testing.T) {
+	path := writeTempJSON(t, `{"single":"object"}`)
+	parser, err := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.JSON,
+		FilePath: path,
+	})
+	if err != nil {
+		t.Fatalf("NewJsonParser() error: %v", err)
+	}
+	defer func() { _ = parser.Close() }()
+
+	_, err = parser.CreateRawDataStream()
+	if err == nil {
+		t.Fatal("expected error for non-array JSON, got nil")
+	}
+}
+
+func TestJsonParser_ErrReturnsNilOnSuccess(t *testing.T) {
+	path := writeTempJSON(t, `[{"a":"1"}]`)
+	parser, err := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.JSON,
+		FilePath: path,
+	})
+	if err != nil {
+		t.Fatalf("NewJsonParser() error: %v", err)
+	}
+	defer func() { _ = parser.Close() }()
+
+	ch, _ := parser.CreateRawDataStream()
+	drainChannel(t, ch)
+
+	if parser.Err() != nil {
+		t.Errorf("expected nil Err(), got %v", parser.Err())
+	}
+}
+
+func TestJsonParser_ContextCancellation(t *testing.T) {
+	// Many records
+	var content = "["
+	for i := range 100 {
+		if i > 0 {
+			content += ","
+		}
+		content += `{"i":"` + string(rune('A'+i%26)) + `"}`
+	}
+	content += "]"
+	path := writeTempJSON(t, content)
+
+	parser, err := NewJsonParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.JSON,
+		FilePath: path,
+	})
+	if err != nil {
+		t.Fatalf("NewJsonParser() error: %v", err)
+	}
+
+	ch, err := parser.CreateRawDataStream()
+	if err != nil {
+		t.Fatalf("CreateRawDataStream() error: %v", err)
+	}
+
+	<-ch
+	<-ch
+	_ = parser.Close()
+
+	for range ch {
+	}
+}
