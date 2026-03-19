@@ -254,7 +254,7 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 		heredoc.Docf(
 			`The Context to use for Parsing the input data.
 			Parser Context is a JSON string that contains the following keys:
-				- strategy: The strategy to use for parsing the file. Possible values are {CSV, JSON, NDJSON, EXCEL}
+				- strategy: The strategy to use for parsing the file. Possible values are {CSV, JSON, NDJSON, EXCEL, PARQUET}
 				- file_path: The path to the file to parse.
 				- on_error: Error handling behavior. "SKIP" (default) skips malformed records, "STOP" halts on first error.
 				- options: Strategy-specific settings (JSON object).
@@ -265,6 +265,7 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 				JSON:   -P '{"strategy":"JSON","file_path":"data.json"}'
 				NDJSON: -P '{"strategy":"NDJSON","file_path":"events.jsonl"}'
 				Excel:  -P '{"strategy":"EXCEL","file_path":"report.xlsx","options":{"sheet_name":"Sheet2"}}'
+				Parquet: -P '{"strategy":"PARQUET","file_path":"export.parquet"}'
 				Stop on error: add "on_error":"STOP" to any parser context
 			Eg. %s`,
 			ParserContextExampleJSON,

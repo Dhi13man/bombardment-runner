@@ -14,7 +14,7 @@
 
 // --- Enums (must stay in sync with app/src/models/enums/) ---
 
-export type ParserStrategy = 'CSV' | 'JSON' | 'NDJSON' | 'EXCEL' | 'PROTOBUF';
+export type ParserStrategy = 'CSV' | 'JSON' | 'NDJSON' | 'EXCEL' | 'PARQUET';
 
 export type OnErrorBehavior = 'SKIP' | 'STOP';
 
@@ -36,11 +36,6 @@ export interface ExcelParserOptions {
   sheet_name?: string;
 }
 
-export interface ProtobufParserOptions {
-  descriptor_set_path: string;
-  message_type: string;
-}
-
 // --- Request DTOs ---
 
 export interface ParserContext {
@@ -48,7 +43,7 @@ export interface ParserContext {
   file_path?: string;
   file_content_b64?: string;
   on_error?: OnErrorBehavior;
-  options?: CsvParserOptions | ExcelParserOptions | ProtobufParserOptions;
+  options?: CsvParserOptions | ExcelParserOptions;
 }
 
 export interface TransformerContext {

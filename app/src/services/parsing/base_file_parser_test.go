@@ -71,6 +71,22 @@ func TestCreateFileParser_EXCEL(t *testing.T) {
 	}
 }
 
+func TestCreateFileParser_PARQUET(t *testing.T) {
+	path := writeTempParquet(t, []testRow{{"x", 1, "y"}})
+	parser, err := CreateFileParser[map[string]string](modelsDtoParsing.ParserContext{
+		Strategy: modelsEnums.PARQUET,
+		FilePath: path,
+	})
+	if err != nil {
+		t.Fatalf("CreateFileParser(PARQUET) returned error: %v", err)
+	}
+	defer func() { _ = parser.Close() }()
+
+	if got := parser.GetStrategy(); got != modelsEnums.PARQUET {
+		t.Errorf("strategy: got %q, want %q", got, modelsEnums.PARQUET)
+	}
+}
+
 func TestCreateFileParser_InvalidStrategy(t *testing.T) {
 	_, err := CreateFileParser[map[string]string](modelsDtoParsing.ParserContext{
 		Strategy: modelsEnums.ParserStrategy("UNKNOWN"),
@@ -81,12 +97,3 @@ func TestCreateFileParser_InvalidStrategy(t *testing.T) {
 	}
 }
 
-func TestCreateFileParser_PROTOBUF(t *testing.T) {
-	_, err := CreateFileParser[map[string]string](modelsDtoParsing.ParserContext{
-		Strategy: modelsEnums.PROTOBUF,
-		FilePath: "irrelevant.bin",
-	})
-	if err == nil {
-		t.Fatal("expected error for unimplemented PROTOBUF parser, got nil")
-	}
-}

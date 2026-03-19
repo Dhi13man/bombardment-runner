@@ -8,7 +8,7 @@ import { formatFileSize } from '../../utils/format';
 import { detectJsonMode, detectDelimiter, detectStrategyFromExt } from '../../utils/detect';
 import type { ParserStrategy } from '../../types/api';
 
-type FormatGroup = 'CSV' | 'JSON' | 'EXCEL' | 'PROTOBUF';
+type FormatGroup = 'CSV' | 'JSON' | 'EXCEL' | 'PARQUET';
 
 const toFG = (s: ParserStrategy): FormatGroup => s === 'NDJSON' ? 'JSON' : s as FormatGroup;
 
@@ -16,11 +16,11 @@ const FMT_OPTS: RadioOption<FormatGroup>[] = [
   { value: 'CSV', label: 'CSV / Delimited', icon: 'file-input', description: 'Comma, tab, pipe, or custom delimiter' },
   { value: 'JSON', label: 'JSON', icon: 'file-code', description: 'Array or line-delimited (auto-detected)' },
   { value: 'EXCEL', label: 'Excel', icon: 'layers', description: '.xlsx spreadsheets' },
-  { value: 'PROTOBUF', label: 'Protocol Buffers', icon: 'code', description: 'Length-delimited protobuf', disabled: true, comingSoon: true },
+  { value: 'PARQUET', label: 'Parquet', icon: 'database', description: 'Apache Parquet columnar files' },
 ];
 
 const PATH_RE = /^(\.[/\\])?([a-zA-Z0-9_\-./\\]+)\.([a-zA-Z0-9]+)$/;
-const ACCEPT = '.csv,.tsv,.json,.jsonl,.ndjson,.xlsx,.pb,.binpb';
+const ACCEPT = '.csv,.tsv,.json,.jsonl,.ndjson,.xlsx,.parquet';
 const WARN_B = 50 * 1024 * 1024;
 const BLOCK_B = 100 * 1024 * 1024;
 
@@ -117,7 +117,7 @@ export function SourceStep() {
             <input ref={fileRef} type="file" accept={ACCEPT} class="hidden"
               aria-label="Upload data file" onChange={onFileSelect} />
             <p id="file-help" class="field-help">
-              <Icon name="info" class="w-3 h-3" />Supported: CSV, TSV, JSON, NDJSON, Excel
+              <Icon name="info" class="w-3 h-3" />Supported: CSV, TSV, JSON, NDJSON, Excel, Parquet
             </p>
           </div>
           <div aria-live="polite" class="sr-only">
@@ -210,28 +210,6 @@ export function SourceStep() {
             <p id="sheet-help" class="field-help">
               <Icon name="info" class="w-3 h-3" />Leave blank to use the first sheet
             </p>
-          </div>
-        )}
-        {fg === 'PROTOBUF' && (
-          <div class="mb-6 flex flex-col gap-4">
-            <div>
-              <label for="descriptor-path" class="label">Descriptor Set Path</label>
-              <input id="descriptor-path" class="input input-code" type="text" placeholder="./proto/descriptors.bin"
-                value={form.descriptorSetPath} onInput={(e) => update('descriptorSetPath', (e.target as HTMLInputElement).value)}
-                aria-describedby="desc-help" aria-required="true" />
-              <p id="desc-help" class="field-help">
-                <Icon name="info" class="w-3 h-3" />protoc --descriptor_set_out=descriptors.bin your.proto
-              </p>
-            </div>
-            <div>
-              <label for="message-type" class="label">Message Type</label>
-              <input id="message-type" class="input input-code" type="text" placeholder="api.v1.UserEvent"
-                value={form.messageType} onInput={(e) => update('messageType', (e.target as HTMLInputElement).value)}
-                aria-describedby="msg-help" aria-required="true" />
-              <p id="msg-help" class="field-help">
-                <Icon name="info" class="w-3 h-3" />Fully qualified protobuf message name
-              </p>
-            </div>
           </div>
         )}
       </div>

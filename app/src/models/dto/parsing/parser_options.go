@@ -9,9 +9,3 @@ type CsvParserOptions struct {
 type ExcelParserOptions struct {
 	SheetName string `json:"sheet_name,omitempty"` // Default: first sheet
 }
-
-// ProtobufParserOptions configures the Protocol Buffers parser.
-type ProtobufParserOptions struct {
-	DescriptorSetPath string `json:"descriptor_set_path"` // Path to compiled FileDescriptorSet
-	MessageType       string `json:"message_type"`        // Fully qualified name, e.g. "api.v1.UserEvent"
-}

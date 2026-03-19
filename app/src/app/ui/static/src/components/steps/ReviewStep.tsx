@@ -66,10 +66,6 @@ export function ReviewStep() {
   if (form.parserStrategy === 'EXCEL' && form.sheetName) {
     sourceRows.push({ label: 'Sheet', value: form.sheetName });
   }
-  if (form.parserStrategy === 'PROTOBUF' && form.messageType) {
-    sourceRows.push({ label: 'Message type', value: form.messageType, mono: true });
-  }
-
   // Transform summary
   const transformRows = [
     { label: 'Strategy', value: form.transformerStrategy },

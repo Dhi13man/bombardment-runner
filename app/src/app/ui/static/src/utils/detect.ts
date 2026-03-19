@@ -39,7 +39,7 @@ export function detectStrategyFromExt(ext: string | undefined): ParserStrategy |
     case 'json': return 'JSON';
     case 'jsonl': case 'ndjson': return 'NDJSON';
     case 'xlsx': return 'EXCEL';
-    case 'pb': case 'binpb': return 'PROTOBUF';
+    case 'parquet': return 'PARQUET';
     default: return null;
   }
 }
