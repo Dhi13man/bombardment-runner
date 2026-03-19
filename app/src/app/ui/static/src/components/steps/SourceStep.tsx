@@ -106,8 +106,8 @@ export function SourceStep() {
         <>
           <div class="mb-6">
             <label for="data-file" class="label">Data File</label>
-            <button id="data-file" type="button" class="input flex items-center gap-3"
-              style={{ textAlign: 'left', cursor: 'pointer', width: '100%' }}
+            <button id="data-file" type="button"
+              class="input flex items-center gap-3 text-left cursor-pointer w-full"
               onClick={() => fileRef.current?.click()} aria-describedby="file-help">
               <Icon name="upload" size="sm" class="text-text-secondary" />
               <span class={form.fileName ? '' : 'custom-select-placeholder'}>
@@ -156,7 +156,7 @@ export function SourceStep() {
           <label for="file-path" class="label">Server-side file path</label>
           <input id="file-path" class={`input input-code${pathErr ? ' input-error' : ''}`}
             type="text" placeholder="./data/records.csv" value={form.filePath}
-            onInput={onPathInput} aria-describedby="fp-help fp-err" aria-invalid={pathErr ? 'true' : undefined} />
+            onInput={onPathInput} aria-describedby="fp-help fp-err" {...(pathErr ? { 'aria-invalid': 'true' } : {})} />
           <p id="fp-help" class="field-help">
             <Icon name="folder" class="w-3 h-3" />Path relative to the server working directory
           </p>
