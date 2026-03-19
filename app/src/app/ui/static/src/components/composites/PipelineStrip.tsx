@@ -1,4 +1,6 @@
 import { Fragment } from 'preact';
+import { Icon } from '../Icon';
+import type { IconName } from '../Icon';
 import type { JobSnapshot } from '../../types/api';
 
 export interface PipelineStage {
@@ -18,6 +20,14 @@ export const DEFAULT_STAGES: PipelineStage[] = [
   { name: 'Batch', status: 'pending' },
   { name: 'Send', status: 'pending' },
 ];
+
+const STAGE_ICONS: Record<string, IconName> = {
+  Source: 'file-input',
+  Parse: 'list-checks',
+  Transform: 'sliders-horizontal',
+  Batch: 'layers',
+  Send: 'rocket',
+};
 
 function stageIndexFromProgress(pct: number): number {
   if (pct < 20) return 2;
@@ -51,19 +61,11 @@ export function deriveStages(job: JobSnapshot): PipelineStage[] {
   return buildStagesWithHighlight(names, pct, job.status === 'FAILED' ? 'error' : 'active');
 }
 
-export function PipelineStrip({ stages, compact = false }: PipelineStripProps) {
-  const mode = compact ? 'compact' : 'expanded';
-
-  const ariaLabel = stages
-    .map((s) => `${s.name}: ${s.status}`)
-    .join(', ');
+function CompactStrip({ stages }: { stages: PipelineStage[] }) {
+  const ariaLabel = stages.map((s) => `${s.name}: ${s.status}`).join(', ');
 
   return (
-    <div
-      class={`pipeline-strip ${mode}`}
-      role="list"
-      aria-label={`Pipeline: ${ariaLabel}`}
-    >
+    <div class="pipeline-strip compact" role="list" aria-label={`Pipeline: ${ariaLabel}`}>
       {stages.map((stage, i) => (
         <Fragment key={stage.name}>
           {i > 0 && (
@@ -72,18 +74,51 @@ export function PipelineStrip({ stages, compact = false }: PipelineStripProps) {
               aria-hidden="true"
             />
           )}
-          <div
-            class={`pipeline-stage ${stage.status}`}
-            role="listitem"
-            aria-label={`${stage.name}: ${stage.status}`}
-          >
+          <div class={`pipeline-stage ${stage.status}`} role="listitem" aria-label={`${stage.name}: ${stage.status}`}>
             <div class={`pipeline-node ${stage.status}`} />
-            {!compact && (
-              <span class="pipeline-label">{stage.name}</span>
-            )}
           </div>
         </Fragment>
       ))}
     </div>
   );
+}
+
+function ExpandedStrip({ stages }: { stages: PipelineStage[] }) {
+  const ariaLabel = stages.map((s) => `${s.name}: ${s.status}`).join(', ');
+
+  return (
+    <ol class="steps" aria-label={`Pipeline: ${ariaLabel}`}>
+      {stages.map((stage) => {
+        const cls = [
+          'step',
+          stage.status === 'active' && 'active',
+          stage.status === 'complete' && 'completed',
+          stage.status === 'error' && 'active',
+        ].filter(Boolean).join(' ');
+
+        const icon = STAGE_ICONS[stage.name];
+
+        return (
+          <li key={stage.name} class={cls}>
+            <div class="step-trigger">
+              <div class={`step-circle${stage.status === 'error' ? ' step-circle-error' : ''}`}>
+                {stage.status === 'complete' ? (
+                  <Icon name="check" size="sm" />
+                ) : icon ? (
+                  <Icon name={icon} size="sm" />
+                ) : (
+                  <span>{stage.name[0]}</span>
+                )}
+              </div>
+              <span class="step-label">{stage.name}</span>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+export function PipelineStrip({ stages, compact = false }: PipelineStripProps) {
+  return compact ? <CompactStrip stages={stages} /> : <ExpandedStrip stages={stages} />;
 }

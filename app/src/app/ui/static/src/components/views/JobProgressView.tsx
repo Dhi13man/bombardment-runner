@@ -192,19 +192,17 @@ export function JobProgressView() {
           </div>
         </div>
 
-        {/* Pipeline Strip */}
-        {job && (
-          <div class="mb-6">
-            <PipelineStrip stages={deriveStages(job)} />
-          </div>
-        )}
+        {/* Pipeline Strip (reuses wizard step indicator design) */}
+        {job && <PipelineStrip stages={deriveStages(job)} />}
 
-        {/* Progress Bar */}
-        <ProgressBar
-          value={pct}
-          status={progressStatus(status)}
-          label={`${pct.toFixed(1)}%`}
-        />
+        {/* Progress Bar (visible only while running) */}
+        {!done && (
+          <ProgressBar
+            value={pct}
+            status={progressStatus(status)}
+            label={`${pct.toFixed(1)}%`}
+          />
+        )}
 
         {/* Stat Cards Grid */}
         <div class="progress-stats">
