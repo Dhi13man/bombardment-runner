@@ -114,7 +114,6 @@ func TestOpenFileFromPathOrContent_WhenPathContainsTraversal_ThenReturnsError(t 
 	}{
 		{"parent directory", "../etc/passwd"},
 		{"nested traversal", "foo/../../etc/shadow"},
-		{"double dot in middle", "some/../path"},
 	}
 
 	for _, tt := range tests {
@@ -244,6 +243,10 @@ func TestGenerateSafeFilename_WhenSpecialChars_ThenStripsToAllowlist(t *testing.
 		{"unicode", "caf\u00e9.csv", "caf_.csv"},
 		{"slashes after base", "dir/sub/my@file#1.csv", "my_file_1.csv"},
 		{"rtl override", "file\u202e.csv", "file_.csv"},
+		{"all special chars", "!@#$%.csv", "_____.csv"},
+		{"hidden file preserved", ".gitignore", ".gitignore"},
+		{"dashes and underscores preserved", "my-file_v2.csv", "my-file_v2.csv"},
+		{"consecutive dots", "file..bak.csv", "file..bak.csv"},
 	}
 
 	for _, tt := range tests {
@@ -254,5 +257,102 @@ func TestGenerateSafeFilename_WhenSpecialChars_ThenStripsToAllowlist(t *testing.
 				t.Errorf("generateSafeFilename(%q): got %q, want suffix %q", tt.input, got, "_"+tt.wantSafe)
 			}
 		})
+	}
+}
+
+// --- ContainsPathTraversal ---
+
+func TestContainsPathTraversal_WhenVariousInputs_ThenDetectsCorrectly(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		path string
+		want bool
+	}{
+		{"parent directory", "../etc/passwd", true},
+		{"nested traversal", "foo/../../etc", true},
+		{"trailing double dot resolves to cwd", "path/..", false},
+		{"bare double dot", "..", true},
+		{"resolvable mid-path cleans away", "some/../path", false},
+		{"clean relative path", "data/file.csv", false},
+		{"absolute path", "/usr/local/bin", false},
+		{"single dot", "./file.csv", false},
+		{"empty string", "", false},
+		{"dot in filename", "file.name.csv", false},
+		{"consecutive dots in filename", "archive..tar.gz", false},
+		{"double dot prefix in filename", "..hidden", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Act
+			got := ContainsPathTraversal(tt.path)
+
+			// Assert
+			if got != tt.want {
+				t.Errorf("ContainsPathTraversal(%q) = %v, want %v", tt.path, got, tt.want)
+			}
+		})
+	}
+}
+
+// --- removeTempFile ---
+
+func TestRemoveTempFile_WhenEmptyPath_ThenNoOp(t *testing.T) {
+	t.Parallel()
+
+	// Act - should not panic
+	removeTempFile("")
+}
+
+func TestRemoveTempFile_WhenFileExists_ThenRemovesFile(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	tmpFile, err := os.CreateTemp(t.TempDir(), "remove-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp file: %v", err)
+	}
+	path := tmpFile.Name()
+	_ = tmpFile.Close()
+
+	// Act
+	removeTempFile(path)
+
+	// Assert
+	if _, statErr := os.Stat(path); !os.IsNotExist(statErr) {
+		t.Errorf("expected file %q to be removed, but it still exists", path)
+	}
+}
+
+func TestRemoveTempFile_WhenFileNotExists_ThenNoError(t *testing.T) {
+	t.Parallel()
+
+	// Act - should not panic on non-existent path
+	removeTempFile("/nonexistent/path/that/does/not/exist.tmp")
+}
+
+// --- MaxUploadSize enforcement ---
+
+func TestOpenFileFromPathOrContent_WhenBase64ExceedsMaxSize_ThenReturnsError(t *testing.T) {
+	t.Parallel()
+
+	// Arrange - create data slightly over MaxUploadSize
+	oversized := make([]byte, MaxUploadSize+1)
+	encoded := base64.StdEncoding.EncodeToString(oversized)
+
+	// Act
+	file, _, err := OpenFileFromPathOrContent("large.bin", encoded)
+
+	// Assert
+	if err == nil {
+		_ = file.Close()
+		t.Fatal("expected error for oversized upload, got nil")
+	}
+	if !strings.Contains(err.Error(), "exceeds maximum") {
+		t.Errorf("expected error to mention size limit, got: %v", err)
 	}
 }

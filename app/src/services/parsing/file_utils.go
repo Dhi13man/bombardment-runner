@@ -22,9 +22,17 @@ const allowedDataDir = "./data"
 // MaxUploadSize is the maximum decoded size for base64 file uploads (100MB).
 const MaxUploadSize = 100 * 1024 * 1024
 
-// ContainsPathTraversal checks if the given path contains directory traversal sequences.
+// ContainsPathTraversal checks if the cleaned path contains a ".." component,
+// indicating an attempt to escape the current directory. It uses filepath.Clean
+// first so that benign substrings like "file..txt" are not falsely rejected.
 func ContainsPathTraversal(path string) bool {
-	return strings.Contains(path, "..")
+	cleaned := filepath.Clean(path)
+	for _, part := range strings.Split(cleaned, string(filepath.Separator)) {
+		if part == ".." {
+			return true
+		}
+	}
+	return false
 }
 
 // OpenFileFromPathOrContent opens a file from either a file path or base64 encoded content.
