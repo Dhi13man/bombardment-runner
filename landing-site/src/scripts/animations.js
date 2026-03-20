@@ -6,7 +6,7 @@
 function initScrollReveals() {
   if (typeof CSS !== 'undefined' && CSS.supports && CSS.supports('animation-timeline: view()')) return;
 
-  var observer = new IntersectionObserver(function (entries) {
+  const observer = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       if (entry.isIntersecting) {
         entry.target.classList.add('visible');
@@ -29,10 +29,10 @@ function initScrollReveals() {
 
 // 2. Floating nav scroll behavior (RAF-throttled)
 function initNavScroll() {
-  var nav = document.querySelector('.nav');
+  const nav = document.querySelector('.nav');
   if (!nav) return;
 
-  var ticking = false;
+  let ticking = false;
   window.addEventListener('scroll', function () {
     if (!ticking) {
       requestAnimationFrame(function () {
@@ -46,15 +46,15 @@ function initNavScroll() {
 
 // 3. Mobile nav toggle
 function initMobileNav() {
-  var toggle = document.querySelector('.nav-toggle');
-  var nav = document.querySelector('.nav');
+  const toggle = document.querySelector('.nav-toggle');
+  const nav = document.querySelector('.nav');
   if (!toggle || !nav) return;
 
   toggle.addEventListener('click', function () {
-    var open = nav.classList.toggle('nav-open');
+    const open = nav.classList.toggle('nav-open');
     toggle.setAttribute('aria-expanded', String(open));
     if (open) {
-      var firstLink = nav.querySelector('.nav-links a');
+      const firstLink = nav.querySelector('.nav-links a');
       if (firstLink) firstLink.focus();
     }
   });
@@ -78,12 +78,12 @@ function initMobileNav() {
 // 4. Bento tile cursor tracking (attach/detach on enter/leave)
 function initBentoGlow() {
   document.querySelectorAll('.bento-tile').forEach(function (tile) {
-    var rafId = 0;
+    let rafId = 0;
 
     function onMove(e) {
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(function () {
-        var rect = tile.getBoundingClientRect();
+        const rect = tile.getBoundingClientRect();
         tile.style.setProperty('--mouse-x', (e.clientX - rect.left) + 'px');
         tile.style.setProperty('--mouse-y', (e.clientY - rect.top) + 'px');
       });
@@ -103,15 +103,15 @@ function initBentoGlow() {
 // 5. Generic tab controller (shared by segment control and screenshot tabs)
 function initTabs(opts) {
   document.querySelectorAll(opts.tablistSelector).forEach(function (tablist) {
-    var tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+    const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
 
     function activateTab(btn) {
-      var targetId = btn.getAttribute(opts.dataAttr);
-      var container = opts.getContainer(btn, tablist);
+      const targetId = btn.getAttribute(opts.dataAttr);
+      const container = opts.getContainer(btn, tablist);
       if (!container) return;
 
       tabs.forEach(function (t) {
-        var isActive = t === btn;
+        const isActive = t === btn;
         t.classList.toggle('active', isActive);
         t.setAttribute('aria-selected', String(isActive));
         t.setAttribute('tabindex', isActive ? '0' : '-1');
@@ -134,10 +134,10 @@ function initTabs(opts) {
     });
 
     tablist.addEventListener('keydown', function (e) {
-      var idx = tabs.indexOf(document.activeElement);
+      const idx = tabs.indexOf(document.activeElement);
       if (idx === -1) return;
 
-      var next = -1;
+      let next = -1;
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
         next = (idx + 1) % tabs.length;
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
@@ -180,15 +180,15 @@ function initScreenshotTabs() {
 function initCopyButtons() {
   document.querySelectorAll('.copy-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      var block = btn.closest('.cli-block, .install-cmd');
+      const block = btn.closest('.cli-block, .install-cmd');
       if (!block) return;
 
-      var code = block.querySelector('code');
+      const code = block.querySelector('code');
       if (!code) return;
 
       navigator.clipboard.writeText(code.textContent).then(function () {
         btn.classList.add('copied');
-        var label = btn.querySelector('.copy-label');
+        const label = btn.querySelector('.copy-label');
         if (label) label.textContent = 'Copied';
 
         setTimeout(function () {
@@ -197,12 +197,12 @@ function initCopyButtons() {
         }, 2000);
       }).catch(function () {
         // Fallback: select text for manual copy
-        var range = document.createRange();
+        const range = document.createRange();
         range.selectNodeContents(code);
-        var sel = window.getSelection();
+        const sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(range);
-        var label = btn.querySelector('.copy-label');
+        const label = btn.querySelector('.copy-label');
         if (label) label.textContent = 'Select + copy';
         setTimeout(function () {
           if (label) label.textContent = 'Copy';
@@ -214,12 +214,12 @@ function initCopyButtons() {
 
 // 7. Pipeline particle animation
 function initPipelineParticles() {
-  var mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
   if (mq.matches) return;
 
   document.querySelectorAll('.pipeline-step-connector').forEach(function (conn) {
-    for (var i = 0; i < 2; i++) {
-      var particle = document.createElement('span');
+    for (let i = 0; i < 2; i++) {
+      const particle = document.createElement('span');
       particle.className = 'data-particle';
       conn.appendChild(particle);
     }
@@ -228,10 +228,10 @@ function initPipelineParticles() {
 
 // 8. Pause off-screen infinite animations to save CPU/battery
 function initAnimationGating() {
-  var sections = document.querySelectorAll('.pipeline-detail, .scope');
+  const sections = document.querySelectorAll('.pipeline-detail, .scope');
   if (!sections.length) return;
 
-  var observer = new IntersectionObserver(function (entries) {
+  const observer = new IntersectionObserver(function (entries) {
     entries.forEach(function (entry) {
       entry.target.classList.toggle('in-view', entry.isIntersecting);
     });
