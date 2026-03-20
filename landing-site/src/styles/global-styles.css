@@ -1476,13 +1476,13 @@ section[id] {
     top: calc(100% + var(--space-2));
     left: 0;
     right: 0;
-    background: var(--glass-bg);
-    -webkit-backdrop-filter: blur(var(--glass-blur));
-    backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid var(--glass-border);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
     border-radius: var(--radius-lg);
     padding: var(--space-4);
     gap: var(--space-3);
+    box-shadow: 0 4px 24px rgb(0 0 0 / 15%);
+    z-index: 10;
   }
 
   .nav.nav-open .nav-links {
@@ -1491,6 +1491,10 @@ section[id] {
 
   .nav-toggle {
     display: block;
+  }
+
+  .theme-toggle {
+    margin-left: auto;
   }
 
   .hero-headline {
