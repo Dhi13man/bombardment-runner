@@ -1,110 +1,162 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Privacy Policy - Bombardment</title>
-    <meta name="description" content="Privacy Policy for Bombardment, the lightweight data migration automation tool. Learn how Bombardment handles your data with transparency and security.">
+    <meta name="description"
+        content="Privacy Policy for Bombardment, the open-source bulk API migration tool. All data processing happens locally on your machine.">
     <meta name="keywords" content="privacy policy, data migration, automation, golang tool, Bombardment">
     <meta name="author" content="Dhiman Seal">
     <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://bombardment.work/privacy-policy.html">
+    <meta name="theme-color" content="#0F1117" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)">
+
     <!-- Open Graph -->
     <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Bombardment">
+    <meta property="og:locale" content="en_US">
     <meta property="og:url" content="https://bombardment.work/privacy-policy.html">
     <meta property="og:title" content="Privacy Policy - Bombardment">
     <meta property="og:description" content="Learn how Bombardment protects your privacy and handles data locally.">
+    <meta property="og:image" content="https://bombardment.work/assets/og-image.png">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Privacy Policy - Bombardment">
+    <meta name="twitter:description" content="Learn how Bombardment protects your privacy and handles data locally.">
+    <meta name="twitter:image" content="https://bombardment.work/assets/og-image.png">
+
+    <!-- Fonts (self-hosted, no external dependency) -->
+    <link rel="stylesheet" href="fonts/fonts.css">
+
     <!-- Styles -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="src/styles/global-styles.css">
-    <!-- Favicon and App Icons -->
-    <link rel="icon" href="assets/favicon/favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="src/styles/global-styles.min.css">
+
+    <!-- Favicon -->
+    <link rel="icon" href="assets/favicon/favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
-    <link rel="manifest" href="data/site.webmanifest">
+    <link rel="manifest" href="assets/favicon/site.webmanifest">
 </head>
+
 <body>
+    <!-- Skip link -->
+    <a href="#main" class="skip-link">Skip to content</a>
+
+    <!-- Navbar -->
     <header>
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fa-solid fa-rocket floating"></i>
-                    <h1>Privacy Policy</h1>
-                </div>
-                <p class="subtitle">Transparency in how Bombardment handles your data</p>
-                <div class="cta-buttons">
-                    <a href="index.html" class="button primary-button">Back to Homepage</a>
-                </div>
-            </div>
+    <nav class="nav" aria-label="Main">
+        <a href="/" class="nav-logo">Bombardment</a>
+        <div class="nav-links" id="nav-links">
+            <a href="index.html">Home</a>
+            <a href="https://github.com/Dhi13man/bombardment-runner" class="nav-cta" rel="noopener">
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    aria-hidden="true">
+                    <path
+                        d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+                    <path d="M9 18c-4.51 2-5-2-7-2" />
+                </svg>
+                GitHub
+            </a>
         </div>
+        <button type="button" class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="nav-links">
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <line x1="4" x2="20" y1="12" y2="12" />
+                <line x1="4" x2="20" y1="6" y2="6" />
+                <line x1="4" x2="20" y1="18" y2="18" />
+            </svg>
+        </button>
+    </nav>
     </header>
 
-    <section>
+    <main id="main" tabindex="-1">
+        <section class="privacy-page-content">
+            <div class="container">
+                <h1 class="privacy-page-title">Privacy Policy</h1>
+                <div class="card table-of-contents">
+                    <h2>Table of Contents</h2>
+                    <ul>
+                        <li><a href="#introduction">Introduction</a></li>
+                        <li><a href="#info-collected">Information We Collect</a></li>
+                        <li><a href="#processing">Data Processing</a></li>
+                        <li><a href="#sharing">Data Sharing and Third Parties</a></li>
+                        <li><a href="#rights">Your Privacy Rights</a></li>
+                        <li><a href="#changes">Changes to This Policy</a></li>
+                        <li><a href="#contact">Contact Us</a></li>
+                    </ul>
+                </div>
+
+                <div class="card" id="introduction">
+                    <h2>1. Introduction</h2>
+                    <p>Bombardment is a CLI tool designed to perform data migrations and transformations on your local
+                        machine. We value your privacy and aim for complete transparency in our operations.</p>
+                </div>
+
+                <div class="card" id="info-collected">
+                    <h2>2. Information We Collect</h2>
+                    <p>Bombardment does not collect any personal or usage data. All configurations, logs, and operations
+                        occur on your system. We do not track or send any data externally.</p>
+                </div>
+
+                <div class="card" id="processing">
+                    <h2>3. Data Processing</h2>
+                    <p>All processing and transformation of your data are performed locally within the tool on your
+                        machine. No external services or servers are involved unless you configure and invoke custom
+                        channels.</p>
+                </div>
+
+                <div class="card" id="sharing">
+                    <h2>4. Data Sharing and Third Parties</h2>
+                    <p>Bombardment does not share your data with any third parties. If you choose to integrate external
+                        endpoints (e.g., REST or gRPC targets), any data sent is directed by you to those endpoints,
+                        governed by their privacy policies.</p>
+                </div>
+
+                <div class="card" id="rights">
+                    <h2>5. Your Privacy Rights</h2>
+                    <p>You have full control over every aspect of Bombardment:</p>
+                    <ul>
+                        <li><strong>Configuration:</strong> All settings are stored in files you manage.</li>
+                        <li><strong>Logs:</strong> Access or delete migration logs at any time.</li>
+                        <li><strong>Uninstallation:</strong> Remove the tool to eliminate all local configurations and
+                            data.</li>
+                    </ul>
+                </div>
+
+                <div class="card" id="changes">
+                    <h2>6. Changes to This Policy</h2>
+                    <p>We may update this policy periodically. Any changes will be reflected on this page with a new
+                        "Last Updated" date.</p>
+                </div>
+
+                <div class="card" id="contact">
+                    <h2>7. Contact Us</h2>
+                    <p>For any questions about this Privacy Policy, please reach out:</p>
+                    <ul>
+                        <li>Email: <a href="mailto:dhiman.seal@hotmail.com">dhiman.seal@hotmail.com</a></li>
+                        <li>Website: <a href="https://bombardment.work">bombardment.work</a></li>
+                    </ul>
+                </div>
+
+                <p class="last-updated">Last Updated: April 22, 2025</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
         <div class="container">
-            <div class="card table-of-contents">
-                <h3>Table of Contents</h3>
-                <ul>
-                    <li><a href="#introduction">Introduction</a></li>
-                    <li><a href="#info-collected">Information We Collect</a></li>
-                    <li><a href="#processing">Data Processing</a></li>
-                    <li><a href="#sharing">Data Sharing and Third Parties</a></li>
-                    <li><a href="#rights">Your Privacy Rights</a></li>
-                    <li><a href="#changes">Changes to This Policy</a></li>
-                    <li><a href="#contact">Contact Us</a></li>
-                </ul>
-            </div>
-
-            <div class="privacy-section card" id="introduction">
-                <h2>1. Introduction</h2>
-                <p>Bombardment is a CLI tool designed to perform data migrations and transformations on your local machine. We value your privacy and aim for complete transparency in our operations.</p>
-            </div>
-
-            <div class="privacy-section card" id="info-collected">
-                <h2>2. Information We Collect</h2>
-                <p>Bombardment does not collect any personal or usage data. All configurations, logs, and operations occur on your system. We do not track or send any data externally.</p>
-            </div>
-
-            <div class="privacy-section card" id="processing">
-                <h2>3. Data Processing</h2>
-                <p>All processing and transformation of your data are performed locally within the tool on your machine. No external services or servers are involved unless you configure and invoke custom channels.</p>
-            </div>
-
-            <div class="privacy-section card" id="sharing">
-                <h2>4. Data Sharing and Third Parties</h2>
-                <p>Bombardment does not share your data with any third parties. If you choose to integrate external endpoints (e.g., REST or gRPC targets), any data sent is directed by you to those endpoints, governed by their privacy policies.</p>
-            </div>
-
-            <div class="privacy-section card" id="rights">
-                <h2>5. Your Privacy Rights</h2>
-                <p>You have full control over every aspect of Bombardment:</p>
-                <ul>
-                    <li><strong>Configuration:</strong> All settings are stored in files you manage.</li>
-                    <li><strong>Logs:</strong> Access or delete migration logs at any time.</li>
-                    <li><strong>Uninstallation:</strong> Remove the tool to eliminate all local configurations and data.</li>
-                </ul>
-            </div>
-
-            <div class="privacy-section card" id="changes">
-                <h2>6. Changes to This Policy</h2>
-                <p>We may update this policy periodically. Any changes will be reflected on this page with a new "Last Updated" date.</p>
-            </div>
-
-            <div class="privacy-section card" id="contact">
-                <h2>7. Contact Us</h2>
-                <p>For any questions about this Privacy Policy, please reach out:</p>
-                <ul>
-                    <li>Email: <a href="mailto:dhiman.seal@hotmail.com">dhiman.seal@hotmail.com</a></li>
-                    <li>Website: <a href="https://bombardment.work">bombardment.work</a></li>
-                </ul>
-            </div>
-
-            <p class="last-updated">Last Updated: April 22, 2025</p>
-        </div>
-    </section>
-
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Bombardment. All rights reserved.</p>
+            <p>&copy; 2025-2026 Bombardment. Open source under the
+                <a href="https://github.com/Dhi13man/bombardment-runner/blob/main/LICENSE" rel="noopener">MIT License</a>.
+            </p>
         </div>
     </footer>
+
+    <script src="src/scripts/animations.min.js"></script>
 </body>
+
 </html>

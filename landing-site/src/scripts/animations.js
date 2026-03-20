@@ -1,183 +1,295 @@
 /**
- * Bombardment Website Animation Scripts
- * Contains all animation-related scripts and interactive functionality
+ * Bombardment Landing Page - Interactions & Animations
  */
 
-// Animation constants for typing effect
-const ANIMATION = {
-    TYPING: {
-        SPEED: 40,           // Speed for typing characters (ms)
-        DELETE_SPEED: 20,    // Speed for deleting characters (ms)
-        PAUSE_DURATION: 1200, // How long to pause at the end of a phrase (ms) 
-        INITIAL_DELAY: 300   // Delay before starting the animation (ms)
-    }
-};
+// 1. Scroll reveal fallback (browsers without CSS animation-timeline)
+function initScrollReveals() {
+  if (typeof CSS !== 'undefined' && CSS.supports && CSS.supports('animation-timeline: view()')) return;
 
-// Subtitle typing animation
-const subtitles = [
-    "No more random last-minute scripts",
-    "Switch to no-code, performant, data migrations",
-    "Transform your data migration process",
-    "Fast, lightweight and scalable data processing",
-    "Process data in batches concurrently",
-    "Client-side load balancing built-in",
-    "Modular design for easy extension",
-    "Multiple channels for target systems",
-    "Golang powered: for maximum performance"
-];
+  const observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
 
-// State variables for typing animation
-let currentSubtitleIndex = 0;
-let currentCharIndex = 0;
-let isDeleting = false;
-let typingSpeed = ANIMATION.TYPING.SPEED;
+  document.querySelectorAll('.reveal').forEach(function (el) {
+    observer.observe(el);
+  });
 
-function typeSubtitle() {
-    const subtitleElement = document.querySelector('.typing-animation');
-    if (!subtitleElement) return;
-
-    const currentText = subtitles[currentSubtitleIndex];
-    
-    if (isDeleting) {
-        // Deleting text
-        subtitleElement.textContent = currentText.substring(0, currentCharIndex - 1);
-        currentCharIndex--;
-        typingSpeed = ANIMATION.TYPING.DELETE_SPEED;
-    } else {
-        // Typing text
-        subtitleElement.textContent = currentText.substring(0, currentCharIndex + 1);
-        currentCharIndex++;
-        typingSpeed = ANIMATION.TYPING.SPEED;
-    }
-    
-    // Check if completed typing the current subtitle
-    if (!isDeleting && currentCharIndex === currentText.length) {
-        // Pause at the end of typing before starting to delete
-        isDeleting = true;
-        typingSpeed = ANIMATION.TYPING.PAUSE_DURATION;
-    } else if (isDeleting && currentCharIndex === 1) {
-        // Move to the next subtitle
-        isDeleting = false;
-        currentSubtitleIndex = (currentSubtitleIndex + 1) % subtitles.length;
-    }
-    
-    setTimeout(typeSubtitle, typingSpeed);
+  // Safety fallback: force-reveal after 3s if observer never fires
+  setTimeout(function () {
+    document.querySelectorAll('.reveal:not(.visible)').forEach(function (el) {
+      el.classList.add('visible');
+    });
+  }, 3000);
 }
 
-// Copy to clipboard functionality
-function copyToClipboard(elementId) {
-    const element = document.getElementById(elementId);
-    const text = element.textContent;
+// 2. Floating nav scroll behavior (RAF-throttled)
+function initNavScroll() {
+  const nav = document.querySelector('.nav');
+  if (!nav) return;
 
-    navigator.clipboard.writeText(text).then(() => {
-        const button = element.parentElement.querySelector('.copy-button');
-        const originalIcon = button.innerHTML;
-        button.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+  let ticking = false;
+  window.addEventListener('scroll', function () {
+    if (!ticking) {
+      requestAnimationFrame(function () {
+        nav.classList.toggle('scrolled', window.scrollY > 100);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+}
 
-        setTimeout(() => {
-            button.innerHTML = originalIcon;
+// 3. Mobile nav toggle
+function initMobileNav() {
+  const toggle = document.querySelector('.nav-toggle');
+  const nav = document.querySelector('.nav');
+  if (!toggle || !nav) return;
+
+  toggle.addEventListener('click', function () {
+    const open = nav.classList.toggle('nav-open');
+    toggle.setAttribute('aria-expanded', String(open));
+    if (open) {
+      const firstLink = nav.querySelector('.nav-links a');
+      if (firstLink) firstLink.focus();
+    }
+  });
+
+  nav.querySelectorAll('.nav-links a').forEach(function (link) {
+    link.addEventListener('click', function () {
+      nav.classList.remove('nav-open');
+      toggle.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && nav.classList.contains('nav-open')) {
+      nav.classList.remove('nav-open');
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.focus();
+    }
+  });
+}
+
+// 4. Bento tile cursor tracking (attach/detach on enter/leave)
+function initBentoGlow() {
+  document.querySelectorAll('.bento-tile').forEach(function (tile) {
+    let rafId = 0;
+
+    function onMove(e) {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(function () {
+        const rect = tile.getBoundingClientRect();
+        tile.style.setProperty('--mouse-x', (e.clientX - rect.left) + 'px');
+        tile.style.setProperty('--mouse-y', (e.clientY - rect.top) + 'px');
+      });
+    }
+
+    tile.addEventListener('pointerenter', function () {
+      tile.addEventListener('pointermove', onMove);
+    });
+
+    tile.addEventListener('pointerleave', function () {
+      tile.removeEventListener('pointermove', onMove);
+      cancelAnimationFrame(rafId);
+    });
+  });
+}
+
+// 5. Generic tab controller (shared by segment control and screenshot tabs)
+function initTabs(opts) {
+  document.querySelectorAll(opts.tablistSelector).forEach(function (tablist) {
+    const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+
+    function activateTab(btn) {
+      const targetId = btn.getAttribute(opts.dataAttr);
+      const container = opts.getContainer(btn, tablist);
+      if (!container) return;
+
+      tabs.forEach(function (t) {
+        const isActive = t === btn;
+        t.classList.toggle('active', isActive);
+        t.setAttribute('aria-selected', String(isActive));
+        t.setAttribute('tabindex', isActive ? '0' : '-1');
+      });
+
+      container.querySelectorAll(opts.panelSelector).forEach(function (panel) {
+        if (opts.useHidden) {
+          panel.hidden = panel.id !== targetId;
+        } else {
+          panel.classList.toggle('active', panel.id === targetId);
+        }
+      });
+
+      btn.focus();
+    }
+
+    tabs.forEach(function (btn, i) {
+      btn.setAttribute('tabindex', i === 0 ? '0' : '-1');
+      btn.addEventListener('click', function () { activateTab(btn); });
+    });
+
+    tablist.addEventListener('keydown', function (e) {
+      const idx = tabs.indexOf(document.activeElement);
+      if (idx === -1) return;
+
+      let next = -1;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        next = (idx + 1) % tabs.length;
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        next = (idx - 1 + tabs.length) % tabs.length;
+      } else if (e.key === 'Home') {
+        next = 0;
+      } else if (e.key === 'End') {
+        next = tabs.length - 1;
+      }
+
+      if (next !== -1) {
+        e.preventDefault();
+        activateTab(tabs[next]);
+      }
+    });
+  });
+}
+
+function initSegmentControl() {
+  initTabs({
+    tablistSelector: '[role="tablist"].segment-control',
+    dataAttr: 'data-tab',
+    panelSelector: '.demo-panel',
+    useHidden: true,
+    getContainer: function (btn) { return btn.closest('section'); }
+  });
+}
+
+function initScreenshotTabs() {
+  initTabs({
+    tablistSelector: '.screenshot-tabs[role="tablist"]',
+    dataAttr: 'data-screenshot',
+    panelSelector: '.screenshot-content',
+    useHidden: false,
+    getContainer: function (btn, tablist) { return tablist.closest('.demo-panel') || tablist.parentElement; }
+  });
+}
+
+// 6. Copy to clipboard
+function initCopyButtons() {
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const block = btn.closest('.cli-block, .install-cmd');
+      if (!block) return;
+
+      const code = block.querySelector('code');
+      if (!code) return;
+
+      navigator.clipboard.writeText(code.textContent).then(function () {
+        btn.classList.add('copied');
+        btn.setAttribute('aria-label', 'Copied');
+        setTimeout(function () {
+          btn.classList.remove('copied');
+          btn.setAttribute('aria-label', 'Copy to clipboard');
         }, 2000);
-    }).catch(err => {
-        console.error('Failed to copy text: ', err);
-        alert('Failed to copy text. Please try again.');
+      }).catch(function () {
+        // Fallback: select text for manual copy
+        const range = document.createRange();
+        range.selectNodeContents(code);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      });
     });
+  });
 }
 
-// Setup tab switching functionality
-function setupTabSwitching() {
-    document.querySelectorAll('.code-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            const tabId = tab.getAttribute('data-tab');
+// 7. Pipeline particle animation
+function initPipelineParticles() {
+  const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (mq.matches) return;
 
-            // Deactivate all tabs
-            document.querySelectorAll('.code-tab').forEach(t => {
-                t.classList.remove('active');
-            });
-            document.querySelectorAll('.code-content').forEach(c => {
-                c.classList.remove('active');
-            });
-
-            // Activate the clicked tab
-            tab.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
-
-            // Rehighlight the code
-            Prism.highlightAll();
-        });
-    });
-}
-
-// Setup fade-in animations using Intersection Observer
-function setupFadeInAnimations() {
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-                observer.unobserve(entry.target);
-            }
-        });
-    }, {
-        root: null,
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    });
-
-    document.querySelectorAll('.fade-in').forEach(element => {
-        observer.observe(element);
-    });
-}
-
-// Usage tab switching functionality
-function showUsageTab(tabId) {
-    // Hide all tabs
-    document.querySelectorAll('.usage-tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    
-    // Deactivate all tab buttons
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.classList.remove('active');
-    });
-    
-    // Show the selected tab
-    document.getElementById(tabId).classList.add('active');
-    
-    // Activate the clicked button
-    document.querySelector(`.tab-button[onclick="showUsageTab('${tabId}')"]`).classList.add('active');
-}
-
-// Screenshot tab switching functionality
-function showScreenshot(screenshotId) {
-    // Hide all screenshot content
-    document.querySelectorAll('.screenshot-content').forEach(content => {
-        content.classList.remove('active');
-    });
-
-    // Deactivate all screenshot tab buttons
-    document.querySelectorAll('.screenshot-tab').forEach(button => {
-        button.classList.remove('active');
-    });
-
-    // Show the selected screenshot
-    document.getElementById(screenshotId).classList.add('active');
-
-    // Activate the clicked button
-    document.querySelector(`.screenshot-tab[onclick="showScreenshot('${screenshotId}')"]`).classList.add('active');
-}
-
-// Initialize all functionality when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Start the typing animation with a small delay
-    setTimeout(typeSubtitle, 500);
-    
-    // Setup tab switching if tabs exist
-    setupTabSwitching();
-    
-    // Setup fade-in animations
-    setupFadeInAnimations();
-    
-    // Initialize Prism.js syntax highlighting
-    if (typeof Prism !== 'undefined') {
-        Prism.highlightAll();
+  document.querySelectorAll('.pipeline-step-connector').forEach(function (conn) {
+    for (let i = 0; i < 2; i++) {
+      const particle = document.createElement('span');
+      particle.className = 'data-particle';
+      conn.appendChild(particle);
     }
+  });
+}
+
+// 8. Pause off-screen infinite animations to save CPU/battery
+function initAnimationGating() {
+  const sections = document.querySelectorAll('.pipeline-detail, .scope');
+  if (!sections.length) return;
+
+  const observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      entry.target.classList.toggle('in-view', entry.isIntersecting);
+    });
+  }, { threshold: 0 });
+
+  sections.forEach(function (s) { observer.observe(s); });
+}
+
+// 9. Theme toggle
+function initThemeToggle() {
+  var btn = document.querySelector('.theme-toggle');
+  if (!btn) return;
+
+  // Query by srcset content (stable) rather than media attribute (mutated by syncScreenshots)
+  var darkSources = document.querySelectorAll('picture source[srcset*="-dark"]');
+
+  function currentTheme() {
+    return document.documentElement.getAttribute('data-theme') || 'dark';
+  }
+
+  function syncScreenshots(theme) {
+    darkSources.forEach(function (src) {
+      src.media = theme === 'light' ? 'not all' : 'all';
+    });
+  }
+
+  function updateAriaLabel(theme) {
+    btn.setAttribute('aria-label', 'Switch to ' + (theme === 'dark' ? 'light' : 'dark') + ' theme');
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    syncScreenshots(theme);
+    updateAriaLabel(theme);
+  }
+
+  // Sync on load (FOUC script already set data-theme)
+  syncScreenshots(currentTheme());
+  updateAriaLabel(currentTheme());
+
+  btn.addEventListener('click', function () {
+    var next = currentTheme() === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+  });
+
+  // Follow OS preference changes when user has no stored preference
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function (e) {
+    if (!localStorage.getItem('theme')) {
+      applyTheme(e.matches ? 'light' : 'dark');
+    }
+  });
+}
+
+// Init all on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function () {
+  document.body.classList.add('js-ready');
+  initScrollReveals();
+  initNavScroll();
+  initMobileNav();
+  initBentoGlow();
+  initSegmentControl();
+  initScreenshotTabs();
+  initCopyButtons();
+  initPipelineParticles();
+  initAnimationGating();
+  initThemeToggle();
 });
