@@ -188,12 +188,10 @@ function initCopyButtons() {
 
       navigator.clipboard.writeText(code.textContent).then(function () {
         btn.classList.add('copied');
-        const label = btn.querySelector('.copy-label');
-        if (label) label.textContent = 'Copied';
-
+        btn.setAttribute('aria-label', 'Copied');
         setTimeout(function () {
           btn.classList.remove('copied');
-          if (label) label.textContent = 'Copy';
+          btn.setAttribute('aria-label', 'Copy to clipboard');
         }, 2000);
       }).catch(function () {
         // Fallback: select text for manual copy
@@ -202,11 +200,6 @@ function initCopyButtons() {
         const sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(range);
-        const label = btn.querySelector('.copy-label');
-        if (label) label.textContent = 'Select + copy';
-        setTimeout(function () {
-          if (label) label.textContent = 'Copy';
-        }, 3000);
       });
     });
   });
