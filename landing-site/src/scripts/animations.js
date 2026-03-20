@@ -100,24 +100,29 @@ function initBentoGlow() {
   });
 }
 
-// 5. Segment control (tab switching with keyboard navigation)
-function initSegmentControl() {
-  document.querySelectorAll('[role="tablist"].segment-control').forEach(function (tablist) {
+// 5. Generic tab controller (shared by segment control and screenshot tabs)
+function initTabs(opts) {
+  document.querySelectorAll(opts.tablistSelector).forEach(function (tablist) {
     var tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
 
     function activateTab(btn) {
-      var tab = btn.getAttribute('data-tab');
-      var parent = btn.closest('section');
-      if (!parent) return;
+      var targetId = btn.getAttribute(opts.dataAttr);
+      var container = opts.getContainer(btn, tablist);
+      if (!container) return;
 
-      tabs.forEach(function (b) {
-        b.classList.toggle('active', b === btn);
-        b.setAttribute('aria-selected', String(b === btn));
-        b.setAttribute('tabindex', b === btn ? '0' : '-1');
+      tabs.forEach(function (t) {
+        var isActive = t === btn;
+        t.classList.toggle('active', isActive);
+        t.setAttribute('aria-selected', String(isActive));
+        t.setAttribute('tabindex', isActive ? '0' : '-1');
       });
 
-      parent.querySelectorAll('.demo-panel').forEach(function (panel) {
-        panel.hidden = panel.id !== tab;
+      container.querySelectorAll(opts.panelSelector).forEach(function (panel) {
+        if (opts.useHidden) {
+          panel.hidden = panel.id !== targetId;
+        } else {
+          panel.classList.toggle('active', panel.id === targetId);
+        }
       });
 
       btn.focus();
@@ -151,48 +156,23 @@ function initSegmentControl() {
   });
 }
 
-// 6. Screenshot tabs (event delegation with keyboard nav)
+function initSegmentControl() {
+  initTabs({
+    tablistSelector: '[role="tablist"].segment-control',
+    dataAttr: 'data-tab',
+    panelSelector: '.demo-panel',
+    useHidden: true,
+    getContainer: function (btn) { return btn.closest('section'); }
+  });
+}
+
 function initScreenshotTabs() {
-  document.querySelectorAll('.screenshot-tabs[role="tablist"]').forEach(function (tablist) {
-    var tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
-
-    function activateTab(btn) {
-      var targetId = btn.getAttribute('data-screenshot');
-      var container = tablist.closest('.demo-panel') || tablist.parentElement;
-
-      tabs.forEach(function (t) {
-        t.classList.toggle('active', t === btn);
-        t.setAttribute('aria-selected', String(t === btn));
-        t.setAttribute('tabindex', t === btn ? '0' : '-1');
-      });
-
-      container.querySelectorAll('.screenshot-content').forEach(function (c) {
-        c.classList.toggle('active', c.id === targetId);
-      });
-
-      btn.focus();
-    }
-
-    tabs.forEach(function (btn, i) {
-      btn.setAttribute('tabindex', i === 0 ? '0' : '-1');
-      btn.addEventListener('click', function () { activateTab(btn); });
-    });
-
-    tablist.addEventListener('keydown', function (e) {
-      var idx = tabs.indexOf(document.activeElement);
-      if (idx === -1) return;
-
-      var next = -1;
-      if (e.key === 'ArrowRight') next = (idx + 1) % tabs.length;
-      else if (e.key === 'ArrowLeft') next = (idx - 1 + tabs.length) % tabs.length;
-      else if (e.key === 'Home') next = 0;
-      else if (e.key === 'End') next = tabs.length - 1;
-
-      if (next !== -1) {
-        e.preventDefault();
-        activateTab(tabs[next]);
-      }
-    });
+  initTabs({
+    tablistSelector: '.screenshot-tabs[role="tablist"]',
+    dataAttr: 'data-screenshot',
+    panelSelector: '.screenshot-content',
+    useHidden: false,
+    getContainer: function (btn, tablist) { return tablist.closest('.demo-panel') || tablist.parentElement; }
   });
 }
 
@@ -200,7 +180,7 @@ function initScreenshotTabs() {
 function initCopyButtons() {
   document.querySelectorAll('.copy-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      var block = btn.closest('.cli-block, .quickstart-card');
+      var block = btn.closest('.cli-block, .install-cmd');
       if (!block) return;
 
       var code = block.querySelector('code');
@@ -232,7 +212,7 @@ function initPipelineParticles() {
   var mq = window.matchMedia('(prefers-reduced-motion: reduce)');
   if (mq.matches) return;
 
-  document.querySelectorAll('.pipeline-connector, .pipeline-step-connector').forEach(function (conn) {
+  document.querySelectorAll('.pipeline-step-connector').forEach(function (conn) {
     for (var i = 0; i < 2; i++) {
       var particle = document.createElement('span');
       particle.className = 'data-particle';

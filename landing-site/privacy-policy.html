@@ -40,7 +40,7 @@
     <!-- Navbar -->
     <nav class="nav" aria-label="Main">
         <a href="index.html" class="nav-logo">Bombardment</a>
-        <div class="nav-links">
+        <div class="nav-links" id="nav-links">
             <a href="index.html">Home</a>
             <a href="https://github.com/Dhi13man/bombardment-runner" class="nav-cta">
                 <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -53,7 +53,7 @@
                 GitHub
             </a>
         </div>
-        <button class="nav-toggle" aria-label="Menu" aria-expanded="false">
+        <button type="button" class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="nav-links">
             <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                 aria-hidden="true">
@@ -64,9 +64,10 @@
         </button>
     </nav>
 
-    <main id="main">
+    <main id="main" tabindex="-1">
         <section class="privacy-page-content">
             <div class="container">
+                <h1 class="privacy-page-title">Privacy Policy</h1>
                 <div class="card table-of-contents">
                     <h3>Table of Contents</h3>
                     <ul>
@@ -145,6 +146,7 @@
         </div>
     </footer>
 
+    <script src="src/scripts/animations.js"></script>
 </body>
 
 </html>

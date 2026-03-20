@@ -270,14 +270,14 @@ bombardment cli \
 
                 <div class="demo-panel" id="gui" role="tabpanel" aria-labelledby="tab-gui">
                     <div class="screenshot-tabs" role="tablist">
-                        <button class="screenshot-tab active" data-screenshot="ss-source" type="button" role="tab" aria-selected="true" aria-controls="ss-source">1. Source</button>
-                        <button class="screenshot-tab" data-screenshot="ss-transform" type="button" role="tab" aria-selected="false" aria-controls="ss-transform">2. Transform</button>
-                        <button class="screenshot-tab" data-screenshot="ss-target" type="button" role="tab" aria-selected="false" aria-controls="ss-target">3. Target</button>
-                        <button class="screenshot-tab" data-screenshot="ss-review" type="button" role="tab" aria-selected="false" aria-controls="ss-review">4. Review</button>
-                        <button class="screenshot-tab" data-screenshot="ss-progress" type="button" role="tab" aria-selected="false" aria-controls="ss-progress">5. Progress</button>
+                        <button class="screenshot-tab active" id="tab-ss-source" data-screenshot="ss-source" type="button" role="tab" aria-selected="true" aria-controls="ss-source">1. Source</button>
+                        <button class="screenshot-tab" id="tab-ss-transform" data-screenshot="ss-transform" type="button" role="tab" aria-selected="false" aria-controls="ss-transform">2. Transform</button>
+                        <button class="screenshot-tab" id="tab-ss-target" data-screenshot="ss-target" type="button" role="tab" aria-selected="false" aria-controls="ss-target">3. Target</button>
+                        <button class="screenshot-tab" id="tab-ss-review" data-screenshot="ss-review" type="button" role="tab" aria-selected="false" aria-controls="ss-review">4. Review</button>
+                        <button class="screenshot-tab" id="tab-ss-progress" data-screenshot="ss-progress" type="button" role="tab" aria-selected="false" aria-controls="ss-progress">5. Progress</button>
                     </div>
 
-                    <div id="ss-source" class="screenshot-content active" role="tabpanel">
+                    <div id="ss-source" class="screenshot-content active" role="tabpanel" aria-labelledby="tab-ss-source">
                         <div class="device-frame">
                             <div class="device-frame-bar">
                                 <span class="device-frame-dot"></span>
@@ -294,7 +294,7 @@ bombardment cli \
                         <p class="screenshot-description">Choose your data format (CSV, JSON, Excel, Parquet)
                             and upload a file or enter a server-side path.</p>
                     </div>
-                    <div id="ss-transform" class="screenshot-content" role="tabpanel">
+                    <div id="ss-transform" class="screenshot-content" role="tabpanel" aria-labelledby="tab-ss-transform">
                         <div class="device-frame">
                             <div class="device-frame-bar">
                                 <span class="device-frame-dot"></span>
@@ -310,7 +310,7 @@ bombardment cli \
                         <p class="screenshot-description">Define JSONata expressions to shape each record into an HTTP
                             request: method, endpoint, headers, and body.</p>
                     </div>
-                    <div id="ss-target" class="screenshot-content" role="tabpanel">
+                    <div id="ss-target" class="screenshot-content" role="tabpanel" aria-labelledby="tab-ss-target">
                         <div class="device-frame">
                             <div class="device-frame-bar">
                                 <span class="device-frame-dot"></span>
@@ -327,7 +327,7 @@ bombardment cli \
                         <p class="screenshot-description">Configure HTTP client settings, load balancing strategy,
                             target URLs, and batch processing options.</p>
                     </div>
-                    <div id="ss-review" class="screenshot-content" role="tabpanel">
+                    <div id="ss-review" class="screenshot-content" role="tabpanel" aria-labelledby="tab-ss-review">
                         <div class="device-frame">
                             <div class="device-frame-bar">
                                 <span class="device-frame-dot"></span>
@@ -343,7 +343,7 @@ bombardment cli \
                         <p class="screenshot-description">Review your full configuration with validation checks before
                             launching the bombardment.</p>
                     </div>
-                    <div id="ss-progress" class="screenshot-content" role="tabpanel">
+                    <div id="ss-progress" class="screenshot-content" role="tabpanel" aria-labelledby="tab-ss-progress">
                         <div class="device-frame">
                             <div class="device-frame-bar">
                                 <span class="device-frame-dot"></span>
@@ -557,9 +557,6 @@ bombardment cli \
                 </div>
             </div>
         </section>
-
-
-
     </main>
 
     <footer class="footer">
