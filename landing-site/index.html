@@ -37,6 +37,11 @@
     <!-- Fonts (self-hosted, no external dependency) -->
     <link rel="stylesheet" href="fonts/fonts.css">
 
+    <!-- Theme (prevent FOUC: always resolve data-theme before CSS loads) -->
+    <script>
+    (function(){var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme:light)').matches?'light':'dark';document.documentElement.setAttribute('data-theme',t)})();
+    </script>
+
     <!-- Styles -->
     <link rel="stylesheet" href="src/styles/global-styles.min.css">
 
@@ -94,6 +99,10 @@
                 </svg>
                 GitHub
             </a>
+            <button type="button" class="theme-toggle" aria-label="Switch to light theme">
+                <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            </button>
         </div>
         <button type="button" class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="nav-links">
             <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -117,8 +126,7 @@
                     <span class="accent">throwaway scripts.</span>
                 </h1>
                 <p class="hero-subtitle">
-                    Stream, transform, and dispatch millions of API requests
-                    from local files. No custom code required.
+                    Stream, transform, and dispatch <span class="hero-millions">millions</span> of API requests from local files.
                 </p>
                 <div class="hero-cta">
                     <a href="https://github.com/Dhi13man/bombardment-runner" class="cta-secondary" rel="noopener">
@@ -141,77 +149,7 @@
                         </svg>
                     </a>
                 </div>
-            </div>
-
-        </section>
-
-        <!-- S2: Before/After Code Comparison -->
-        <section class="comparison" id="why" aria-labelledby="heading-why">
-            <div class="container">
-                <h2 class="reveal" id="heading-why">The script you keep rewriting</h2>
-                <p class="section-subtitle reveal">Every migration, you start from scratch. Here is what that looks like.</p>
-                <div class="comparison-grid reveal">
-                    <div class="comparison-card comparison-before">
-                        <div class="comparison-label">Before</div>
-                        <pre class="code-block" tabindex="0" role="region" aria-label="Python migration script"><code><span class="kw">import</span> csv, requests
-
-<span class="kw">with</span> <span class="fn">open</span>(<span class="str">"users.csv"</span>) <span class="kw">as</span> f:
-    <span class="kw">for</span> row <span class="kw">in</span> csv.<span class="fn">DictReader</span>(f):
-        resp = requests.<span class="fn">post</span>(
-            <span class="str">"https://api.example.com/users"</span>,
-            json={
-                <span class="str">"id"</span>: row[<span class="str">"id"</span>],
-                <span class="str">"name"</span>: row[<span class="str">"name"</span>],
-            },
-        )
-        <span class="kw">if</span> resp.status_code != <span class="num">200</span>:
-            <span class="fn">print</span>(<span class="str">f"Failed: </span>{row[<span class="str">'id'</span>]}<span class="str">"</span>)</code></pre>
-                    </div>
-                    <div class="comparison-card comparison-after">
-                        <div class="comparison-label">After</div>
-                        <pre class="code-block" tabindex="0" role="region" aria-label="Bombardment CLI equivalent"><code><span class="cm"># One command. Batched. Load-balanced. Streaming.</span>
-bombardment cli \
-  <span class="op">--parser</span> <span class="str">'{"file_path":"users.csv","strategy":"CSV"}'</span> \
-  <span class="op">--transformer</span> <span class="str">'{"strategy":"JSONATA",
-    "method_expression":"\"POST\"",
-    "endpoint_expression":"\"/api/v1/users\"",
-    "body_expression":"{ \"id\": id, \"name\": name }"
-  }'</span> \
-  <span class="op">--client</span> <span class="str">'{"channel":"REST"}'</span> \
-  <span class="op">--load_balancer</span> <span class="str">'{"strategy":"ROUND_ROBIN",
-    "urls":["https://api1.example.com",
-            "https://api2.example.com"]
-  }'</span></code></pre>
-                    </div>
-                </div>
-                <h3 class="comparison-gaps-heading reveal">What Bombardment adds</h3>
-                <ul class="comparison-gaps reveal">
-                    <li>
-                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
-                        Concurrent batching across goroutines
-                    </li>
-                    <li>
-                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
-                        Client-side load balancing across targets
-                    </li>
-                    <li>
-                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
-                        Streaming parsers (never loads the full file)
-                    </li>
-                    <li>
-                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
-                        Structured error handling and retries
-                    </li>
-                    <li>
-                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
-                        Real-time progress tracking and job control
-                    </li>
-                    <li>
-                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
-                        One config, reusable for every migration
-                    </li>
-                </ul>
-                <div class="stats-strip reveal">
+                <div class="stats-strip">
                     <div class="stat">
                         <span class="stat-number">10x</span>
                         <span class="stat-label">Faster than scripted migrations</span>
@@ -226,12 +164,13 @@ bombardment cli \
                     </div>
                 </div>
             </div>
+
         </section>
 
-        <!-- S3: Pipeline Deep Dive -->
+        <!-- S2: Pipeline Deep Dive -->
         <section class="pipeline-detail" aria-labelledby="heading-how">
             <div class="container">
-                <h2 class="reveal" id="heading-how">How it works</h2>
+                <h2 class="reveal" id="heading-how">How Bombardment works</h2>
                 <p class="section-subtitle reveal">A modular pipeline you can extend</p>
 
                 <div class="pipeline-steps reveal">
@@ -267,6 +206,14 @@ bombardment cli \
                         <span class="pipeline-step-tech">Progress tracking, error handling</span>
                     </div>
                 </div>
+                <ul class="pipeline-adds reveal">
+                    <li>Process millions of records in parallel</li>
+                    <li>Spread traffic across endpoints automatically</li>
+                    <li>Handle any file size without running out of memory</li>
+                    <li>Failures retry, not fail silently</li>
+                    <li>Know exactly where every job stands</li>
+                    <li>Write once, reuse for every migration</li>
+                </ul>
             </div>
         </section>
 

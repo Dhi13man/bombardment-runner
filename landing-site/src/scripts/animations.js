@@ -233,6 +233,52 @@ function initAnimationGating() {
   sections.forEach(function (s) { observer.observe(s); });
 }
 
+// 9. Theme toggle
+function initThemeToggle() {
+  var btn = document.querySelector('.theme-toggle');
+  if (!btn) return;
+
+  // Query by srcset content (stable) rather than media attribute (mutated by syncScreenshots)
+  var darkSources = document.querySelectorAll('picture source[srcset*="-dark"]');
+
+  function currentTheme() {
+    return document.documentElement.getAttribute('data-theme') || 'dark';
+  }
+
+  function syncScreenshots(theme) {
+    darkSources.forEach(function (src) {
+      src.media = theme === 'light' ? 'not all' : 'all';
+    });
+  }
+
+  function updateAriaLabel(theme) {
+    btn.setAttribute('aria-label', 'Switch to ' + (theme === 'dark' ? 'light' : 'dark') + ' theme');
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    syncScreenshots(theme);
+    updateAriaLabel(theme);
+  }
+
+  // Sync on load (FOUC script already set data-theme)
+  syncScreenshots(currentTheme());
+  updateAriaLabel(currentTheme());
+
+  btn.addEventListener('click', function () {
+    var next = currentTheme() === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+  });
+
+  // Follow OS preference changes when user has no stored preference
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function (e) {
+    if (!localStorage.getItem('theme')) {
+      applyTheme(e.matches ? 'light' : 'dark');
+    }
+  });
+}
+
 // Init all on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function () {
   document.body.classList.add('js-ready');
@@ -245,4 +291,5 @@ document.addEventListener('DOMContentLoaded', function () {
   initCopyButtons();
   initPipelineParticles();
   initAnimationGating();
+  initThemeToggle();
 });

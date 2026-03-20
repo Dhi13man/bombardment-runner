@@ -71,28 +71,26 @@
   --transition-normal: 250ms ease;
 }
 
-/* Light mode override */
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg-base:      #F8FAFC;
-    --bg-surface:   #FFF;
-    --bg-elevated:  #FFF;
-    --bg-inset:     #F1F5F9;
-    --glass-bg:     rgb(255 255 255 / 80%);
-    --glass-border: rgb(0 0 0 / 8%);
-    --text-primary:   #0F172A;
-    --text-secondary: #475569;
-    --text-tertiary:  #64748B;
-    --accent:       #6366F1;
-    --accent-hover: #4F46E5;
-    --accent-muted: rgb(99 102 241 / 12%);
-    --accent-border: rgb(99 102 241 / 30%);
-    --cta:          #EA580C;
-    --cta-hover:    #C2410C;
-    --cta-text:     #FFF;
-    --border-default: rgb(0 0 0 / 10%);
-    --border-hover:   rgb(0 0 0 / 18%);
-  }
+/* Light theme tokens (applied by JS via data-theme attribute) */
+:root[data-theme="light"] {
+  --bg-base:      #F8FAFC;
+  --bg-surface:   #FFF;
+  --bg-elevated:  #FFF;
+  --bg-inset:     #F1F5F9;
+  --glass-bg:     rgb(255 255 255 / 80%);
+  --glass-border: rgb(0 0 0 / 8%);
+  --text-primary:   #0F172A;
+  --text-secondary: #475569;
+  --text-tertiary:  #64748B;
+  --accent:       #6366F1;
+  --accent-hover: #4F46E5;
+  --accent-muted: rgb(99 102 241 / 12%);
+  --accent-border: rgb(99 102 241 / 30%);
+  --cta:          #EA580C;
+  --cta-hover:    #C2410C;
+  --cta-text:     #FFF;
+  --border-default: rgb(0 0 0 / 10%);
+  --border-hover:   rgb(0 0 0 / 18%);
 }
 
 /* -----------------------------------------------------------
@@ -254,10 +252,8 @@ section .section-subtitle {
   border-color: var(--border-hover);
 }
 
-@media (prefers-color-scheme: light) {
-  .nav.scrolled {
-    background: rgb(255 255 255 / 95%);
-  }
+:root[data-theme="light"] .nav.scrolled {
+  background: rgb(255 255 255 / 95%);
 }
 
 .nav-logo {
@@ -331,7 +327,7 @@ section .section-subtitle {
   justify-content: center;
   position: relative;
   overflow: hidden;
-  padding: 120px 0 var(--space-24);
+  padding: 120px 0 var(--space-16);
 }
 
 .hero-bg {
@@ -367,13 +363,17 @@ section .section-subtitle {
   letter-spacing: -0.04em;
 }
 
+.accent,
+.hero-millions {
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shimmer 6s linear infinite;
+}
+
 .accent {
   background: linear-gradient(90deg, var(--accent), var(--accent-hover), var(--accent));
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: gradient-shimmer 6s linear infinite;
 }
 
 .hero-subtitle {
@@ -383,6 +383,15 @@ section .section-subtitle {
   margin: 0 auto var(--space-8);
   line-height: 1.7;
   text-wrap: balance;
+}
+
+.hero-millions {
+  font-weight: 600;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover), var(--cta), var(--accent));
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation-duration: 4s;
 }
 
 section[id] {
@@ -467,97 +476,16 @@ section[id] {
   border-color: var(--success);
 }
 
-/* -----------------------------------------------------------
-   9. Comparison (Before/After)
-   ----------------------------------------------------------- */
-.comparison {
-  background: var(--bg-surface);
-}
-
-.comparison-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-6);
-  margin-bottom: var(--space-8);
-}
-
-.comparison-card {
-  background: var(--bg-inset);
-  border-radius: var(--radius-xl);
-  padding: var(--space-6);
-  border: 1px solid var(--border-default);
-}
-
-.comparison-label {
-  display: inline-block;
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-sm);
-  margin-bottom: var(--space-4);
-}
-
-.comparison-before .comparison-label {
-  background: rgb(239 68 68 / 15%);
-  color: #F87171;
-}
-
-.comparison-after .comparison-label {
-  background: rgb(16 185 129 / 15%);
-  color: #34D399;
-}
-
-.comparison-gaps-heading {
-  text-align: center;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-tertiary);
-  margin-bottom: var(--space-4);
-}
-
-.comparison-gaps {
-  list-style: none;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
-  max-width: 800px;
-  margin: 0 auto;
-  padding: var(--space-6);
-  background: var(--bg-inset);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-}
-
-.comparison-gaps li {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-}
-
-.comparison-gaps li .icon {
-  flex-shrink: 0;
-  color: var(--success);
-  width: 18px;
-  height: 18px;
-  margin-top: 1px;
-}
-
 /* Stats strip */
 .stats-strip {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-6);
-  max-width: 800px;
-  margin: var(--space-8) auto 0;
-  padding: var(--space-6);
+  max-width: 700px;
+  margin: var(--space-12) auto 0;
   text-align: center;
+  position: relative;
+  z-index: 1;
 }
 
 .stat-number {
@@ -619,20 +547,19 @@ section[id] {
 .num { color: #F78C6C; }
 .op { color: #89DDFF; }
 
-@media (prefers-color-scheme: light) {
-  .kw { color: #7C3AED; }
-  .fn { color: #2563EB; }
-  .str { color: #059669; }
-  .cm { color: #475569; }
-  .num { color: #EA580C; }
-  .op { color: #0891B2; }
-}
+:root[data-theme="light"] .kw { color: #7C3AED; }
+:root[data-theme="light"] .fn { color: #2563EB; }
+:root[data-theme="light"] .str { color: #059669; }
+:root[data-theme="light"] .cm { color: #475569; }
+:root[data-theme="light"] .num { color: #EA580C; }
+:root[data-theme="light"] .op { color: #0891B2; }
 
 /* -----------------------------------------------------------
    11. Pipeline Deep Dive
    ----------------------------------------------------------- */
 .pipeline-detail {
   background: var(--bg-base);
+  padding-top: var(--space-12);
 }
 
 .pipeline-steps {
@@ -696,6 +623,7 @@ section[id] {
   border-radius: 4px;
   animation: connector-glow 3s ease-in-out infinite;
   opacity: 0.6;
+  will-change: transform, opacity;
 }
 
 @keyframes connector-glow {
@@ -743,6 +671,52 @@ section[id] {
 .pipeline-step-card p {
   color: var(--text-secondary);
   font-size: var(--text-sm);
+}
+
+.pipeline-adds {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3) var(--space-6);
+  max-width: 1080px;
+  margin: var(--space-8) auto 0;
+  padding: var(--space-6) 0 0;
+  position: relative;
+}
+
+.pipeline-adds::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--accent-muted) 20%,
+    var(--accent-border) 50%,
+    var(--accent-muted) 80%,
+    transparent
+  );
+}
+
+.pipeline-adds li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.pipeline-adds li::before {
+  content: '';
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-muted);
 }
 
 /* -----------------------------------------------------------
@@ -1275,6 +1249,7 @@ section[id] {
   to   { opacity: 1; }
 }
 
+
 /* -----------------------------------------------------------
    19. Scroll Reveals (Progressive Enhancement)
    ----------------------------------------------------------- */
@@ -1330,6 +1305,7 @@ section[id] {
   .data-particle {
     display: none;
   }
+
 }
 
 /* -----------------------------------------------------------
@@ -1411,66 +1387,79 @@ section[id] {
 /* -----------------------------------------------------------
    23. Light Mode Surface Fixes
    ----------------------------------------------------------- */
-@media (prefers-color-scheme: light) {
-  /* Hero gradient boost */
-  .hero-bg {
-    background:
-      radial-gradient(ellipse 80% 50% at 50% 0%, rgb(99 102 241 / 18%), transparent 70%),
-      radial-gradient(ellipse 60% 40% at 80% 50%, rgb(99 102 241 / 12%), transparent 60%),
-      radial-gradient(ellipse 50% 40% at 10% 70%, rgb(139 92 246 / 8%), transparent 50%);
-  }
+:root[data-theme="light"] .hero-bg {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgb(99 102 241 / 18%), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 50%, rgb(99 102 241 / 12%), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 10% 70%, rgb(139 92 246 / 8%), transparent 50%);
+}
 
-  .hero {
-    background: linear-gradient(180deg, #EEF0FF 0%, var(--bg-base) 100%);
-  }
+:root[data-theme="light"] .hero {
+  background: linear-gradient(180deg, #EEF0FF 0%, var(--bg-base) 100%);
+}
 
-  /* Card elevation for light backgrounds */
-  .pipeline-step-card,
-  .bento-tile,
-  .scope-card {
-    box-shadow: 0 1px 3px rgb(0 0 0 / 6%), 0 1px 2px rgb(0 0 0 / 4%);
-  }
+:root[data-theme="light"] .pipeline-step-card,
+:root[data-theme="light"] .bento-tile,
+:root[data-theme="light"] .scope-card {
+  box-shadow: 0 1px 3px rgb(0 0 0 / 6%), 0 1px 2px rgb(0 0 0 / 4%);
+}
 
-  /* Nav shadow */
-  .nav {
-    box-shadow: 0 1px 3px rgb(0 0 0 / 5%);
-  }
+:root[data-theme="light"] .nav {
+  box-shadow: 0 1px 3px rgb(0 0 0 / 5%);
+}
 
-  /* Comparison label contrast */
-  .comparison-before .comparison-label {
-    color: #B91C1C;
-    background: rgb(239 68 68 / 12%);
-  }
+:root[data-theme="light"] .bento-tile::before {
+  background: radial-gradient(
+    400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgb(99 102 241 / 8%), transparent 40%
+  );
+}
 
-  .comparison-after .comparison-label {
-    color: #059669;
-    background: rgb(16 185 129 / 12%);
-  }
-
-  /* Bento glow tweak */
-  .bento-tile::before {
-    background: radial-gradient(
-      400px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-      rgb(99 102 241 / 8%), transparent 40%
-    );
-  }
-
-  /* Device frame dots */
-  .device-frame-dot {
-    background: rgb(0 0 0 / 15%);
-  }
+:root[data-theme="light"] .device-frame-dot {
+  background: rgb(0 0 0 / 15%);
 }
 
 /* -----------------------------------------------------------
    24. Dark Mode Section Borders
    ----------------------------------------------------------- */
-@media (prefers-color-scheme: dark) {
-  .comparison,
-  .demo,
-  .scope {
-    border-top: 1px solid var(--border-default);
-  }
+:root[data-theme="dark"] .demo,
+:root[data-theme="dark"] .scope {
+  border-top: 1px solid var(--border-default);
 }
+
+/* Theme toggle button */
+.theme-toggle {
+  background: none;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--space-2);
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.theme-toggle:hover {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.theme-toggle .icon-sun,
+.theme-toggle .icon-moon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Show sun in dark mode, moon in light mode */
+.theme-toggle .icon-sun { display: block; }
+.theme-toggle .icon-moon { display: none; }
+
+:root[data-theme="light"] .theme-toggle .icon-sun { display: none; }
+:root[data-theme="light"] .theme-toggle .icon-moon { display: block; }
 
 /* -----------------------------------------------------------
    25. Responsive
@@ -1506,6 +1495,13 @@ section[id] {
     display: block;
   }
 
+  .nav .theme-toggle {
+    position: absolute;
+    right: calc(var(--space-6) + 44px + var(--space-2));
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
   .hero-headline {
     font-size: clamp(2rem, 1.5rem + 2.5vw, 3rem);
   }
@@ -1521,12 +1517,9 @@ section[id] {
     justify-content: center;
   }
 
-  .comparison-grid {
+  .pipeline-adds {
     grid-template-columns: 1fr;
-  }
-
-  .comparison-gaps {
-    grid-template-columns: 1fr;
+    gap: var(--space-2);
   }
 
   .stats-strip {
@@ -1614,6 +1607,10 @@ section[id] {
 
   .pipeline-step-connector {
     display: none;
+  }
+
+  .pipeline-adds {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
