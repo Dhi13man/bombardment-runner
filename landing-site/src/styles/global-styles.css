@@ -1430,8 +1430,7 @@ section[id] {
 /* Theme toggle button */
 .theme-toggle {
   background: none;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
+  border: none;
   color: var(--text-secondary);
   cursor: pointer;
   padding: var(--space-2);
@@ -1440,11 +1439,10 @@ section[id] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: border-color var(--transition-fast), color var(--transition-fast);
+  transition: color var(--transition-fast);
 }
 
 .theme-toggle:hover {
-  border-color: var(--border-hover);
   color: var(--text-primary);
 }
 
@@ -1493,13 +1491,6 @@ section[id] {
 
   .nav-toggle {
     display: block;
-  }
-
-  .nav .theme-toggle {
-    position: absolute;
-    right: calc(var(--space-6) + 44px + var(--space-2));
-    top: 50%;
-    transform: translateY(-50%);
   }
 
   .hero-headline {
