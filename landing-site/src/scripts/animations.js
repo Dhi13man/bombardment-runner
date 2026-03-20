@@ -1,183 +1,255 @@
 /**
- * Bombardment Website Animation Scripts
- * Contains all animation-related scripts and interactive functionality
+ * Bombardment Landing Page - Interactions & Animations
  */
 
-// Animation constants for typing effect
-const ANIMATION = {
-    TYPING: {
-        SPEED: 40,           // Speed for typing characters (ms)
-        DELETE_SPEED: 20,    // Speed for deleting characters (ms)
-        PAUSE_DURATION: 1200, // How long to pause at the end of a phrase (ms) 
-        INITIAL_DELAY: 300   // Delay before starting the animation (ms)
-    }
-};
+// 1. Scroll reveal fallback (browsers without CSS animation-timeline)
+function initScrollReveals() {
+  if (typeof CSS !== 'undefined' && CSS.supports && CSS.supports('animation-timeline: view()')) return;
 
-// Subtitle typing animation
-const subtitles = [
-    "No more random last-minute scripts",
-    "Switch to no-code, performant, data migrations",
-    "Transform your data migration process",
-    "Fast, lightweight and scalable data processing",
-    "Process data in batches concurrently",
-    "Client-side load balancing built-in",
-    "Modular design for easy extension",
-    "Multiple channels for target systems",
-    "Golang powered: for maximum performance"
-];
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
 
-// State variables for typing animation
-let currentSubtitleIndex = 0;
-let currentCharIndex = 0;
-let isDeleting = false;
-let typingSpeed = ANIMATION.TYPING.SPEED;
+  document.querySelectorAll('.reveal').forEach(function (el) {
+    observer.observe(el);
+  });
 
-function typeSubtitle() {
-    const subtitleElement = document.querySelector('.typing-animation');
-    if (!subtitleElement) return;
-
-    const currentText = subtitles[currentSubtitleIndex];
-    
-    if (isDeleting) {
-        // Deleting text
-        subtitleElement.textContent = currentText.substring(0, currentCharIndex - 1);
-        currentCharIndex--;
-        typingSpeed = ANIMATION.TYPING.DELETE_SPEED;
-    } else {
-        // Typing text
-        subtitleElement.textContent = currentText.substring(0, currentCharIndex + 1);
-        currentCharIndex++;
-        typingSpeed = ANIMATION.TYPING.SPEED;
-    }
-    
-    // Check if completed typing the current subtitle
-    if (!isDeleting && currentCharIndex === currentText.length) {
-        // Pause at the end of typing before starting to delete
-        isDeleting = true;
-        typingSpeed = ANIMATION.TYPING.PAUSE_DURATION;
-    } else if (isDeleting && currentCharIndex === 1) {
-        // Move to the next subtitle
-        isDeleting = false;
-        currentSubtitleIndex = (currentSubtitleIndex + 1) % subtitles.length;
-    }
-    
-    setTimeout(typeSubtitle, typingSpeed);
+  // Safety fallback: force-reveal after 3s if observer never fires
+  setTimeout(function () {
+    document.querySelectorAll('.reveal:not(.visible)').forEach(function (el) {
+      el.classList.add('visible');
+    });
+  }, 3000);
 }
 
-// Copy to clipboard functionality
-function copyToClipboard(elementId) {
-    const element = document.getElementById(elementId);
-    const text = element.textContent;
+// 2. Floating nav scroll behavior (RAF-throttled)
+function initNavScroll() {
+  var nav = document.querySelector('.nav');
+  if (!nav) return;
 
-    navigator.clipboard.writeText(text).then(() => {
-        const button = element.parentElement.querySelector('.copy-button');
-        const originalIcon = button.innerHTML;
-        button.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+  var ticking = false;
+  window.addEventListener('scroll', function () {
+    if (!ticking) {
+      requestAnimationFrame(function () {
+        nav.classList.toggle('scrolled', window.scrollY > 100);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+}
 
-        setTimeout(() => {
-            button.innerHTML = originalIcon;
+// 3. Mobile nav toggle
+function initMobileNav() {
+  var toggle = document.querySelector('.nav-toggle');
+  var nav = document.querySelector('.nav');
+  if (!toggle || !nav) return;
+
+  toggle.addEventListener('click', function () {
+    var open = nav.classList.toggle('nav-open');
+    toggle.setAttribute('aria-expanded', String(open));
+    if (open) {
+      var firstLink = nav.querySelector('.nav-links a');
+      if (firstLink) firstLink.focus();
+    }
+  });
+
+  nav.querySelectorAll('.nav-links a').forEach(function (link) {
+    link.addEventListener('click', function () {
+      nav.classList.remove('nav-open');
+      toggle.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && nav.classList.contains('nav-open')) {
+      nav.classList.remove('nav-open');
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.focus();
+    }
+  });
+}
+
+// 4. Bento tile cursor tracking (attach/detach on enter/leave)
+function initBentoGlow() {
+  document.querySelectorAll('.bento-tile').forEach(function (tile) {
+    var rafId = 0;
+
+    function onMove(e) {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(function () {
+        var rect = tile.getBoundingClientRect();
+        tile.style.setProperty('--mouse-x', (e.clientX - rect.left) + 'px');
+        tile.style.setProperty('--mouse-y', (e.clientY - rect.top) + 'px');
+      });
+    }
+
+    tile.addEventListener('pointerenter', function () {
+      tile.addEventListener('pointermove', onMove);
+    });
+
+    tile.addEventListener('pointerleave', function () {
+      tile.removeEventListener('pointermove', onMove);
+      cancelAnimationFrame(rafId);
+    });
+  });
+}
+
+// 5. Segment control (tab switching with keyboard navigation)
+function initSegmentControl() {
+  document.querySelectorAll('[role="tablist"].segment-control').forEach(function (tablist) {
+    var tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+
+    function activateTab(btn) {
+      var tab = btn.getAttribute('data-tab');
+      var parent = btn.closest('section');
+      if (!parent) return;
+
+      tabs.forEach(function (b) {
+        b.classList.toggle('active', b === btn);
+        b.setAttribute('aria-selected', String(b === btn));
+        b.setAttribute('tabindex', b === btn ? '0' : '-1');
+      });
+
+      parent.querySelectorAll('.demo-panel').forEach(function (panel) {
+        panel.hidden = panel.id !== tab;
+      });
+
+      btn.focus();
+    }
+
+    tabs.forEach(function (btn, i) {
+      btn.setAttribute('tabindex', i === 0 ? '0' : '-1');
+      btn.addEventListener('click', function () { activateTab(btn); });
+    });
+
+    tablist.addEventListener('keydown', function (e) {
+      var idx = tabs.indexOf(document.activeElement);
+      if (idx === -1) return;
+
+      var next = -1;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        next = (idx + 1) % tabs.length;
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        next = (idx - 1 + tabs.length) % tabs.length;
+      } else if (e.key === 'Home') {
+        next = 0;
+      } else if (e.key === 'End') {
+        next = tabs.length - 1;
+      }
+
+      if (next !== -1) {
+        e.preventDefault();
+        activateTab(tabs[next]);
+      }
+    });
+  });
+}
+
+// 6. Screenshot tabs (event delegation with keyboard nav)
+function initScreenshotTabs() {
+  document.querySelectorAll('.screenshot-tabs[role="tablist"]').forEach(function (tablist) {
+    var tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+
+    function activateTab(btn) {
+      var targetId = btn.getAttribute('data-screenshot');
+      var container = tablist.closest('.demo-panel') || tablist.parentElement;
+
+      tabs.forEach(function (t) {
+        t.classList.toggle('active', t === btn);
+        t.setAttribute('aria-selected', String(t === btn));
+        t.setAttribute('tabindex', t === btn ? '0' : '-1');
+      });
+
+      container.querySelectorAll('.screenshot-content').forEach(function (c) {
+        c.classList.toggle('active', c.id === targetId);
+      });
+
+      btn.focus();
+    }
+
+    tabs.forEach(function (btn, i) {
+      btn.setAttribute('tabindex', i === 0 ? '0' : '-1');
+      btn.addEventListener('click', function () { activateTab(btn); });
+    });
+
+    tablist.addEventListener('keydown', function (e) {
+      var idx = tabs.indexOf(document.activeElement);
+      if (idx === -1) return;
+
+      var next = -1;
+      if (e.key === 'ArrowRight') next = (idx + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') next = (idx - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') next = 0;
+      else if (e.key === 'End') next = tabs.length - 1;
+
+      if (next !== -1) {
+        e.preventDefault();
+        activateTab(tabs[next]);
+      }
+    });
+  });
+}
+
+// 7. Copy to clipboard
+function initCopyButtons() {
+  document.querySelectorAll('.copy-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var block = btn.closest('.cli-block, .quickstart-card');
+      if (!block) return;
+
+      var code = block.querySelector('code');
+      if (!code) return;
+
+      navigator.clipboard.writeText(code.textContent).then(function () {
+        btn.classList.add('copied');
+        var label = btn.querySelector('.copy-label');
+        if (label) label.textContent = 'Copied';
+
+        setTimeout(function () {
+          btn.classList.remove('copied');
+          if (label) label.textContent = 'Copy';
         }, 2000);
-    }).catch(err => {
-        console.error('Failed to copy text: ', err);
-        alert('Failed to copy text. Please try again.');
+      }).catch(function () {
+        // Fallback: select text for manual copy
+        var range = document.createRange();
+        range.selectNodeContents(code);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      });
     });
+  });
 }
 
-// Setup tab switching functionality
-function setupTabSwitching() {
-    document.querySelectorAll('.code-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            const tabId = tab.getAttribute('data-tab');
+// 8. Pipeline particle animation
+function initPipelineParticles() {
+  var mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (mq.matches) return;
 
-            // Deactivate all tabs
-            document.querySelectorAll('.code-tab').forEach(t => {
-                t.classList.remove('active');
-            });
-            document.querySelectorAll('.code-content').forEach(c => {
-                c.classList.remove('active');
-            });
-
-            // Activate the clicked tab
-            tab.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
-
-            // Rehighlight the code
-            Prism.highlightAll();
-        });
-    });
-}
-
-// Setup fade-in animations using Intersection Observer
-function setupFadeInAnimations() {
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-                observer.unobserve(entry.target);
-            }
-        });
-    }, {
-        root: null,
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    });
-
-    document.querySelectorAll('.fade-in').forEach(element => {
-        observer.observe(element);
-    });
-}
-
-// Usage tab switching functionality
-function showUsageTab(tabId) {
-    // Hide all tabs
-    document.querySelectorAll('.usage-tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    
-    // Deactivate all tab buttons
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.classList.remove('active');
-    });
-    
-    // Show the selected tab
-    document.getElementById(tabId).classList.add('active');
-    
-    // Activate the clicked button
-    document.querySelector(`.tab-button[onclick="showUsageTab('${tabId}')"]`).classList.add('active');
-}
-
-// Screenshot tab switching functionality
-function showScreenshot(screenshotId) {
-    // Hide all screenshot content
-    document.querySelectorAll('.screenshot-content').forEach(content => {
-        content.classList.remove('active');
-    });
-
-    // Deactivate all screenshot tab buttons
-    document.querySelectorAll('.screenshot-tab').forEach(button => {
-        button.classList.remove('active');
-    });
-
-    // Show the selected screenshot
-    document.getElementById(screenshotId).classList.add('active');
-
-    // Activate the clicked button
-    document.querySelector(`.screenshot-tab[onclick="showScreenshot('${screenshotId}')"]`).classList.add('active');
-}
-
-// Initialize all functionality when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Start the typing animation with a small delay
-    setTimeout(typeSubtitle, 500);
-    
-    // Setup tab switching if tabs exist
-    setupTabSwitching();
-    
-    // Setup fade-in animations
-    setupFadeInAnimations();
-    
-    // Initialize Prism.js syntax highlighting
-    if (typeof Prism !== 'undefined') {
-        Prism.highlightAll();
+  document.querySelectorAll('.pipeline-connector, .pipeline-step-connector').forEach(function (conn) {
+    for (var i = 0; i < 2; i++) {
+      var particle = document.createElement('span');
+      particle.className = 'data-particle';
+      conn.appendChild(particle);
     }
+  });
+}
+
+// Init all on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function () {
+  document.body.classList.add('js-ready');
+  initScrollReveals();
+  initNavScroll();
+  initMobileNav();
+  initBentoGlow();
+  initSegmentControl();
+  initScreenshotTabs();
+  initCopyButtons();
+  initPipelineParticles();
 });

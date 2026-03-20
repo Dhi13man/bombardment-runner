@@ -4,374 +4,567 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bombardment - Lightweight Bulk Data Automation</title>
+    <title>Bombardment - Bulk API Migration Tool | CSV to REST, gRPC, GraphQL</title>
     <meta name="description"
-        content="Bombardment is a lightweight, extensible automation tool for efficient application-layer data migrations and API-based transformations.">
+        content="Stream CSV, JSON, Excel, or Parquet files through REST, GraphQL, or gRPC endpoints with concurrent batching, load balancing, and JSONata transforms. Open-source Go tool with Web UI and CLI.">
     <meta name="keywords"
-        content="application layer migration, API automation, golang, concurrent processing, load balancing, REST, gRPC, JSONata">
+        content="application layer migration, API automation, golang, concurrent processing, load balancing, REST, gRPC, GraphQL, JSONata, bulk API">
     <meta name="author" content="Dhiman Seal">
     <meta name="robots" content="index, follow">
+
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://bombardment.work/">
-    <meta property="og:title" content="Bombardment - Application Layer Data Migration Automation">
+    <meta property="og:title" content="Bombardment - Bulk API Migration Tool">
     <meta property="og:description"
-        content="Streamline application-layer data migrations with Bombardment's modular, concurrent, and extensible architecture for API-based transfers.">
-    <meta property="og:image" content="assets/logo.png">
+        content="Stream, transform, and dispatch millions of API requests from CSV/JSON files through REST, gRPC, or GraphQL. Open-source Go tool.">
+    <meta property="og:image" content="https://bombardment.work/assets/favicon/android-chrome-512x512.png">
+
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Bombardment - Data Migration Automation">
+    <meta name="twitter:title" content="Bombardment - Bulk API Migration Tool">
     <meta name="twitter:description"
-        content="Streamline data migrations with Bombardment's modular, concurrent, and extensible architecture.">
-    <meta name="twitter:image" content="assets/logo.png">
-    <!-- Styles -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="src/styles/global-styles.css">
-    <!-- Animation Library -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-    <!-- Code Syntax Highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
-    <!-- Favicon and App Icons -->
-    <link rel="icon" href="assets/favicon/favicon.ico" type="image/x-icon" />
-    <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
-    <link rel="manifest" href="data/site.webmanifest">
+        content="Stream, transform, and dispatch millions of API requests from CSV/JSON files. Open-source Go tool.">
+    <meta name="twitter:image" content="https://bombardment.work/assets/favicon/android-chrome-512x512.png">
 
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="src/styles/global-styles.css">
+
+    <!-- Favicon -->
+    <link rel="icon" href="assets/favicon/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="assets/favicon/apple-touch-icon.png">
+    <link rel="manifest" href="assets/favicon/site.webmanifest">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Bombardment",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Linux, macOS, Windows",
+        "programmingLanguage": "Go",
+        "license": "https://opensource.org/licenses/MIT",
+        "url": "https://bombardment.work",
+        "author": {
+            "@type": "Person",
+            "name": "Dhiman Seal",
+            "url": "https://github.com/Dhi13man"
+        }
+    }
+    </script>
 </head>
 
 <body>
-    <header>
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fa-solid fa-rocket floating"></i>
-                    <h1 class="glow">Bombardment</h1>
-                </div>
-                <div id="subtitle-container">
-                    <p class="subtitle typing-animation"></p>
-                </div>
-                <div class="hero-description animate__animated animate__fadeIn">
-                    <p>Transform and bombard bulk data into your target Systems</p>
-                </div>
-                <div class="cta-buttons animate__animated animate__fadeInUp">
-                    <a href="https://github.com/Dhi13man/bombardment-runner"
-                        class="button primary-button" target="_blank" rel="noopener">
-                        <i class="fa-brands fa-github"></i> View on GitHub</a>
-                    <a href="https://github.com/Dhi13man/bombardment-runner/issues"
-                        class="button primary-button" target="_blank" rel="noopener">
-                        <i class="fa-solid fa-bug"></i> Report an Issue</a>
-                    <a href="#why-switch" class="button secondary-button">Learn More</a>
-                </div>
-            </div>
-        </div>
-    </header>
+    <!-- Skip link -->
+    <a href="#main" class="skip-link">Skip to content</a>
 
-    <section class="use-case-clarification">
-        <div class="container">
-            <div class="section-title fade-in">
-                <h2>The Right Tool for the Right Job</h2>
-                <p class="section-subtitle">Understanding when to use Bombardment in your data migration strategy</p>
+    <!-- S0: Floating Glass Navbar -->
+    <nav class="nav" aria-label="Main">
+        <a href="index.html" class="nav-logo">Bombardment</a>
+        <div class="nav-links" id="nav-links">
+            <a href="#features">Features</a>
+            <a href="#get-started">Get Started</a>
+            <a href="https://github.com/Dhi13man/bombardment-runner" class="nav-cta">
+                <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    aria-hidden="true">
+                    <path
+                        d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+                    <path d="M9 18c-4.51 2-5-2-7-2" />
+                </svg>
+                GitHub
+            </a>
+        </div>
+        <button type="button" class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="nav-links">
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                aria-hidden="true">
+                <line x1="4" x2="20" y1="12" y2="12" />
+                <line x1="4" x2="20" y1="6" y2="6" />
+                <line x1="4" x2="20" y1="18" y2="18" />
+            </svg>
+        </button>
+    </nav>
+
+    <main id="main" tabindex="-1">
+        <!-- S1: Hero -->
+        <section class="hero">
+            <div class="hero-bg"></div>
+            <div class="hero-content container">
+                <h1 class="hero-headline">
+                    Stop writing<br>
+                    <span class="accent">throwaway scripts.</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Stream, transform, and dispatch millions of API requests
+                    from local files. No custom code required.
+                </p>
+                <div class="hero-cta">
+                    <a href="https://github.com/Dhi13man/bombardment-runner" class="cta-secondary">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path
+                                d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+                            <path d="M9 18c-4.51 2-5-2-7-2" />
+                        </svg>
+                        View on GitHub
+                    </a>
+                    <a href="#get-started" class="cta-primary">
+                        Get Started
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M5 12h14" />
+                            <path d="m12 5 7 7-7 7" />
+                        </svg>
+                    </a>
+                </div>
             </div>
-            <div class="use-case-content fade-in">
-                <div class="use-case-column">
-                    <div class="use-case-header">
-                        <i class="fa-solid fa-check-circle"></i>
-                        <h3>Application Layer Migrations</h3>
+
+        </section>
+
+        <!-- S2: Before/After Code Comparison -->
+        <section class="comparison" id="why" aria-labelledby="heading-why">
+            <div class="container">
+                <h2 class="reveal" id="heading-why">The script you keep rewriting</h2>
+                <p class="section-subtitle reveal">Every migration, you start from scratch. Here is what that looks like.</p>
+                <div class="comparison-grid reveal">
+                    <div class="comparison-card comparison-before">
+                        <div class="comparison-label">Before</div>
+                        <pre class="code-block" tabindex="0" role="region" aria-label="Python migration script"><code><span class="kw">import</span> csv, requests
+
+<span class="kw">with</span> <span class="fn">open</span>(<span class="str">"users.csv"</span>) <span class="kw">as</span> f:
+    <span class="kw">for</span> row <span class="kw">in</span> csv.<span class="fn">DictReader</span>(f):
+        resp = requests.<span class="fn">post</span>(
+            <span class="str">"https://api.example.com/users"</span>,
+            json={
+                <span class="str">"id"</span>: row[<span class="str">"id"</span>],
+                <span class="str">"name"</span>: row[<span class="str">"name"</span>],
+            },
+        )
+        <span class="kw">if</span> resp.status_code != <span class="num">200</span>:
+            <span class="fn">print</span>(<span class="str">f"Failed: </span>{row[<span class="str">'id'</span>]}<span class="str">"</span>)</code></pre>
                     </div>
-                    <div class="use-case-body">
+                    <div class="comparison-card comparison-after">
+                        <div class="comparison-label">After</div>
+                        <pre class="code-block" tabindex="0" role="region" aria-label="Bombardment CLI equivalent"><code><span class="cm"># One command. Batched. Load-balanced. Streaming.</span>
+bombardment cli \
+  <span class="op">--parser</span> <span class="str">'{"file_path":"users.csv","strategy":"CSV"}'</span> \
+  <span class="op">--transformer</span> <span class="str">'{"strategy":"JSONATA",
+    "method_expression":"\"POST\"",
+    "endpoint_expression":"\"/api/v1/users\"",
+    "body_expression":"{ \"id\": id, \"name\": name }"
+  }'</span> \
+  <span class="op">--client</span> <span class="str">'{"channel":"REST"}'</span> \
+  <span class="op">--load_balancer</span> <span class="str">'{"strategy":"ROUND_ROBIN",
+    "urls":["https://api1.example.com",
+            "https://api2.example.com"]
+  }'</span></code></pre>
+                    </div>
+                </div>
+                <h3 class="comparison-gaps-heading reveal">What Bombardment adds</h3>
+                <ul class="comparison-gaps reveal">
+                    <li>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                        Concurrent batching across goroutines
+                    </li>
+                    <li>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                        Client-side load balancing across targets
+                    </li>
+                    <li>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                        Streaming parsers (never loads the full file)
+                    </li>
+                    <li>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                        Structured error handling and retries
+                    </li>
+                    <li>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                        Real-time progress tracking and job control
+                    </li>
+                    <li>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                        One config, reusable for every migration
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- S3: Pipeline Deep Dive -->
+        <section class="pipeline-detail" aria-labelledby="heading-how">
+            <div class="container">
+                <h2 class="reveal" id="heading-how">How it works</h2>
+                <p class="section-subtitle reveal">A modular pipeline you can extend</p>
+
+                <div class="pipeline-steps reveal">
+                    <div class="pipeline-step-card">
+                        <svg class="icon pipeline-step-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="M2 15h10" /><path d="m9 18 3-3-3-3" /></svg>
+                        <div class="pipeline-step-number">01</div>
+                        <h3>Configure Source</h3>
+                        <p>Choose your data format and point to the file.</p>
+                        <span class="pipeline-step-tech">CSV, JSON, Excel, Parquet</span>
+                    </div>
+                    <div class="pipeline-step-connector"></div>
+                    <div class="pipeline-step-card">
+                        <svg class="icon pipeline-step-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>
+                        <div class="pipeline-step-number">02</div>
+                        <h3>Define Transforms</h3>
+                        <p>Reshape each record into an HTTP request.</p>
+                        <span class="pipeline-step-tech">JSONata, GoTemplate, Passthrough</span>
+                    </div>
+                    <div class="pipeline-step-connector"></div>
+                    <div class="pipeline-step-card">
+                        <svg class="icon pipeline-step-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg>
+                        <div class="pipeline-step-number">03</div>
+                        <h3>Configure Target</h3>
+                        <p>Set up endpoints with load balancing across targets.</p>
+                        <span class="pipeline-step-tech">REST, gRPC, GraphQL</span>
+                    </div>
+                    <div class="pipeline-step-connector"></div>
+                    <div class="pipeline-step-card">
+                        <svg class="icon pipeline-step-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>
+                        <div class="pipeline-step-number">04</div>
+                        <h3>Execute</h3>
+                        <p>Run batched jobs with concurrent goroutines.</p>
+                        <span class="pipeline-step-tech">Progress tracking, error handling</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- S4: Get Started (Install + Use) -->
+        <section class="demo" id="get-started" aria-labelledby="heading-start">
+            <div class="container">
+                <h2 class="reveal" id="heading-start">Get started</h2>
+                <p class="section-subtitle reveal">Install and start migrating in minutes</p>
+
+                <div class="install-inline reveal">
+                    <div class="install-cmd">
+                        <pre class="code-block"><code>git clone https://github.com/Dhi13man/bombardment-runner.git && cd bombardment-runner && docker compose up --build</code></pre>
+                        <button class="copy-btn" type="button">
+                            <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                            </svg>
+                            <span class="copy-label" role="status">Copy</span>
+                        </button>
+                    </div>
+                    <p class="install-alt">or <a href="https://github.com/Dhi13man/bombardment-runner/releases">download a binary</a></p>
+                </div>
+                <div class="segment-control reveal" role="tablist">
+                    <button type="button" class="segment-btn active" id="tab-gui" data-tab="gui" role="tab" aria-selected="true" aria-controls="gui">GUI Mode</button>
+                    <button type="button" class="segment-btn" id="tab-cli" data-tab="cli" role="tab" aria-selected="false" aria-controls="cli">CLI Mode</button>
+                </div>
+
+                <div class="demo-panel" id="gui" role="tabpanel" aria-labelledby="tab-gui">
+                    <div class="screenshot-tabs" role="tablist">
+                        <button class="screenshot-tab active" data-screenshot="ss-source" type="button" role="tab" aria-selected="true" aria-controls="ss-source">1. Source</button>
+                        <button class="screenshot-tab" data-screenshot="ss-transform" type="button" role="tab" aria-selected="false" aria-controls="ss-transform">2. Transform</button>
+                        <button class="screenshot-tab" data-screenshot="ss-target" type="button" role="tab" aria-selected="false" aria-controls="ss-target">3. Target</button>
+                        <button class="screenshot-tab" data-screenshot="ss-review" type="button" role="tab" aria-selected="false" aria-controls="ss-review">4. Review</button>
+                        <button class="screenshot-tab" data-screenshot="ss-progress" type="button" role="tab" aria-selected="false" aria-controls="ss-progress">5. Progress</button>
+                    </div>
+
+                    <div id="ss-source" class="screenshot-content active" role="tabpanel">
+                        <div class="device-frame">
+                            <div class="device-frame-bar">
+                                <span class="device-frame-dot"></span>
+                                <span class="device-frame-dot"></span>
+                                <span class="device-frame-dot"></span>
+                            </div>
+                            <img src="assets/ui-source-step.png"
+                                alt="Source configuration step: select format and upload a file" width="900"
+                                height="500">
+                        </div>
+                        <p class="screenshot-description">Choose your data format (CSV, JSON, Excel, Parquet)
+                            and upload a file or enter a server-side path.</p>
+                    </div>
+                    <div id="ss-transform" class="screenshot-content" role="tabpanel">
+                        <div class="device-frame">
+                            <div class="device-frame-bar">
+                                <span class="device-frame-dot"></span>
+                                <span class="device-frame-dot"></span>
+                                <span class="device-frame-dot"></span>
+                            </div>
+                            <img src="assets/ui-transform-step.png"
+                                alt="Transform configuration step: define JSONata expressions" width="900" height="500">
+                        </div>
+                        <p class="screenshot-description">Define JSONata expressions to shape each record into an HTTP
+                            request: method, endpoint, headers, and body.</p>
+                    </div>
+                    <div id="ss-target" class="screenshot-content" role="tabpanel">
+                        <div class="device-frame">
+                            <div class="device-frame-bar">
+                                <span class="device-frame-dot"></span>
+                                <span class="device-frame-dot"></span>
+                                <span class="device-frame-dot"></span>
+                            </div>
+                            <img src="assets/ui-target-step.png"
+                                alt="Target configuration step: configure HTTP client and load balancing" width="900"
+                                height="500">
+                        </div>
+                        <p class="screenshot-description">Configure HTTP client settings, load balancing strategy,
+                            target URLs, and batch processing options.</p>
+                    </div>
+                    <div id="ss-review" class="screenshot-content" role="tabpanel">
+                        <div class="device-frame">
+                            <div class="device-frame-bar">
+                                <span class="device-frame-dot"></span>
+                                <span class="device-frame-dot"></span>
+                                <span class="device-frame-dot"></span>
+                            </div>
+                            <img src="assets/ui-review-step.png"
+                                alt="Review step: verify all configuration before running" width="900" height="500">
+                        </div>
+                        <p class="screenshot-description">Review your full configuration with validation checks before
+                            launching the bombardment.</p>
+                    </div>
+                    <div id="ss-progress" class="screenshot-content" role="tabpanel">
+                        <div class="device-frame">
+                            <div class="device-frame-bar">
+                                <span class="device-frame-dot"></span>
+                                <span class="device-frame-dot"></span>
+                                <span class="device-frame-dot"></span>
+                            </div>
+                            <img src="assets/ui-job-progress.png"
+                                alt="Job progress view with pipeline visualization and throughput metrics" width="900"
+                                height="500">
+                        </div>
+                        <p class="screenshot-description">Real-time pipeline visualization with processed/failed
+                            counters and throughput metrics.</p>
+                    </div>
+                </div>
+
+                <div class="demo-panel" id="cli" role="tabpanel" aria-labelledby="tab-cli" hidden>
+                    <div class="cli-cards">
+                        <!-- Source -->
+                        <div class="cli-card">
+                            <div class="cli-card-label">Source</div>
+                            <div class="cli-card-desc">Where to read data from</div>
+                            <pre class="code-block"><code><span class="op">--parser_context</span> <span class="str">'{
+  "file_path": "./data/users.csv",
+  "strategy": "CSV"
+}'</span></code></pre>
+                        </div>
+                        <!-- Transform -->
+                        <div class="cli-card">
+                            <div class="cli-card-label">Transform</div>
+                            <div class="cli-card-desc">How to shape each record into a request</div>
+                            <pre class="code-block"><code><span class="op">--transformation_context</span> <span class="str">'{
+  "strategy": "JSONATA",
+  "method_expression": "\"POST\"",
+  "endpoint_expression": "\"/api/v1/users\"",
+  "body_expression": "{ \"id\": $number(id) }"
+}'</span></code></pre>
+                        </div>
+                        <!-- Target -->
+                        <div class="cli-card">
+                            <div class="cli-card-label">Target</div>
+                            <div class="cli-card-desc">Where to send requests, with load balancing</div>
+                            <pre class="code-block"><code><span class="op">--load_balancer</span> <span class="str">'{
+  "strategy": "ROUND_ROBIN",
+  "urls": [
+    "https://api.example.com",
+    "https://api-backup.example.com"
+  ]
+}'</span></code></pre>
+                        </div>
+                        <!-- Execute -->
+                        <div class="cli-card">
+                            <div class="cli-card-label">Execute</div>
+                            <div class="cli-card-desc">Batch size and client settings</div>
+                            <pre class="code-block"><code><span class="op">--client_context</span> <span class="str">'{"channel": "REST"}'</span>
+<span class="op">--data_context</span>   <span class="str">'{"batch_size": 100}'</span></code></pre>
+                        </div>
+                    </div>
+                    <!-- Full command -->
+                    <div class="cli-full">
+                        <div class="cli-full-label">Full command</div>
+                        <div class="cli-block">
+                            <pre class="code-block" tabindex="0" role="region" aria-label="Full CLI command"><code>bombardment cli \
+  --parser_context '...' \
+  --transformation_context '...' \
+  --load_balancer '...' \
+  --client_context '...' \
+  --data_context '...'</code></pre>
+                            <button class="copy-btn" type="button">
+                                <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                                </svg>
+                                <span class="copy-label" role="status">Copy</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- S5: Differentiators (Bento Grid) -->
+        <section class="features" id="features" aria-labelledby="heading-features">
+            <div class="container">
+                <h2 class="reveal" id="heading-features">Built for real migrations</h2>
+                <p class="section-subtitle reveal">Everything you need, nothing you do not</p>
+                <div class="bento-grid reveal">
+                    <!-- Concurrent Processing (wide) -->
+                    <div class="bento-tile bento-tile--wide">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
+                        </svg>
+                        <h3>Concurrent Processing</h3>
+                        <p>Batched jobs processed in parallel goroutines for high throughput.</p>
+                    </div>
+                    <!-- Flexible Channels -->
+                    <div class="bento-tile">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 22v-5" />
+                            <path d="M9 8V2" />
+                            <path d="M15 8V2" />
+                            <path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z" />
+                        </svg>
+                        <h3>Flexible Channels</h3>
+                        <p>REST, gRPC, and GraphQL out of the box.</p>
+                    </div>
+                    <!-- Load Balancing -->
+                    <div class="bento-tile">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22" />
+                            <path d="m18 2 4 4-4 4" />
+                            <path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2" />
+                            <path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8" />
+                            <path d="m18 14 4 4-4 4" />
+                        </svg>
+                        <h3>Load Balancing</h3>
+                        <p>Client-side Round Robin and Random strategies across targets.</p>
+                    </div>
+                    <!-- Transformation Rules (wide) -->
+                    <div class="bento-tile bento-tile--wide">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="16 18 22 12 16 6" />
+                            <polyline points="8 6 2 12 8 18" />
+                        </svg>
+                        <h3>Transformation Rules</h3>
+                        <p>JSONata and Go Template expressions to reshape every record.</p>
+                    </div>
+                    <!-- Streaming Parsers -->
+                    <div class="bento-tile">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
+                            <path d="m6.08 9.5-3.5 1.6a1 1 0 0 0 0 1.81l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9a1 1 0 0 0 0-1.83l-3.5-1.59" />
+                            <path d="m6.08 14.5-3.5 1.6a1 1 0 0 0 0 1.81l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9a1 1 0 0 0 0-1.83l-3.5-1.59" />
+                        </svg>
+                        <h3>Streaming Parsers</h3>
+                        <p>CSV, JSON, Excel, Parquet via Go channels. Never loads the full file.</p>
+                    </div>
+                    <!-- Job Management -->
+                    <div class="bento-tile">
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" />
+                        </svg>
+                        <h3>Job Management</h3>
+                        <p>Track, monitor, and control migration jobs through a state machine.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- S6: Scope Clarity -->
+        <section class="scope" aria-labelledby="heading-scope">
+            <div class="container">
+                <h2 class="reveal" id="heading-scope">The right tool for the right job</h2>
+                <p class="section-subtitle reveal">Understanding when to use Bombardment</p>
+                <div class="scope-grid reveal">
+                    <div class="scope-card scope-yes">
+                        <svg class="icon scope-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" aria-hidden="true">
+                            <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+                            <path d="m9 12 2 2 4-4" />
+                        </svg>
+                        <h3>Application Layer Migrations</h3>
                         <p><strong>Bombardment excels at:</strong></p>
                         <ul>
-                            <li>API-based bulk data transfers</li>
-                            <li>Service-to-service or local-to-service migrations</li>
-                            <li>Bulk record processing via REST/gRPC</li>
-                            <li>Data transformations before API submission</li>
-                            <li>High-throughput application integrations</li>
+                            <li>Bulk data transfers via API endpoints</li>
+                            <li>Service-to-service record migrations</li>
+                            <li>Multi-target load-balanced dispatching</li>
+                            <li>Data transformation before submission</li>
+                            <li>High-throughput concurrent processing</li>
                         </ul>
-                        <p class="use-case-highlight">Perfect for hitting application endpoints repeatedly, with
-                            (optional) data transformations</p>
+                        <div class="scope-highlight">Perfect for hitting application endpoints repeatedly with
+                            concurrent batching and transformation</div>
                     </div>
-                </div>
-                <div class="use-case-column">
-                    <div class="use-case-header">
-                        <i class="fa-solid fa-database"></i>
-                        <h3>Database Schema Migrations</h3>
-                    </div>
-                    <div class="use-case-body">
+                    <div class="scope-card scope-neutral">
+                        <svg class="icon scope-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" aria-hidden="true">
+                            <ellipse cx="12" cy="5" rx="9" ry="3" />
+                            <path d="M3 5V19A9 3 0 0 0 21 19V5" />
+                            <path d="M3 12A9 3 0 0 0 21 12" />
+                        </svg>
+                        <h3>Database Layer Migrations</h3>
                         <p><strong>Better handled by:</strong></p>
                         <ul>
-                            <li>SQL-based ETL tools</li>
-                            <li>Database-specific migration utilities</li>
+                            <li>SQL-based ETL pipelines</li>
+                            <li>Database-native migration utilities</li>
                             <li>Schema versioning frameworks</li>
-                            <li>Direct database connection tools</li>
-                            <li>Data replication solutions</li>
+                            <li>Direct connection replication tools</li>
+                            <li>Change data capture (CDC) systems</li>
                         </ul>
-                        <p class="use-case-highlight">Complements these tools for the application layer requirements of
-                            the migration strategy</p>
+                        <div class="scope-highlight">Bombardment complements these tools by handling the application layer
+                            of your migration strategy</div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="how-it-works" id="why-switch">
+
+
+    </main>
+
+    <footer class="footer">
         <div class="container">
-            <div class="section-title fade-in">
-                <h2>Why Switch to Bombardment?</h2>
-                <p class="section-subtitle">Discover how Bombardment outperforms your traditional migration scripts</p>
+            <div class="footer-badges">
+                <a href="https://goreportcard.com/report/github.dhi13man.com/bombardment-runner" class="badge">Go Report Card</a>
+                <a href="https://github.com/Dhi13man/bombardment-runner/blob/main/LICENSE" class="badge">MIT License</a>
+                <a href="https://pkg.go.dev/github.dhi13man.com/bombardment-runner" class="badge">pkg.go.dev</a>
             </div>
-            <div class="steps">
-                <div class="step fade-in">
-                    <div class="step-number">01</div>
-                    <div class="step-content">
-                        <h3 class="step-title">Lightning-Fast Performance</h3>
-                        <p class="step-description">Built with Golang's concurrency model, Bombardment processes
-                            <strong>millions of records</strong> with minimal CPU and memory footprint. Achieve
-                            migration speeds <strong>up to 10x faster</strong> than Python or Java-based tools.</p>
-                    </div>
-                </div>
-                <div class="step fade-in">
-                    <div class="step-number">02</div>
-                    <div class="step-content">
-                        <h3 class="step-title">Dramatic Cost Reduction</h3>
-                        <p class="step-description">Cut infrastructure costs by <strong>up to 70%</strong> by
-                            efficiently utilizing your existing resources. Bombardment's <strong>lightweight
-                                footprint</strong> means you can run enterprise-scale migrations on standard hardware —
-                            no need for expensive cloud instances or specialized infrastructure.</p>
-                    </div>
-                </div>
-                <div class="step fade-in">
-                    <div class="step-number">03</div>
-                    <div class="step-content">
-                        <h3 class="step-title">Zero Learning Curve</h3>
-                        <p class="step-description">Go from installation to production in <strong>under 30
-                                minutes</strong>. Bombardment's intuitive configuration requires <strong>no programming
-                                knowledge</strong>, while still offering deep customization for power users.</p>
-                    </div>
-                </div>
+            <div class="footer-info">
+                <p>Built by <a href="https://github.com/Dhi13man">Dhiman Seal</a>, a backend engineer at Groww processing 300K+ daily transactions.</p>
+                <span class="footer-dot" aria-hidden="true"></span>
+                <p>Runs entirely on your machine. <a href="privacy-policy.html">Privacy Policy</a></p>
             </div>
-        </div>
-    </section>
-
-    <section id="features">
-        <div class="container">
-            <h2>And much more...</h2>
-            <div class="features">
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">
-                        <i class="fa-solid fa-bolt"></i>
-                    </div>
-                    <h3 class="feature-title">Concurrent Processing</h3>
-                    <p class="feature-description">Batched jobs can be processed in parallel for extremely high
-                        throughput.</p>
-                </div>
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">
-                        <i class="fa-solid fa-plug"></i>
-                    </div>
-                    <h3 class="feature-title">Flexible Channels</h3>
-                    <p class="feature-description">Supports REST, gRPC, and custom channels out of the box, enabling
-                        seamless communication with any server.</p>
-                </div>
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">
-                        <i class="fa-solid fa-balance-scale"></i>
-                    </div>
-                    <h3 class="feature-title">Load Balancing</h3>
-                    <p class="feature-description">Client-side strategies like Round Robin ensure even distribution and
-                        no bottlenecks.</p>
-                </div>
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">
-                        <i class="fa-solid fa-code-branch"></i>
-                    </div>
-                    <h3 class="feature-title">Transformation Rules</h3>
-                    <p class="feature-description">Apply powerful JSONata or GoTmpl-based rules for data
-                        transformations.</p>
-                </div>
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">
-                        <i class="fa-solid fa-tasks"></i>
-                    </div>
-                    <h3 class="feature-title">Job Management</h3>
-                    <p class="feature-description">Track, pause, resume, and stop migrations with a built-in state
-                        machine.
-                    </p>
-                </div>
-
-                <div class="feature-card fade-in">
-                    <div class="feature-icon">
-                        <i class="fa-solid fa-cubes"></i>
-                    </div>
-                    <h3 class="feature-title">Modular Architecture</h3>
-                    <p class="feature-description">Clean, layered design for easy extension, debugging, and maintenance.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="get-started">
-        <div class="container">
-            <div class="section-title fade-in">
-                <h2>Get Started</h2>
-                <p class="section-subtitle">Install Bombardment and start migrating data in minutes</p>
-            </div>
-            <div class="usage-options fade-in">
-                <div class="usage-tabs">
-                    <button class="tab-button active" onclick="showUsageTab('gui-tab')" type="button">GUI Mode</button>
-                    <button class="tab-button" onclick="showUsageTab('cli-tab')" type="button">CLI Mode</button>
-                </div>
-
-                <div id="gui-tab" class="usage-tab active">
-                    <div class="gui-container">
-                        <h3>4-Step Wizard Interface</h3>
-                        <p>Configure source, transformations, targets, and review — all through a guided wizard with validation at every step.</p>
-                        <div class="screenshot-tabs">
-                            <button class="screenshot-tab active" onclick="showScreenshot('ss-source')" type="button">1. Source</button>
-                            <button class="screenshot-tab" onclick="showScreenshot('ss-transform')" type="button">2. Transform</button>
-                            <button class="screenshot-tab" onclick="showScreenshot('ss-target')" type="button">3. Target</button>
-                            <button class="screenshot-tab" onclick="showScreenshot('ss-review')" type="button">4. Review</button>
-                            <button class="screenshot-tab" onclick="showScreenshot('ss-progress')" type="button">5. Progress</button>
-                        </div>
-                        <div id="ss-source" class="screenshot-content active">
-                            <div class="screenshot-box">
-                                <img src="assets/ui-source-step.png" alt="Source configuration step — select format and upload a file">
-                            </div>
-                            <p class="screenshot-description">Choose your data format (CSV, JSON, NDJSON, Excel, Parquet) and upload a file or enter a server-side path.</p>
-                        </div>
-                        <div id="ss-transform" class="screenshot-content">
-                            <div class="screenshot-box">
-                                <img src="assets/ui-transform-step.png" alt="Transform configuration step — define JSONata expressions for method, endpoint, headers, and body">
-                            </div>
-                            <p class="screenshot-description">Define JSONata expressions to shape each record into an HTTP request — method, endpoint, headers, and body.</p>
-                        </div>
-                        <div id="ss-target" class="screenshot-content">
-                            <div class="screenshot-box">
-                                <img src="assets/ui-target-step.png" alt="Target configuration step — configure HTTP client, load balancing, and batch processing">
-                            </div>
-                            <p class="screenshot-description">Configure HTTP client settings, load balancing strategy, target URLs, and batch processing options.</p>
-                        </div>
-                        <div id="ss-review" class="screenshot-content">
-                            <div class="screenshot-box">
-                                <img src="assets/ui-review-step.png" alt="Review step — verify all configuration before running the bombardment">
-                            </div>
-                            <p class="screenshot-description">Review your full configuration with validation checks before launching the bombardment.</p>
-                        </div>
-                        <div id="ss-progress" class="screenshot-content">
-                            <div class="screenshot-box">
-                                <img src="assets/ui-job-progress.png" alt="Job progress view with pipeline visualization and throughput metrics">
-                            </div>
-                            <p class="screenshot-description">Real-time pipeline visualization with processed/failed counters and throughput metrics.</p>
-                        </div>
-                        <p class="screenshot-note">Dark mode included — automatically follows your system preference.</p>
-                    </div>
-                </div>
-
-                <div id="cli-tab" class="usage-tab">
-                    <div class="gui-container">
-                        <h3>Command Line Interface</h3>
-                        <p>Bombardment CLI offers powerful automation capabilities with full access to all features
-                            through simple command-line arguments.</p>
-                        <div class="code-container">
-                            <div class="code-header">
-                                <span class="language-tag">bash</span>
-                                <button class="copy-button" onclick="copyToClipboard('basic-code')" type="button">
-                                    <i class="fa-regular fa-copy"></i> Copy
-                                </button>
-                            </div>
-                            <pre id="basic-code"
-                                class="line-numbers"><code class="language-bash"># Run Bombardment in CLI mode
-bombardment cli \
-  --client_context '{"channel":"REST","dial_keep_alive":10000000000,"dial_timeout":5000000000,"tls_handshake_timeout":5000000000,"response_header_timeout":5000000000,"expect_continue_timeout":500000,"request_timeout":30000000000,"insecure_skip_verify":false}' \
-  --data_context '{"batch_size":100,"should_store_responses":false}' \
-  --load_balancer '{"strategy":"ROUND_ROBIN","urls":["https://api.example.com","https://api-backup.example.com"]}' \
-  --parser_context '{"file_path":"./private/file_path.csv","strategy":"CSV"}' \
-  --transformation_context '{"strategy":"JSONATA","method_expression":"\"POST\"","endpoint_expression":"\"/api/v1/\" & resource","headers_expression":"{ \"Content-Type\": \"application/json\", \"X-Request-ID\": request_id }","body_expression":"{ \"id\": $number(id), \"timestamp\": $millis() }"}'</code></pre>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="how-it-works">
-        <div class="container">
-            <div class="section-title fade-in">
-                <h2>How It Works</h2>
-                <p class="section-subtitle">Bombardment simplifies your data migration process in four steps</p>
-            </div>
-            <div class="steps">
-                <div class="step fade-in">
-                    <div class="step-number">01</div>
-                    <div class="step-content">
-                        <h3 class="step-title">Configure Your Source</h3>
-                        <p class="step-description">Define your source data format (CSV, JSON, PARQUET, or custom
-                            formats) and
-                            connection details.</p>
-                    </div>
-                </div>
-                <div class="step fade-in">
-                    <div class="step-number">02</div>
-                    <div class="step-content">
-                        <h3 class="step-title">Define Transformations</h3>
-                        <p class="step-description">Apply intuitive transformation rules to reshape your data for the
-                            target system.</p>
-                    </div>
-                </div>
-                <div class="step fade-in">
-                    <div class="step-number">03</div>
-                    <div class="step-content">
-                        <h3 class="step-title">Configure Target Channels</h3>
-                        <p class="step-description">Set up REST or gRPC endpoints with load balancing strategies.</p>
-                    </div>
-                </div>
-                <div class="step fade-in">
-                    <div class="step-number">04</div>
-                    <div class="step-content">
-                        <h3 class="step-title">Execute & Monitor</h3>
-                        <p class="step-description">Run batched migration jobs and track progress through the state
-                            machine.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="privacy-section">
-        <div class="container">
-            <div class="privacy-content fade-in">
-                <div class="privacy-icon">
-                    <i class="fa-solid fa-shield-alt"></i>
-                </div>
-                <div class="privacy-text">
-                    <h2>Data Privacy & Security</h2>
-                    <p>Bombardment runs entirely on your machine or server. No data is ever sent to external servers or
-                        stored in the cloud without your explicit configuration.</p>
-                    <p>Your sensitive business data stays within your infrastructure, giving you complete control over
-                        your information.</p>
-                    <a href="privacy-policy.html" class="button primary-button privacy-cta"><i
-                            class="fa-solid fa-lock"></i> Read Our Privacy Policy</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Bombardment. Open source under the <a href="https://github.com/Dhi13man/bombardment-runner/blob/main/LICENSE" style="color: inherit; text-decoration: underline;">MIT License</a>.</p>
+            <p class="footer-copy">&copy; 2025-2026 Bombardment. Open source under the
+                <a href="https://github.com/Dhi13man/bombardment-runner/blob/main/LICENSE">MIT License</a>.
+            </p>
         </div>
     </footer>
 
-    <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
-    <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
-    <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
-
-    <!-- Custom scripts -->
     <script src="src/scripts/animations.js"></script>
 </body>
 
