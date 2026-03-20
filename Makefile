@@ -1,4 +1,4 @@
-.PHONY: build test test-cover lint run run-cli docker docker-run swagger clean help ui-install ui-build ui-watch ui-typecheck check-bundle-size
+.PHONY: build test test-cover lint run run-cli docker docker-run swagger clean help ui-install ui-build ui-watch ui-typecheck check-bundle-size landing-minify landing-webp
 
 GO_DIR := ./app
 BINARY := bombardment
@@ -61,6 +61,27 @@ check-bundle-size: ui-build ## Check frontend bundle sizes against budgets
 	if [ $$ICON_SIZE -gt 12288 ]; then echo "FAIL: Icons exceed 12KB budget" && exit 1; fi; \
 	echo "All bundle sizes within budget."
 
+LANDING_DIR := ./landing-site
+
+landing-minify: ## Minify landing site CSS and JS
+	@echo "Minifying landing site assets..."
+	@npx --yes cssnano-cli $(LANDING_DIR)/src/styles/global-styles.css $(LANDING_DIR)/src/styles/global-styles.min.css 2>/dev/null
+	@npx --yes terser $(LANDING_DIR)/src/scripts/animations.js -o $(LANDING_DIR)/src/scripts/animations.min.js --compress --mangle 2>/dev/null
+	@ORIG_CSS=$$(wc -c < $(LANDING_DIR)/src/styles/global-styles.css); \
+	MIN_CSS=$$(wc -c < $(LANDING_DIR)/src/styles/global-styles.min.css); \
+	ORIG_JS=$$(wc -c < $(LANDING_DIR)/src/scripts/animations.js); \
+	MIN_JS=$$(wc -c < $(LANDING_DIR)/src/scripts/animations.min.js); \
+	echo "  CSS: $$ORIG_CSS -> $$MIN_CSS bytes"; \
+	echo "  JS:  $$ORIG_JS -> $$MIN_JS bytes"
+
+landing-webp: ## Convert landing site PNGs to WebP
+	@echo "Converting PNGs to WebP..."
+	@for f in $(LANDING_DIR)/assets/ui-*.png; do \
+		cwebp -q 82 "$$f" -o "$${f%.png}.webp" 2>/dev/null; \
+	done
+	@echo "Done."
+
 clean: ## Remove build artifacts
 	rm -f $(GO_DIR)/$(BINARY) $(GO_DIR)/coverage.out $(GO_DIR)/coverage.html
 	rm -f $(GO_DIR)/__debug_bin*
+	rm -f $(LANDING_DIR)/src/styles/global-styles.min.css $(LANDING_DIR)/src/scripts/animations.min.js

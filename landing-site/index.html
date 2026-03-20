@@ -4,37 +4,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bombardment - Bulk API Migration Tool | CSV to REST, gRPC, GraphQL</title>
+    <title>Bombardment: Open-Source Bulk API Migration Tool</title>
     <meta name="description"
-        content="Stream CSV, JSON, Excel, or Parquet files through REST, GraphQL, or gRPC endpoints with concurrent batching, load balancing, and JSONata transforms. Open-source Go tool with Web UI and CLI.">
+        content="Open-source Go tool to stream CSV and JSON files through REST, gRPC, or GraphQL with concurrent batching and load balancing. CLI and Web UI.">
     <meta name="keywords"
         content="application layer migration, API automation, golang, concurrent processing, load balancing, REST, gRPC, GraphQL, JSONata, bulk API">
     <meta name="author" content="Dhiman Seal">
     <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://bombardment.work/">
+    <meta name="theme-color" content="#0F1117" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#F8FAFC" media="(prefers-color-scheme: light)">
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Bombardment">
+    <meta property="og:locale" content="en_US">
     <meta property="og:url" content="https://bombardment.work/">
-    <meta property="og:title" content="Bombardment - Bulk API Migration Tool">
+    <meta property="og:title" content="Bombardment: Open-Source Bulk API Migration Tool">
     <meta property="og:description"
         content="Stream, transform, and dispatch millions of API requests from CSV/JSON files through REST, gRPC, or GraphQL. Open-source Go tool.">
-    <meta property="og:image" content="https://bombardment.work/assets/favicon/android-chrome-512x512.png">
+    <meta property="og:image" content="https://bombardment.work/assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Bombardment - Bulk API Migration Tool">
+    <meta name="twitter:title" content="Bombardment: Open-Source Bulk API Migration Tool">
     <meta name="twitter:description"
         content="Stream, transform, and dispatch millions of API requests from CSV/JSON files. Open-source Go tool.">
-    <meta name="twitter:image" content="https://bombardment.work/assets/favicon/android-chrome-512x512.png">
+    <meta name="twitter:image" content="https://bombardment.work/assets/og-image.png">
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
-        rel="stylesheet">
+    <!-- Fonts (self-hosted, no external dependency) -->
+    <link rel="stylesheet" href="fonts/fonts.css">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="src/styles/global-styles.css">
+    <link rel="stylesheet" href="src/styles/global-styles.min.css">
 
     <!-- Favicon -->
     <link rel="icon" href="assets/favicon/favicon.ico" type="image/x-icon">
@@ -47,11 +51,19 @@
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
         "name": "Bombardment",
+        "description": "Open-source Go tool for bulk API migration. Stream CSV, JSON, Excel, or Parquet files through REST, gRPC, or GraphQL endpoints with concurrent batching and load balancing.",
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "Linux, macOS, Windows",
         "programmingLanguage": "Go",
         "license": "https://opensource.org/licenses/MIT",
         "url": "https://bombardment.work",
+        "downloadUrl": "https://github.com/Dhi13man/bombardment-runner/releases",
+        "screenshot": "https://bombardment.work/assets/ui-source-step.png",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
         "author": {
             "@type": "Person",
             "name": "Dhiman Seal",
@@ -66,12 +78,13 @@
     <a href="#main" class="skip-link">Skip to content</a>
 
     <!-- S0: Floating Glass Navbar -->
+    <header>
     <nav class="nav" aria-label="Main">
-        <a href="index.html" class="nav-logo">Bombardment</a>
+        <a href="/" class="nav-logo" aria-current="page">Bombardment</a>
         <div class="nav-links" id="nav-links">
             <a href="#features">Features</a>
             <a href="#get-started">Get Started</a>
-            <a href="https://github.com/Dhi13man/bombardment-runner" class="nav-cta">
+            <a href="https://github.com/Dhi13man/bombardment-runner" class="nav-cta" rel="noopener">
                 <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     aria-hidden="true">
@@ -92,6 +105,7 @@
             </svg>
         </button>
     </nav>
+    </header>
 
     <main id="main" tabindex="-1">
         <!-- S1: Hero -->
@@ -99,15 +113,15 @@
             <div class="hero-bg"></div>
             <div class="hero-content container">
                 <h1 class="hero-headline">
-                    Stop writing<br>
-                    <span class="accent">throwaway scripts.</span>
+                    Bulk API migration<br>
+                    <span class="accent">without throwaway scripts.</span>
                 </h1>
                 <p class="hero-subtitle">
                     Stream, transform, and dispatch millions of API requests
                     from local files. No custom code required.
                 </p>
                 <div class="hero-cta">
-                    <a href="https://github.com/Dhi13man/bombardment-runner" class="cta-secondary">
+                    <a href="https://github.com/Dhi13man/bombardment-runner" class="cta-secondary" rel="noopener">
                         <svg class="icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -261,15 +275,15 @@ bombardment cli \
                             <span class="copy-label" role="status">Copy</span>
                         </button>
                     </div>
-                    <p class="install-alt">or <a href="https://github.com/Dhi13man/bombardment-runner/releases">download a binary</a></p>
+                    <p class="install-alt">or <a href="https://github.com/Dhi13man/bombardment-runner/releases" rel="noopener">download a binary</a></p>
                 </div>
-                <div class="segment-control reveal" role="tablist">
+                <div class="segment-control reveal" role="tablist" aria-label="Interface mode">
                     <button type="button" class="segment-btn active" id="tab-gui" data-tab="gui" role="tab" aria-selected="true" aria-controls="gui">GUI Mode</button>
                     <button type="button" class="segment-btn" id="tab-cli" data-tab="cli" role="tab" aria-selected="false" aria-controls="cli">CLI Mode</button>
                 </div>
 
-                <div class="demo-panel" id="gui" role="tabpanel" aria-labelledby="tab-gui">
-                    <div class="screenshot-tabs" role="tablist">
+                <div class="demo-panel" id="gui" role="tabpanel" aria-labelledby="tab-gui" tabindex="0">
+                    <div class="screenshot-tabs" role="tablist" aria-label="GUI workflow steps">
                         <button class="screenshot-tab active" id="tab-ss-source" data-screenshot="ss-source" type="button" role="tab" aria-selected="true" aria-controls="ss-source">1. Source</button>
                         <button class="screenshot-tab" id="tab-ss-transform" data-screenshot="ss-transform" type="button" role="tab" aria-selected="false" aria-controls="ss-transform">2. Transform</button>
                         <button class="screenshot-tab" id="tab-ss-target" data-screenshot="ss-target" type="button" role="tab" aria-selected="false" aria-controls="ss-target">3. Target</button>
@@ -277,7 +291,7 @@ bombardment cli \
                         <button class="screenshot-tab" id="tab-ss-progress" data-screenshot="ss-progress" type="button" role="tab" aria-selected="false" aria-controls="ss-progress">5. Progress</button>
                     </div>
 
-                    <div id="ss-source" class="screenshot-content active" role="tabpanel" aria-labelledby="tab-ss-source">
+                    <div id="ss-source" class="screenshot-content active" role="tabpanel" aria-labelledby="tab-ss-source" tabindex="0">
                         <div class="device-frame">
                             <div class="device-frame-bar">
                                 <span class="device-frame-dot"></span>
@@ -285,16 +299,18 @@ bombardment cli \
                                 <span class="device-frame-dot"></span>
                             </div>
                             <picture>
+                                <source srcset="assets/ui-source-step-dark.webp" media="(prefers-color-scheme: dark)" type="image/webp">
+                                <source srcset="assets/ui-source-step.webp" type="image/webp">
                                 <source srcset="assets/ui-source-step-dark.png" media="(prefers-color-scheme: dark)">
                                 <img src="assets/ui-source-step.png"
-                                    alt="Source configuration step: select format and upload a file" width="900"
-                                    height="500">
+                                    alt="Bombardment web UI: configure CSV source for bulk API migration" width="900"
+                                    height="500" decoding="async">
                             </picture>
                         </div>
                         <p class="screenshot-description">Choose your data format (CSV, JSON, Excel, Parquet)
                             and upload a file or enter a server-side path.</p>
                     </div>
-                    <div id="ss-transform" class="screenshot-content" role="tabpanel" aria-labelledby="tab-ss-transform">
+                    <div id="ss-transform" class="screenshot-content" role="tabpanel" aria-labelledby="tab-ss-transform" tabindex="0">
                         <div class="device-frame">
                             <div class="device-frame-bar">
                                 <span class="device-frame-dot"></span>
@@ -302,15 +318,18 @@ bombardment cli \
                                 <span class="device-frame-dot"></span>
                             </div>
                             <picture>
+                                <source srcset="assets/ui-transform-step-dark.webp" media="(prefers-color-scheme: dark)" type="image/webp">
+                                <source srcset="assets/ui-transform-step.webp" type="image/webp">
                                 <source srcset="assets/ui-transform-step-dark.png" media="(prefers-color-scheme: dark)">
                                 <img src="assets/ui-transform-step.png"
-                                    alt="Transform configuration step: define JSONata expressions" width="900" height="500">
+                                    alt="Bombardment web UI: define JSONata transform expressions" width="900" height="500"
+                                    loading="lazy" decoding="async">
                             </picture>
                         </div>
                         <p class="screenshot-description">Define JSONata expressions to shape each record into an HTTP
                             request: method, endpoint, headers, and body.</p>
                     </div>
-                    <div id="ss-target" class="screenshot-content" role="tabpanel" aria-labelledby="tab-ss-target">
+                    <div id="ss-target" class="screenshot-content" role="tabpanel" aria-labelledby="tab-ss-target" tabindex="0">
                         <div class="device-frame">
                             <div class="device-frame-bar">
                                 <span class="device-frame-dot"></span>
@@ -318,16 +337,18 @@ bombardment cli \
                                 <span class="device-frame-dot"></span>
                             </div>
                             <picture>
+                                <source srcset="assets/ui-target-step-dark.webp" media="(prefers-color-scheme: dark)" type="image/webp">
+                                <source srcset="assets/ui-target-step.webp" type="image/webp">
                                 <source srcset="assets/ui-target-step-dark.png" media="(prefers-color-scheme: dark)">
                                 <img src="assets/ui-target-step.png"
-                                    alt="Target configuration step: configure HTTP client and load balancing" width="900"
-                                    height="500">
+                                    alt="Bombardment web UI: configure load balancing and target endpoints" width="900"
+                                    height="500" loading="lazy" decoding="async">
                             </picture>
                         </div>
                         <p class="screenshot-description">Configure HTTP client settings, load balancing strategy,
                             target URLs, and batch processing options.</p>
                     </div>
-                    <div id="ss-review" class="screenshot-content" role="tabpanel" aria-labelledby="tab-ss-review">
+                    <div id="ss-review" class="screenshot-content" role="tabpanel" aria-labelledby="tab-ss-review" tabindex="0">
                         <div class="device-frame">
                             <div class="device-frame-bar">
                                 <span class="device-frame-dot"></span>
@@ -335,15 +356,18 @@ bombardment cli \
                                 <span class="device-frame-dot"></span>
                             </div>
                             <picture>
+                                <source srcset="assets/ui-review-step-dark.webp" media="(prefers-color-scheme: dark)" type="image/webp">
+                                <source srcset="assets/ui-review-step.webp" type="image/webp">
                                 <source srcset="assets/ui-review-step-dark.png" media="(prefers-color-scheme: dark)">
                                 <img src="assets/ui-review-step.png"
-                                    alt="Review step: verify all configuration before running" width="900" height="500">
+                                    alt="Bombardment web UI: review all configuration before running" width="900" height="500"
+                                    loading="lazy" decoding="async">
                             </picture>
                         </div>
                         <p class="screenshot-description">Review your full configuration with validation checks before
                             launching the bombardment.</p>
                     </div>
-                    <div id="ss-progress" class="screenshot-content" role="tabpanel" aria-labelledby="tab-ss-progress">
+                    <div id="ss-progress" class="screenshot-content" role="tabpanel" aria-labelledby="tab-ss-progress" tabindex="0">
                         <div class="device-frame">
                             <div class="device-frame-bar">
                                 <span class="device-frame-dot"></span>
@@ -351,10 +375,12 @@ bombardment cli \
                                 <span class="device-frame-dot"></span>
                             </div>
                             <picture>
+                                <source srcset="assets/ui-job-progress-dark.webp" media="(prefers-color-scheme: dark)" type="image/webp">
+                                <source srcset="assets/ui-job-progress.webp" type="image/webp">
                                 <source srcset="assets/ui-job-progress-dark.png" media="(prefers-color-scheme: dark)">
                                 <img src="assets/ui-job-progress.png"
-                                    alt="Job progress view with pipeline visualization and throughput metrics" width="900"
-                                    height="500">
+                                    alt="Bombardment web UI: real-time job progress and throughput metrics" width="900"
+                                    height="500" loading="lazy" decoding="async">
                             </picture>
                         </div>
                         <p class="screenshot-description">Real-time pipeline visualization with processed/failed
@@ -362,7 +388,7 @@ bombardment cli \
                     </div>
                 </div>
 
-                <div class="demo-panel" id="cli" role="tabpanel" aria-labelledby="tab-cli" hidden>
+                <div class="demo-panel" id="cli" role="tabpanel" aria-labelledby="tab-cli" tabindex="0" hidden>
                     <div class="cli-cards">
                         <!-- Source -->
                         <div class="cli-card">
@@ -562,17 +588,17 @@ bombardment cli \
     <footer class="footer">
         <div class="container">
             <div class="footer-info">
-                <p>Built by <a href="https://github.com/Dhi13man">Dhiman Seal</a>, a backend engineer at Groww processing 300K+ daily transactions.</p>
+                <p>Built by <a href="https://github.com/Dhi13man" rel="noopener">Dhiman Seal</a>, a backend engineer at Groww processing 300K+ daily transactions.</p>
                 <span class="footer-dot" aria-hidden="true"></span>
                 <p>Runs entirely on your machine. <a href="privacy-policy.html">Privacy Policy</a></p>
             </div>
             <p class="footer-copy">&copy; 2025-2026 Bombardment. Open source under the
-                <a href="https://github.com/Dhi13man/bombardment-runner/blob/main/LICENSE">MIT License</a>.
+                <a href="https://github.com/Dhi13man/bombardment-runner/blob/main/LICENSE" rel="noopener">MIT License</a>.
             </p>
         </div>
     </footer>
 
-    <script src="src/scripts/animations.js"></script>
+    <script src="src/scripts/animations.min.js"></script>
 </body>
 
 </html>

@@ -176,7 +176,7 @@ function initScreenshotTabs() {
   });
 }
 
-// 7. Copy to clipboard
+// 6. Copy to clipboard
 function initCopyButtons() {
   document.querySelectorAll('.copy-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -202,12 +202,17 @@ function initCopyButtons() {
         var sel = window.getSelection();
         sel.removeAllRanges();
         sel.addRange(range);
+        var label = btn.querySelector('.copy-label');
+        if (label) label.textContent = 'Select + copy';
+        setTimeout(function () {
+          if (label) label.textContent = 'Copy';
+        }, 3000);
       });
     });
   });
 }
 
-// 8. Pipeline particle animation
+// 7. Pipeline particle animation
 function initPipelineParticles() {
   var mq = window.matchMedia('(prefers-reduced-motion: reduce)');
   if (mq.matches) return;
@@ -221,6 +226,20 @@ function initPipelineParticles() {
   });
 }
 
+// 8. Pause off-screen infinite animations to save CPU/battery
+function initAnimationGating() {
+  var sections = document.querySelectorAll('.pipeline-detail, .scope');
+  if (!sections.length) return;
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      entry.target.classList.toggle('in-view', entry.isIntersecting);
+    });
+  }, { threshold: 0 });
+
+  sections.forEach(function (s) { observer.observe(s); });
+}
+
 // Init all on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function () {
   document.body.classList.add('js-ready');
@@ -232,4 +251,5 @@ document.addEventListener('DOMContentLoaded', function () {
   initScreenshotTabs();
   initCopyButtons();
   initPipelineParticles();
+  initAnimationGating();
 });

@@ -134,6 +134,10 @@ img {
   outline-offset: 2px;
 }
 
+:focus {
+  scroll-margin-top: 80px;
+}
+
 a {
   color: var(--accent);
   text-decoration: none;
@@ -307,7 +311,9 @@ section .section-subtitle {
   border: none;
   color: var(--text-primary);
   cursor: pointer;
-  padding: var(--space-2);
+  padding: var(--space-3);
+  min-width: 44px;
+  min-height: 44px;
 }
 
 /* -----------------------------------------------------------
@@ -434,7 +440,9 @@ section[id] {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  min-height: 44px;
+  min-width: 44px;
   background: none;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
@@ -573,7 +581,7 @@ section[id] {
   .kw { color: #7C3AED; }
   .fn { color: #2563EB; }
   .str { color: #059669; }
-  .cm { color: #64748B; }
+  .cm { color: #475569; }
   .num { color: #EA580C; }
   .op { color: #0891B2; }
 }
@@ -664,6 +672,7 @@ section[id] {
   left: -6px;
   animation: flow-right 2.5s linear infinite;
   box-shadow: 0 0 8px var(--accent), 0 0 16px rgba(129, 140, 248, 0.4);
+  will-change: transform, opacity;
 }
 
 .pipeline-step-connector .data-particle:nth-child(2) {
@@ -700,6 +709,7 @@ section[id] {
 
 .segment-btn {
   padding: var(--space-2) var(--space-6);
+  min-height: 44px;
   background: none;
   border: none;
   border-radius: var(--radius-sm);
@@ -721,7 +731,7 @@ section[id] {
 }
 
 /* -----------------------------------------------------------
-   14. Demo Section
+   13. Demo Section
    ----------------------------------------------------------- */
 .demo {
   background: var(--bg-surface);
@@ -812,7 +822,7 @@ section[id] {
   font-family: var(--font-body);
   font-size: var(--text-sm);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 
 .screenshot-tab.active {
@@ -908,7 +918,7 @@ section[id] {
 }
 
 /* -----------------------------------------------------------
-   15. Bento Grid (Features)
+   14. Bento Grid (Features)
    ----------------------------------------------------------- */
 .features {
   background: var(--bg-base);
@@ -990,7 +1000,7 @@ section[id] {
 }
 
 /* -----------------------------------------------------------
-   16. Scope
+   15. Scope
    ----------------------------------------------------------- */
 .scope {
   background: var(--bg-surface);
@@ -1077,7 +1087,7 @@ section[id] {
 }
 
 /* -----------------------------------------------------------
-   17. Footer
+   16. Footer
    ----------------------------------------------------------- */
 .footer {
   background: var(--bg-surface);
@@ -1124,7 +1134,7 @@ section[id] {
 }
 
 /* -----------------------------------------------------------
-   21. Icons
+   17. Icons
    ----------------------------------------------------------- */
 .icon {
   width: 24px;
@@ -1133,13 +1143,13 @@ section[id] {
 }
 
 /* -----------------------------------------------------------
-   22. Keyframe Animations
+   18. Keyframe Animations
    ----------------------------------------------------------- */
 @keyframes flow-right {
-  0%   { left: -6px; opacity: 0; }
+  0%   { transform: translateX(0); opacity: 0; }
   10%  { opacity: 1; }
   90%  { opacity: 1; }
-  100% { left: calc(100% + 6px); opacity: 0; }
+  100% { transform: translateX(60px); opacity: 0; }
 }
 
 @keyframes reveal-up {
@@ -1176,7 +1186,7 @@ section[id] {
 
 @keyframes border-pulse {
   0%, 100% { border-left-color: var(--accent); }
-  50% { border-left-color: var(--accent-hover); box-shadow: -4px 0 12px rgba(129, 140, 248, 0.15); }
+  50% { border-left-color: var(--accent-hover); }
 }
 
 @keyframes gradient-shimmer {
@@ -1185,10 +1195,10 @@ section[id] {
 }
 
 @keyframes flow-down {
-  0%   { top: -6px; left: -2px; opacity: 0; }
+  0%   { transform: translateY(0); opacity: 0; }
   10%  { opacity: 1; }
   90%  { opacity: 1; }
-  100% { top: calc(100% + 6px); left: -2px; opacity: 0; }
+  100% { transform: translateY(36px); opacity: 0; }
 }
 
 @keyframes fade-in {
@@ -1197,7 +1207,7 @@ section[id] {
 }
 
 /* -----------------------------------------------------------
-   23. Scroll Reveals (Progressive Enhancement)
+   19. Scroll Reveals (Progressive Enhancement)
    ----------------------------------------------------------- */
 @supports (animation-timeline: view()) {
   .reveal {
@@ -1220,7 +1230,19 @@ section[id] {
 }
 
 /* -----------------------------------------------------------
-   24. Reduced Motion
+   20. Off-Screen Animation Gating
+   ----------------------------------------------------------- */
+.pipeline-detail:not(.in-view) .data-particle,
+.pipeline-detail:not(.in-view) .pipeline-step-connector::before {
+  animation-play-state: paused;
+}
+
+.scope:not(.in-view) .scope-yes {
+  animation-play-state: paused;
+}
+
+/* -----------------------------------------------------------
+   21. Reduced Motion
    ----------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -1239,7 +1261,7 @@ section[id] {
 }
 
 /* -----------------------------------------------------------
-   25. Privacy Policy Page
+   22. Privacy Policy Page
    ----------------------------------------------------------- */
 .privacy-page-content {
   padding-top: 120px;
@@ -1287,6 +1309,12 @@ section[id] {
   background: var(--bg-inset);
 }
 
+.table-of-contents h2 {
+  font-size: var(--text-h3);
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
 .table-of-contents ul {
   list-style: none;
   padding: 0;
@@ -1309,7 +1337,7 @@ section[id] {
 }
 
 /* -----------------------------------------------------------
-   26. Light Mode Surface Fixes
+   23. Light Mode Surface Fixes
    ----------------------------------------------------------- */
 @media (prefers-color-scheme: light) {
   /* Hero gradient boost */
@@ -1338,7 +1366,7 @@ section[id] {
 
   /* Comparison label contrast */
   .comparison-before .comparison-label {
-    color: #DC2626;
+    color: #B91C1C;
     background: rgba(239, 68, 68, 0.12);
   }
   .comparison-after .comparison-label {
@@ -1361,7 +1389,7 @@ section[id] {
 }
 
 /* -----------------------------------------------------------
-   27. Dark Mode Section Borders
+   24. Dark Mode Section Borders
    ----------------------------------------------------------- */
 @media (prefers-color-scheme: dark) {
   .comparison,
@@ -1372,7 +1400,7 @@ section[id] {
 }
 
 /* -----------------------------------------------------------
-   28. Responsive
+   25. Responsive
    ----------------------------------------------------------- */
 
 /* Mobile nav */
@@ -1446,6 +1474,8 @@ section[id] {
   }
 
   .pipeline-step-connector .data-particle {
+    left: -2px;
+    top: -6px;
     animation-name: flow-down;
   }
 
@@ -1469,8 +1499,9 @@ section[id] {
   }
 
   .screenshot-tab {
-    padding: var(--space-1) var(--space-3);
+    padding: var(--space-2) var(--space-3);
     font-size: var(--text-xs);
+    min-height: 44px;
   }
 
   .cli-cards {
