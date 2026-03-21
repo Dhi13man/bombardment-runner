@@ -101,7 +101,7 @@ curl -L https://github.com/Dhi13man/bombardment-runner/releases/latest/download/
 ```
 
 | Platform | Architecture | Binary |
-|----------|-------------|--------|
+| --- | --- | --- |
 | Linux | x86_64 | `bombardment-linux-amd64` |
 | Linux | ARM64 | `bombardment-linux-arm64` |
 | macOS | Intel | `bombardment-darwin-amd64` |

@@ -24,7 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - Nav items reordered to match page flow: How It Works, Get Started, Features, GitHub.
 - README rewritten for v1.0.0 with download quick start, platform matrix, and website link.
 
-## [0.5.0] - 2026-03-12
+## [0.5.0] - 2025-03-12
 
 ### Added
 
@@ -40,7 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - Removed unused JS validation sub-objects (`source`, `transform`, `target`, `driver`).
 - Removed redundant `init()` logger setup in same-package test files.
 
-## [0.4.0] - 2026-03-12
+## [0.4.0] - 2025-03-12
 
 ### Added
 
@@ -72,7 +72,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - CSV flush batching every 100 rows instead of per-row for reduced syscall overhead.
 - `docker-compose.yml` resource limits (2 CPU, 1G RAM), `no-new-privileges`, JSON log rotation.
 
-## [0.3.0] - 2026-03-12
+## [0.3.0] - 2025-03-12
 
 ### Added
 
@@ -80,7 +80,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - CI workflow with lint, test, and Docker build checks.
 - Docker networking fix for container-to-host communication.
 
-## [0.2.0] - 2026-03-11
+## [0.2.0] - 2025-03-11
 
 ### Added
 
@@ -97,7 +97,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 - Removed deprecated `bombardment_runner/` Buffalo framework directory.
 
-## [0.1.0] - 2026-03-11
+## [0.1.0] - 2025-03-11
 
 ### Added
 
