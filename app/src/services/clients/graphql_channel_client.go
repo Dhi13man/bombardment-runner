@@ -45,8 +45,9 @@ type graphqlPayload struct {
 }
 
 type graphqlResponseBody struct {
-	Data   json.RawMessage                  `json:"data"`
-	Errors []modelsDtoResponses.GraphqlError `json:"errors"`
+	Data       json.RawMessage                  `json:"data"`
+	Errors     []modelsDtoResponses.GraphqlError `json:"errors"`
+	Extensions map[string]any                    `json:"extensions,omitempty"`
 }
 
 func (c *graphqlChannelClient) Execute(
@@ -101,6 +102,7 @@ func (c *graphqlChannelClient) Execute(
 	var gqlResp graphqlResponseBody
 	var parsedBody any
 	var gqlErrors []modelsDtoResponses.GraphqlError
+	var extensions map[string]any
 
 	if err := json.Unmarshal(body, &gqlResp); err == nil {
 		if gqlResp.Data != nil {
@@ -112,9 +114,10 @@ func (c *graphqlChannelClient) Execute(
 			}
 		}
 		gqlErrors = gqlResp.Errors
+		extensions = gqlResp.Extensions
 	} else {
 		parsedBody = body
 	}
 
-	return modelsDtoResponses.NewGraphqlChannelResponse(response.StatusCode, parsedBody, gqlErrors), nil
+	return modelsDtoResponses.NewGraphqlChannelResponse(response.StatusCode, parsedBody, gqlErrors, extensions), nil
 }

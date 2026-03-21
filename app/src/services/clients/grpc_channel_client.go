@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
@@ -52,17 +53,51 @@ type grpcChannelClient struct {
 	context     modelsDtoClients.ClientContext
 	connections sync.Map // target -> *grpc.ClientConn
 	dialer      GrpcDialer
+	resolver    *ProtoResolver // nil = JSON codec fallback
 }
 
-func NewGrpcClient(clientCtx modelsDtoClients.ClientContext) GrpcChannelClient {
+func NewGrpcClient(clientCtx modelsDtoClients.ClientContext) (GrpcChannelClient, error) {
 	return newGrpcClientWithDialer(clientCtx, grpc.NewClient)
 }
 
-func newGrpcClientWithDialer(clientCtx modelsDtoClients.ClientContext, dialer GrpcDialer) GrpcChannelClient {
-	return &grpcChannelClient{
-		context: clientCtx,
-		dialer:  dialer,
+func newGrpcClientWithDialer(clientCtx modelsDtoClients.ClientContext, dialer GrpcDialer) (GrpcChannelClient, error) {
+	protoFiles := clientCtx.ProtoFiles
+	importPaths := clientCtx.ProtoImportPaths
+
+	// Guard: proto_file_contents and proto_files are mutually exclusive.
+	// The controller validates this for API callers; this guard covers CLI and direct library use.
+	if len(clientCtx.ProtoFileContents) > 0 && len(clientCtx.ProtoFiles) > 0 {
+		return nil, fmt.Errorf("proto_file_contents and proto_files are mutually exclusive")
 	}
+
+	// Handle browser-uploaded proto file contents
+	if len(clientCtx.ProtoFileContents) > 0 {
+		tempDir, paths, err := writeProtoContents(clientCtx.ProtoFileContents)
+		if err != nil {
+			return nil, fmt.Errorf("write uploaded proto files: %w", err)
+		}
+		// Safe to delete immediately after NewProtoResolver below: protocompile reads
+		// all file contents eagerly during Compile() and holds only in-memory descriptors.
+		defer cleanupTempDir(tempDir)
+		zap.L().Debug("wrote uploaded proto files to temp dir", zap.String("dir", tempDir), zap.Int("count", len(paths)))
+		protoFiles = paths
+		importPaths = append([]string{tempDir}, importPaths...)
+	}
+
+	var resolver *ProtoResolver
+	if len(protoFiles) > 0 {
+		var err error
+		resolver, err = NewProtoResolver(protoFiles, importPaths)
+		if err != nil {
+			return nil, fmt.Errorf("init proto resolver: %w", err)
+		}
+	}
+
+	return &grpcChannelClient{
+		context:  clientCtx,
+		dialer:   dialer,
+		resolver: resolver,
+	}, nil
 }
 
 func (c *grpcChannelClient) GetStrategy() modelsEnums.ClientChannel {
@@ -96,6 +131,25 @@ func (c *grpcChannelClient) getOrDial(target string) (*grpc.ClientConn, error) {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	} else {
 		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(nil)))
+	}
+
+	if c.context.MaxRecvMsgSize > 0 || c.context.MaxSendMsgSize > 0 {
+		var callOpts []grpc.CallOption
+		if c.context.MaxRecvMsgSize > 0 {
+			callOpts = append(callOpts, grpc.MaxCallRecvMsgSize(c.context.MaxRecvMsgSize))
+		}
+		if c.context.MaxSendMsgSize > 0 {
+			callOpts = append(callOpts, grpc.MaxCallSendMsgSize(c.context.MaxSendMsgSize))
+		}
+		opts = append(opts, grpc.WithDefaultCallOptions(callOpts...))
+	}
+
+	if c.context.KeepaliveTime > 0 {
+		opts = append(opts, grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:                c.context.KeepaliveTime,
+			Timeout:             c.context.KeepaliveTimeout,
+			PermitWithoutStream: true,
+		}))
 	}
 
 	conn, err := c.dialer(target, opts...)
@@ -142,21 +196,60 @@ func (c *grpcChannelClient) Execute(
 		ctx = metadata.NewOutgoingContext(ctx, md)
 	}
 
+	// Proto mode: use protobuf encoding when a resolver is configured.
+	if c.resolver != nil {
+		return c.executeProto(ctx, conn, fullMethod, grpcRequest)
+	}
+
+	// JSON codec fallback: existing behavior for servers accepting application/grpc+json.
 	var response json.RawMessage
 	err = conn.Invoke(ctx, fullMethod, grpcRequest.Body, &response, jsonForceCodec)
 
 	if err != nil {
-		st, ok := status.FromError(err)
-		if ok {
-			statusCode := int(st.Code())
-			zap.L().Debug("gRPC call returned status",
-				zap.Int("code", statusCode),
-				zap.String("message", st.Message()),
-			)
-			return modelsDtoResponses.NewGrpcChannelResponse(statusCode, st.Message()), nil
-		}
-		return nil, fmt.Errorf("gRPC invocation failed: %w", err)
+		return c.handleGrpcError(err)
 	}
 
 	return modelsDtoResponses.NewGrpcChannelResponse(0, response), nil // 0 = OK
+}
+
+func (c *grpcChannelClient) executeProto(
+	ctx context.Context,
+	conn *grpc.ClientConn,
+	fullMethod string,
+	grpcRequest *modelsDtoRequests.GrpcChannelRequest,
+) (modelsDtoResponses.BaseChannelResponse, error) {
+	reqMsg, err := c.resolver.CreateRequestMessage(grpcRequest.Service, grpcRequest.Method, grpcRequest.Body)
+	if err != nil {
+		return nil, fmt.Errorf("proto marshal: %w", err)
+	}
+
+	respMsg := c.resolver.CreateResponseMessage(grpcRequest.Service, grpcRequest.Method)
+	if respMsg == nil {
+		return nil, fmt.Errorf("no response descriptor for %s/%s", grpcRequest.Service, grpcRequest.Method)
+	}
+
+	err = conn.Invoke(ctx, fullMethod, reqMsg, respMsg)
+	if err != nil {
+		return c.handleGrpcError(err)
+	}
+
+	body, err := c.resolver.ResponseToJSON(respMsg)
+	if err != nil {
+		return nil, fmt.Errorf("proto unmarshal response: %w", err)
+	}
+
+	return modelsDtoResponses.NewGrpcChannelResponse(0, body), nil
+}
+
+func (c *grpcChannelClient) handleGrpcError(err error) (modelsDtoResponses.BaseChannelResponse, error) {
+	st, ok := status.FromError(err)
+	if ok {
+		statusCode := int(st.Code())
+		zap.L().Debug("gRPC call returned status",
+			zap.Int("code", statusCode),
+			zap.String("message", st.Message()),
+		)
+		return modelsDtoResponses.NewGrpcChannelResponse(statusCode, st.Message()), nil
+	}
+	return nil, fmt.Errorf("gRPC invocation failed: %w", err)
 }

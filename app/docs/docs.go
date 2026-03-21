@@ -16,8 +16,32 @@ const docTemplate = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/v1/bombardment": {
+            "get": {
+                "description": "Get a list of all bombardment jobs with their statuses",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bombardment Core"
+                ],
+                "summary": "List all jobs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/definitions/services.JobSnapshot"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "post": {
-                "description": "Accept contexts payload and trigger processing",
+                "description": "Accept contexts payload and trigger processing asynchronously",
                 "consumes": [
                     "application/json"
                 ],
@@ -40,13 +64,10 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/services.JobSnapshot"
                         }
                     },
                     "400": {
@@ -60,6 +81,74 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/bombardment/{id}": {
+            "get": {
+                "description": "Get the current status and progress of a bombardment job",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Bombardment Core"
+                ],
+                "summary": "Get job status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/services.JobSnapshot"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a bombardment job by its ID",
+                "tags": [
+                    "Bombardment Core"
+                ],
+                "summary": "Delete a job",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -108,27 +197,27 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "client_context": {
-                    "$ref": "#/definitions/models_dto_clients.ClientContext"
+                    "$ref": "#/definitions/modelsDtoClients.ClientContext"
                 },
                 "driver_context": {
-                    "$ref": "#/definitions/models_dto_driver.DriverContext"
+                    "$ref": "#/definitions/modelsDtoDriver.DriverContext"
                 },
                 "load_balancer_context": {
-                    "$ref": "#/definitions/models_dto_load_balancing.LoadBalancerContext"
+                    "$ref": "#/definitions/modelsDtoLoadBalancing.LoadBalancerContext"
                 },
                 "parser_context": {
-                    "$ref": "#/definitions/models_dto_parsing.ParserContext"
+                    "$ref": "#/definitions/modelsDtoParsing.ParserContext"
                 },
                 "transformer_context": {
-                    "$ref": "#/definitions/models_dto_transforming.TransformerContext"
+                    "$ref": "#/definitions/modelsDtoTransforming.TransformerContext"
                 }
             }
         },
-        "models_dto_clients.ClientContext": {
+        "modelsDtoClients.ClientContext": {
             "type": "object",
             "properties": {
                 "channel": {
-                    "$ref": "#/definitions/models_enums.ClientChannel"
+                    "$ref": "#/definitions/modelsEnums.ClientChannel"
                 },
                 "dial_keep_alive": {
                     "description": "Maximum time a connection will be kept alive.",
@@ -139,7 +228,7 @@ const docTemplate = `{
                     ]
                 },
                 "dial_timeout": {
-                    "description": "Maximum time a dial will wait for a connect to complete.",
+                    "description": "Maximum time a dial will wait for connect to complete.",
                     "allOf": [
                         {
                             "$ref": "#/definitions/time.Duration"
@@ -148,6 +237,62 @@ const docTemplate = `{
                 },
                 "expect_continue_timeout": {
                     "description": "Maximum time waiting for a server's first response headers after fully writing the request headers.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                },
+                "insecure_skip_verify": {
+                    "description": "Whether to skip TLS certificate verification",
+                    "type": "boolean"
+                },
+                "keepalive_time": {
+                    "description": "nanoseconds, 0 = disabled",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                },
+                "keepalive_timeout": {
+                    "description": "nanoseconds, 0 = default (20s)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                },
+                "max_recv_msg_size": {
+                    "description": "gRPC connection tuning",
+                    "type": "integer"
+                },
+                "max_send_msg_size": {
+                    "description": "bytes, 0 = default (4MB)",
+                    "type": "integer"
+                },
+                "proto_file_contents": {
+                    "description": "Browser-uploaded proto file contents: filename -\u003e base64-encoded content.\nWhen set, files are decoded to a temp directory for compilation, then cleaned up.\nMutually exclusive with ProtoFiles (paths); contents take precedence.",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "proto_files": {
+                    "description": "gRPC proto file support: paths to .proto files for protobuf encoding.\nWhen set, the gRPC client sends standard protobuf instead of JSON codec.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "proto_import_paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "request_timeout": {
+                    "description": "Overall timeout for the entire request, from dial-to-response reading",
                     "allOf": [
                         {
                             "$ref": "#/definitions/time.Duration"
@@ -172,22 +317,25 @@ const docTemplate = `{
                 }
             }
         },
-        "models_dto_driver.DriverContext": {
+        "modelsDtoDriver.DriverContext": {
             "type": "object",
             "properties": {
                 "batch_size": {
                     "type": "integer"
+                },
+                "responses_storage_path": {
+                    "type": "string"
                 },
                 "should_store_responses": {
                     "type": "boolean"
                 }
             }
         },
-        "models_dto_load_balancing.LoadBalancerContext": {
+        "modelsDtoLoadBalancing.LoadBalancerContext": {
             "type": "object",
             "properties": {
                 "strategy": {
-                    "$ref": "#/definitions/models_enums.LoadBalancerStrategy"
+                    "$ref": "#/definitions/modelsEnums.LoadBalancerStrategy"
                 },
                 "urls": {
                     "type": "array",
@@ -197,18 +345,28 @@ const docTemplate = `{
                 }
             }
         },
-        "models_dto_parsing.ParserContext": {
+        "modelsDtoParsing.ParserContext": {
             "type": "object",
             "properties": {
+                "file_content_b64": {
+                    "type": "string"
+                },
                 "file_path": {
                     "type": "string"
                 },
+                "on_error": {
+                    "$ref": "#/definitions/modelsEnums.OnErrorBehavior"
+                },
+                "options": {
+                    "description": "Options holds strategy-specific configuration (e.g. CsvParserOptions, ExcelParserOptions).\nswagger:type object",
+                    "type": "object"
+                },
                 "strategy": {
-                    "$ref": "#/definitions/models_enums.ParserStrategy"
+                    "$ref": "#/definitions/modelsEnums.ParserStrategy"
                 }
             }
         },
-        "models_dto_transforming.TransformerContext": {
+        "modelsDtoTransforming.TransformerContext": {
             "type": "object",
             "properties": {
                 "body_expression": {
@@ -224,24 +382,26 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "strategy": {
-                    "$ref": "#/definitions/models_enums.TransformerStrategy"
+                    "$ref": "#/definitions/modelsEnums.TransformerStrategy"
                 }
             }
         },
-        "models_enums.ClientChannel": {
+        "modelsEnums.ClientChannel": {
             "type": "string",
             "enum": [
                 "REST",
+                "GRAPHQL",
                 "GRPC",
                 "KAFKA"
             ],
             "x-enum-varnames": [
                 "REST",
+                "GRAPHQL",
                 "GRPC",
                 "KAFKA"
             ]
         },
-        "models_enums.LoadBalancerStrategy": {
+        "modelsEnums.LoadBalancerStrategy": {
             "type": "string",
             "enum": [
                 "RANDOM",
@@ -254,39 +414,101 @@ const docTemplate = `{
                 "LEAST_CONNECTION"
             ]
         },
-        "models_enums.ParserStrategy": {
+        "modelsEnums.OnErrorBehavior": {
             "type": "string",
             "enum": [
-                "CSV",
-                "JSON"
+                "SKIP",
+                "STOP"
             ],
             "x-enum-varnames": [
-                "CSV",
-                "JSON"
+                "OnErrorSkip",
+                "OnErrorStop"
             ]
         },
-        "models_enums.TransformerStrategy": {
+        "modelsEnums.ParserStrategy": {
+            "type": "string",
+            "enum": [
+                "CSV",
+                "JSON",
+                "NDJSON",
+                "EXCEL",
+                "PARQUET"
+            ],
+            "x-enum-varnames": [
+                "CSV",
+                "JSON",
+                "NDJSON",
+                "EXCEL",
+                "PARQUET"
+            ]
+        },
+        "modelsEnums.TransformerStrategy": {
             "type": "string",
             "enum": [
                 "JSONATA",
-                "GOTEMPLATE"
+                "GOTEMPLATE",
+                "PASSTHROUGH"
             ],
             "x-enum-varnames": [
                 "JSONATA",
-                "GO_TEMPLATE"
+                "GO_TEMPLATE",
+                "PASSTHROUGH"
+            ]
+        },
+        "services.JobSnapshot": {
+            "type": "object",
+            "properties": {
+                "completed_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "error_message": {
+                    "type": "string"
+                },
+                "failed_rows": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "original_request": {
+                    "$ref": "#/definitions/dto.BombardmentRequest"
+                },
+                "processed_rows": {
+                    "type": "integer"
+                },
+                "progress_percent": {
+                    "type": "number"
+                },
+                "status": {
+                    "$ref": "#/definitions/services.JobStatus"
+                },
+                "total_rows": {
+                    "type": "integer"
+                }
+            }
+        },
+        "services.JobStatus": {
+            "type": "string",
+            "enum": [
+                "PENDING",
+                "RUNNING",
+                "COMPLETED",
+                "FAILED"
+            ],
+            "x-enum-varnames": [
+                "JobStatusPending",
+                "JobStatusRunning",
+                "JobStatusCompleted",
+                "JobStatusFailed"
             ]
         },
         "time.Duration": {
             "type": "integer",
+            "format": "int64",
             "enum": [
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
                 -9223372036854775808,
                 9223372036854775807,
                 1,
@@ -297,14 +519,6 @@ const docTemplate = `{
                 3600000000000
             ],
             "x-enum-varnames": [
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
                 "minDuration",
                 "maxDuration",
                 "Nanosecond",

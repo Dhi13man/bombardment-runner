@@ -1,11 +1,21 @@
 package controllers
 
 import (
+	"path/filepath"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.dhi13man.com/bombardment-runner/src/models/dto"
 	"github.dhi13man.com/bombardment-runner/src/services"
 	serviceDriver "github.dhi13man.com/bombardment-runner/src/services/driver"
 	"github.dhi13man.com/bombardment-runner/src/services/parsing"
+)
+
+const (
+	// MaxGrpcMsgSize is the upper bound for max_recv_msg_size and max_send_msg_size (64 MB).
+	MaxGrpcMsgSize = 64 << 20
+	// MinGrpcKeepalive is the minimum keepalive_time allowed (10 seconds in nanoseconds).
+	MinGrpcKeepalive = 10_000_000_000
 )
 
 // BombardmentController Handles Bombardment as an API endpoints
@@ -95,6 +105,53 @@ func validateBombardmentRequest(req dto.BombardmentRequest) []string {
 	// Validate ResponsesStoragePath doesn't contain traversal sequences
 	if req.Driver.ResponsesStoragePath != "" && parsing.ContainsPathTraversal(req.Driver.ResponsesStoragePath) {
 		errs = append(errs, "responses_storage_path must not contain directory traversal sequences")
+	}
+
+	// Validate proto file paths don't contain traversal sequences
+	for _, p := range req.Client.ProtoFiles {
+		if parsing.ContainsPathTraversal(p) {
+			errs = append(errs, "proto_files paths must not contain directory traversal sequences")
+			break
+		}
+	}
+	for _, p := range req.Client.ProtoImportPaths {
+		if parsing.ContainsPathTraversal(p) {
+			errs = append(errs, "proto_import_paths must not contain directory traversal sequences")
+			break
+		}
+	}
+
+	// Validate uploaded proto file contents
+	if len(req.Client.ProtoFileContents) > 0 {
+		if len(req.Client.ProtoFiles) > 0 {
+			errs = append(errs, "proto_file_contents and proto_files are mutually exclusive")
+		}
+		for name := range req.Client.ProtoFileContents {
+			if parsing.ContainsPathTraversal(name) || filepath.IsAbs(name) {
+				errs = append(errs, "proto_file_contents filenames must not contain path traversal or absolute paths")
+				break
+			}
+			if !strings.HasSuffix(name, ".proto") {
+				errs = append(errs, "proto_file_contents filenames must end in .proto")
+				break
+			}
+		}
+	}
+
+	// Validate uploaded proto file count at controller level (defense in depth with writeProtoContents)
+	if len(req.Client.ProtoFileContents) > 100 {
+		errs = append(errs, "proto_file_contents must not exceed 100 files")
+	}
+
+	// Validate gRPC connection tuning bounds
+	if req.Client.MaxRecvMsgSize < 0 || req.Client.MaxRecvMsgSize > MaxGrpcMsgSize {
+		errs = append(errs, "max_recv_msg_size must be between 0 and 64 MB")
+	}
+	if req.Client.MaxSendMsgSize < 0 || req.Client.MaxSendMsgSize > MaxGrpcMsgSize {
+		errs = append(errs, "max_send_msg_size must be between 0 and 64 MB")
+	}
+	if req.Client.KeepaliveTime > 0 && req.Client.KeepaliveTime < MinGrpcKeepalive {
+		errs = append(errs, "keepalive_time must be at least 10 seconds (10000000000 ns)")
 	}
 
 	return errs

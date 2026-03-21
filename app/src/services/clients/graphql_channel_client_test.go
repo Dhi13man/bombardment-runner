@@ -410,3 +410,112 @@ func TestGraphqlClient_NullDataField(t *testing.T) {
 		t.Errorf("expected nil Body for null data, got %v", gqlResp.Body)
 	}
 }
+
+func TestGraphqlClient_ErrorWithExtensionsAndLocations(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		resp := map[string]any{
+			"data": nil,
+			"errors": []map[string]any{
+				{
+					"message": "rate limited",
+					"path":    []any{"users"},
+					"locations": []map[string]any{
+						{"line": 2, "column": 3},
+					},
+					"extensions": map[string]any{
+						"code":      "RATE_LIMITED",
+						"retryAfter": 30,
+					},
+				},
+			},
+		}
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	client := newTestGraphqlClient(5 * time.Second)
+	req := modelsDtoRequests.NewGraphqlChannelRequest("{ users { id } }", nil, "", "/graphql", nil)
+
+	resp, err := client.Execute(req, server.URL)
+	if err != nil {
+		t.Fatalf("Execute() error: %v", err)
+	}
+
+	gqlResp, ok := resp.(*modelsDtoResponses.GraphqlChannelResponse)
+	if !ok {
+		t.Fatalf("expected *GraphqlChannelResponse, got %T", resp)
+	}
+	if len(gqlResp.GqlErrors) != 1 {
+		t.Fatalf("expected 1 GraphQL error, got %d", len(gqlResp.GqlErrors))
+	}
+
+	gqlErr := gqlResp.GqlErrors[0]
+	if gqlErr.Message != "rate limited" {
+		t.Errorf("error.Message = %q, want %q", gqlErr.Message, "rate limited")
+	}
+
+	// Verify locations parsed
+	if len(gqlErr.Locations) != 1 {
+		t.Fatalf("expected 1 location, got %d", len(gqlErr.Locations))
+	}
+	if gqlErr.Locations[0].Line != 2 || gqlErr.Locations[0].Column != 3 {
+		t.Errorf("location = {%d, %d}, want {2, 3}", gqlErr.Locations[0].Line, gqlErr.Locations[0].Column)
+	}
+
+	// Verify extensions parsed
+	if gqlErr.Extensions == nil {
+		t.Fatal("expected non-nil extensions")
+	}
+	if gqlErr.Extensions["code"] != "RATE_LIMITED" {
+		t.Errorf("extensions.code = %v, want RATE_LIMITED", gqlErr.Extensions["code"])
+	}
+}
+
+func TestGraphqlClient_ResponseExtensions(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		resp := map[string]any{
+			"data": map[string]any{"users": []any{}},
+			"extensions": map[string]any{
+				"tracing": map[string]any{
+					"duration": 42,
+				},
+			},
+		}
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	client := newTestGraphqlClient(5 * time.Second)
+	req := modelsDtoRequests.NewGraphqlChannelRequest("{ users { id } }", nil, "", "/graphql", nil)
+
+	resp, err := client.Execute(req, server.URL)
+	if err != nil {
+		t.Fatalf("Execute() error: %v", err)
+	}
+
+	gqlResp, ok := resp.(*modelsDtoResponses.GraphqlChannelResponse)
+	if !ok {
+		t.Fatalf("expected *GraphqlChannelResponse, got %T", resp)
+	}
+
+	if gqlResp.Extensions == nil {
+		t.Fatal("expected non-nil response extensions")
+	}
+	tracing, ok := gqlResp.Extensions["tracing"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected tracing map, got %T", gqlResp.Extensions["tracing"])
+	}
+	if tracing["duration"] != float64(42) {
+		t.Errorf("tracing.duration = %v, want 42", tracing["duration"])
+	}
+}

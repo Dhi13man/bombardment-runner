@@ -3,6 +3,7 @@ module github.dhi13man.com/bombardment-runner
 go 1.25.8
 
 require (
+	github.com/bufbuild/protocompile v0.14.1
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-gonic/gin v1.10.1
 	github.com/google/uuid v1.6.0
@@ -13,6 +14,7 @@ require (
 	github.com/xuri/excelize/v2 v2.10.1
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.79.2
+	google.golang.org/protobuf v1.36.10
 )
 
 require (
@@ -65,11 +67,11 @@ require (
 	golang.org/x/arch v0.18.0 // indirect
 	golang.org/x/crypto v0.49.0 // indirect
 	golang.org/x/net v0.52.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
 	golang.org/x/tools v0.42.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
-	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	mellium.im/sasl v0.3.2 // indirect
 )

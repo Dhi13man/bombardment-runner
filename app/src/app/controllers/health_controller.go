@@ -30,7 +30,7 @@ func (hc *healthControllerImpl) RegisterRoutes(r *gin.Engine) {
 //	@Summary	Health check
 //	@Description	Returns pong
 //	@Tags	health
-//	@Produce	JSON
+//	@Produce	json
 //	@Success	200	{object}	map[string]string
 //	@Failure	500	{object}	map[string]string
 //	@Router	/v1/ping [get]

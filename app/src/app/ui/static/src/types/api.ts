@@ -64,6 +64,15 @@ export interface ClientContext {
   expect_continue_timeout: number;
   request_timeout: number;
   insecure_skip_verify: boolean;
+  // gRPC proto file support
+  proto_files?: string[];
+  proto_import_paths?: string[];
+  proto_file_contents?: Record<string, string>;  // filename -> base64 content
+  // gRPC connection tuning
+  max_recv_msg_size?: number;     // bytes, 0 = default (4MB)
+  max_send_msg_size?: number;     // bytes, 0 = default (4MB)
+  keepalive_time?: number;        // nanoseconds, 0 = disabled
+  keepalive_timeout?: number;     // nanoseconds, 0 = default (20s)
 }
 
 export interface LoadBalancerContext {

@@ -22,4 +22,20 @@ type ClientContext struct {
 	RequestTimeout time.Duration `json:"request_timeout,omitempty"`
 	// Whether to skip TLS certificate verification
 	InsecureSkipVerify bool `json:"insecure_skip_verify,omitempty"`
+
+	// gRPC proto file support: paths to .proto files for protobuf encoding.
+	// When set, the gRPC client sends standard protobuf instead of JSON codec.
+	ProtoFiles       []string `json:"proto_files,omitempty"`
+	ProtoImportPaths []string `json:"proto_import_paths,omitempty"`
+
+	// Browser-uploaded proto file contents: filename -> base64-encoded content.
+	// When set, files are decoded to a temp directory for compilation, then cleaned up.
+	// Mutually exclusive with ProtoFiles (paths); contents take precedence.
+	ProtoFileContents map[string]string `json:"proto_file_contents,omitempty"`
+
+	// gRPC connection tuning
+	MaxRecvMsgSize   int           `json:"max_recv_msg_size,omitempty"`   // bytes, 0 = default (4MB)
+	MaxSendMsgSize   int           `json:"max_send_msg_size,omitempty"`   // bytes, 0 = default (4MB)
+	KeepaliveTime    time.Duration `json:"keepalive_time,omitempty"`      // nanoseconds, 0 = disabled
+	KeepaliveTimeout time.Duration `json:"keepalive_timeout,omitempty"`   // nanoseconds, 0 = default (20s)
 }
