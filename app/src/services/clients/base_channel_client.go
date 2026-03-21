@@ -30,7 +30,7 @@ func CreateChannelClient(
 	case modelsEnums.GRAPHQL:
 		return NewGraphqlClient(context), nil
 	case modelsEnums.GRPC:
-		return NewGrpcClient(context), nil
+		return NewGrpcClient(context)
 	default:
 		return nil, errors.New("invalid strategy")
 	}

@@ -97,6 +97,20 @@ func validateBombardmentRequest(req dto.BombardmentRequest) []string {
 		errs = append(errs, "responses_storage_path must not contain directory traversal sequences")
 	}
 
+	// Validate proto file paths don't contain traversal sequences
+	for _, p := range req.Client.ProtoFiles {
+		if parsing.ContainsPathTraversal(p) {
+			errs = append(errs, "proto_files paths must not contain directory traversal sequences")
+			break
+		}
+	}
+	for _, p := range req.Client.ProtoImportPaths {
+		if parsing.ContainsPathTraversal(p) {
+			errs = append(errs, "proto_import_paths must not contain directory traversal sequences")
+			break
+		}
+	}
+
 	return errs
 }
 

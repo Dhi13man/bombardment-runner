@@ -18,6 +18,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	grpcStatus "google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 )
@@ -84,13 +85,18 @@ func startBufconnServer(t *testing.T, serviceDescs ...grpc.ServiceDesc) GrpcDial
 	}
 }
 
-func newTestGrpcClient(timeout time.Duration, dialer GrpcDialer) GrpcChannelClient {
+func newTestGrpcClient(t *testing.T, timeout time.Duration, dialer GrpcDialer) GrpcChannelClient {
+	t.Helper()
 	ctx := modelsDtoClients.ClientContext{
 		Channel:            modelsEnums.GRPC,
 		RequestTimeout:     timeout,
 		InsecureSkipVerify: true,
 	}
-	return newGrpcClientWithDialer(ctx, dialer)
+	client, err := newGrpcClientWithDialer(ctx, dialer)
+	if err != nil {
+		t.Fatalf("newGrpcClientWithDialer() error: %v", err)
+	}
+	return client
 }
 
 func TestGrpcClient_SuccessfulRequest(t *testing.T) {
@@ -103,7 +109,7 @@ func TestGrpcClient_SuccessfulRequest(t *testing.T) {
 		},
 	}
 	dialer := startBufconnServer(t, svcDesc)
-	client := newTestGrpcClient(5*time.Second, dialer)
+	client := newTestGrpcClient(t, 5*time.Second, dialer)
 
 	req := modelsDtoRequests.NewGrpcChannelRequest(
 		"mypackage.MyService",
@@ -151,7 +157,7 @@ func TestGrpcClient_ServerError(t *testing.T) {
 		},
 	}
 	dialer := startBufconnServer(t, svcDesc)
-	client := newTestGrpcClient(5*time.Second, dialer)
+	client := newTestGrpcClient(t, 5*time.Second, dialer)
 
 	req := modelsDtoRequests.NewGrpcChannelRequest("svc", "ErrorMethod", map[string]any{}, nil)
 
@@ -178,7 +184,7 @@ func TestGrpcClient_Timeout(t *testing.T) {
 		},
 	}
 	dialer := startBufconnServer(t, svcDesc)
-	client := newTestGrpcClient(100*time.Millisecond, dialer)
+	client := newTestGrpcClient(t, 100*time.Millisecond, dialer)
 
 	req := modelsDtoRequests.NewGrpcChannelRequest("svc", "SlowMethod", map[string]any{"ping": true}, nil)
 
@@ -205,7 +211,7 @@ func TestGrpcClient_MetadataPassing(t *testing.T) {
 		},
 	}
 	dialer := startBufconnServer(t, svcDesc)
-	client := newTestGrpcClient(5*time.Second, dialer)
+	client := newTestGrpcClient(t, 5*time.Second, dialer)
 
 	md := map[string]string{
 		"authorization": "Bearer grpc-token",
@@ -228,7 +234,7 @@ func TestGrpcClient_InvalidRequestType(t *testing.T) {
 	dialer := func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 		return nil, nil
 	}
-	client := newTestGrpcClient(5*time.Second, dialer)
+	client := newTestGrpcClient(t, 5*time.Second, dialer)
 	_, err := client.Execute(&badRequest{}, "bufconn")
 	if err == nil {
 		t.Fatal("expected error for invalid request type, got nil")
@@ -241,7 +247,7 @@ func TestGrpcClient_GetStrategy(t *testing.T) {
 	dialer := func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 		return nil, nil
 	}
-	client := newTestGrpcClient(5*time.Second, dialer)
+	client := newTestGrpcClient(t, 5*time.Second, dialer)
 	if got := client.GetStrategy(); got != modelsEnums.GRPC {
 		t.Errorf("GetStrategy() = %v, want GRPC", got)
 	}
@@ -254,7 +260,7 @@ func TestGrpcClient_Close_NoConnections(t *testing.T) {
 	dialer := func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 		return nil, nil
 	}
-	client := newTestGrpcClient(5*time.Second, dialer)
+	client := newTestGrpcClient(t, 5*time.Second, dialer)
 
 	// Act
 	err := client.Close()
@@ -276,7 +282,7 @@ func TestGrpcClient_Close_WithCachedConnection(t *testing.T) {
 		},
 	}
 	dialer := startBufconnServer(t, svcDesc)
-	client := newTestGrpcClient(5*time.Second, dialer)
+	client := newTestGrpcClient(t, 5*time.Second, dialer)
 
 	// Trigger a dial to cache a connection
 	req := modelsDtoRequests.NewGrpcChannelRequest("svc.CloseTest", "Ping", map[string]any{"x": 1}, nil)
@@ -310,7 +316,7 @@ func TestGrpcClient_GetOrDial_CachedConnectionFastPath(t *testing.T) {
 		dialCount++
 		return baseDial(target, opts...)
 	}
-	client := newTestGrpcClient(5*time.Second, countingDialer)
+	client := newTestGrpcClient(t, 5*time.Second, countingDialer)
 
 	req := modelsDtoRequests.NewGrpcChannelRequest("svc.CacheTest", "Echo", map[string]any{"k": "v"}, nil)
 
@@ -339,7 +345,7 @@ func TestGrpcClient_GetOrDial_DialFailure(t *testing.T) {
 	failDialer := func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 		return nil, fmt.Errorf("%s", expectedErr)
 	}
-	client := newTestGrpcClient(5*time.Second, failDialer)
+	client := newTestGrpcClient(t, 5*time.Second, failDialer)
 	req := modelsDtoRequests.NewGrpcChannelRequest("svc", "Method", map[string]any{}, nil)
 
 	// Act
@@ -371,7 +377,10 @@ func TestGrpcClient_DefaultTimeout_WhenZero(t *testing.T) {
 		RequestTimeout:     0, // triggers default
 		InsecureSkipVerify: true,
 	}
-	client := newGrpcClientWithDialer(ctx, dialer)
+	client, err := newGrpcClientWithDialer(ctx, dialer)
+	if err != nil {
+		t.Fatalf("newGrpcClientWithDialer() error: %v", err)
+	}
 
 	req := modelsDtoRequests.NewGrpcChannelRequest("svc.TimeoutDefault", "Echo", map[string]any{"ok": true}, nil)
 
@@ -391,9 +400,6 @@ func TestGrpcClient_GetOrDial_TLSCredentials(t *testing.T) {
 	t.Parallel()
 
 	// Arrange: client with InsecureSkipVerify=false uses TLS credentials.
-	// We use a dialer that captures the options to verify TLS was configured.
-	// The dial itself will fail since there's no real server, but that's fine
-	// because we just want to exercise the TLS options path.
 	svcDesc := grpc.ServiceDesc{
 		ServiceName: "svc.TLS",
 		Methods: []grpc.MethodDesc{
@@ -408,7 +414,10 @@ func TestGrpcClient_GetOrDial_TLSCredentials(t *testing.T) {
 		InsecureSkipVerify: false, // TLS path
 	}
 	// The bufconn dialer ignores opts, but the code still executes the TLS branch
-	client := newGrpcClientWithDialer(ctx, baseDial)
+	client, err := newGrpcClientWithDialer(ctx, baseDial)
+	if err != nil {
+		t.Fatalf("newGrpcClientWithDialer() error: %v", err)
+	}
 
 	req := modelsDtoRequests.NewGrpcChannelRequest("svc.TLS", "Ping", map[string]any{"v": 1}, nil)
 
@@ -436,7 +445,7 @@ func TestGrpcClient_GetOrDial_ConcurrentRace(t *testing.T) {
 		},
 	}
 	baseDial := startBufconnServer(t, svcDesc)
-	client := newTestGrpcClient(5*time.Second, baseDial)
+	client := newTestGrpcClient(t, 5*time.Second, baseDial)
 
 	req := modelsDtoRequests.NewGrpcChannelRequest("svc.Race", "Echo", map[string]any{"k": "v"}, nil)
 
@@ -474,7 +483,7 @@ func TestGrpcClient_EmptyMetadata(t *testing.T) {
 		},
 	}
 	dialer := startBufconnServer(t, svcDesc)
-	client := newTestGrpcClient(5*time.Second, dialer)
+	client := newTestGrpcClient(t, 5*time.Second, dialer)
 
 	req := modelsDtoRequests.NewGrpcChannelRequest("svc.EmptyMD", "Echo", map[string]any{"v": 1}, map[string]string{})
 
@@ -482,6 +491,258 @@ func TestGrpcClient_EmptyMetadata(t *testing.T) {
 	resp, err := client.Execute(req, "bufconn")
 
 	// Assert
+	if err != nil {
+		t.Fatalf("Execute() error: %v", err)
+	}
+	if resp.GetStatus() == nil || *resp.GetStatus() != 0 {
+		t.Errorf("GetStatus() = %v, want 0 (OK)", resp.GetStatus())
+	}
+}
+
+// --- Proto mode tests ---
+
+// protoEchoHandler handles protobuf-encoded gRPC calls for the test EchoService.
+// It decodes EchoRequest, copies fields into EchoResponse with status="ok".
+func protoEchoHandler(resolver *ProtoResolver) grpc.MethodHandler {
+	return func(srv any, ctx context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
+		// Get an empty EchoRequest message to decode the incoming wire bytes into.
+		// CreateRequestMessage with empty body produces a default-valued message
+		// of the correct type; dec() then fills it from the protobuf wire format.
+		reqMsg, err := resolver.CreateRequestMessage("testpkg.EchoService", "Echo", map[string]any{})
+		if err != nil {
+			return nil, err
+		}
+		if err := dec(reqMsg); err != nil {
+			return nil, err
+		}
+
+		// Build response: copy id and name from request, add status="ok"
+		respMsg := resolver.CreateResponseMessage("testpkg.EchoService", "Echo")
+		reqReflect := reqMsg.ProtoReflect()
+		respReflect := respMsg.ProtoReflect()
+
+		for _, fname := range []protoreflect.Name{"id", "name"} {
+			srcFd := reqReflect.Descriptor().Fields().ByName(fname)
+			dstFd := respReflect.Descriptor().Fields().ByName(fname)
+			if srcFd != nil && dstFd != nil {
+				respReflect.Set(dstFd, reqReflect.Get(srcFd))
+			}
+		}
+
+		statusField := respReflect.Descriptor().Fields().ByName("status")
+		if statusField != nil {
+			respReflect.Set(statusField, protoreflect.ValueOfString("ok"))
+		}
+
+		return respMsg, nil
+	}
+}
+
+func TestGrpcClient_ProtoMode_SuccessfulRequest(t *testing.T) {
+	t.Parallel()
+
+	// Build a proto-aware server handler
+	resolver, err := NewProtoResolver([]string{"testdata/echo.proto"}, nil)
+	if err != nil {
+		t.Fatalf("NewProtoResolver() error: %v", err)
+	}
+
+	svcDesc := grpc.ServiceDesc{
+		ServiceName: "testpkg.EchoService",
+		HandlerType: nil,
+		Methods: []grpc.MethodDesc{
+			{MethodName: "Echo", Handler: protoEchoHandler(resolver)},
+		},
+	}
+	dialer := startBufconnServer(t, svcDesc)
+
+	clientCtx := modelsDtoClients.ClientContext{
+		Channel:            modelsEnums.GRPC,
+		RequestTimeout:     5 * time.Second,
+		InsecureSkipVerify: true,
+		ProtoFiles:         []string{"testdata/echo.proto"},
+	}
+	client, err := newGrpcClientWithDialer(clientCtx, dialer)
+	if err != nil {
+		t.Fatalf("newGrpcClientWithDialer() error: %v", err)
+	}
+
+	req := modelsDtoRequests.NewGrpcChannelRequest(
+		"testpkg.EchoService",
+		"Echo",
+		map[string]any{"id": 42, "name": "Alice"},
+		nil,
+	)
+
+	resp, err := client.Execute(req, "bufconn")
+	if err != nil {
+		t.Fatalf("Execute() error: %v", err)
+	}
+
+	if resp.GetStatus() == nil || *resp.GetStatus() != 0 {
+		t.Errorf("GetStatus() = %v, want 0 (OK)", resp.GetStatus())
+	}
+
+	grpcResp, ok := resp.(*modelsDtoResponses.GrpcChannelResponse)
+	if !ok {
+		t.Fatalf("expected *GrpcChannelResponse, got %T", resp)
+	}
+
+	bodyMap, ok := grpcResp.Body.(map[string]any)
+	if !ok {
+		t.Fatalf("expected map[string]any body, got %T", grpcResp.Body)
+	}
+	if bodyMap["name"] != "Alice" {
+		t.Errorf("name = %v, want Alice", bodyMap["name"])
+	}
+	if bodyMap["status"] != "ok" {
+		t.Errorf("status = %v, want ok", bodyMap["status"])
+	}
+}
+
+func TestGrpcClient_ProtoMode_UnknownMethod(t *testing.T) {
+	t.Parallel()
+
+	svcDesc := grpc.ServiceDesc{
+		ServiceName: "testpkg.EchoService",
+		Methods: []grpc.MethodDesc{
+			{MethodName: "Echo", Handler: echoHandler},
+		},
+	}
+	dialer := startBufconnServer(t, svcDesc)
+
+	clientCtx := modelsDtoClients.ClientContext{
+		Channel:            modelsEnums.GRPC,
+		RequestTimeout:     5 * time.Second,
+		InsecureSkipVerify: true,
+		ProtoFiles:         []string{"testdata/echo.proto"},
+	}
+	client, err := newGrpcClientWithDialer(clientCtx, dialer)
+	if err != nil {
+		t.Fatalf("newGrpcClientWithDialer() error: %v", err)
+	}
+
+	req := modelsDtoRequests.NewGrpcChannelRequest(
+		"testpkg.EchoService",
+		"NonExistentMethod",
+		map[string]any{"id": 1},
+		nil,
+	)
+
+	_, err = client.Execute(req, "bufconn")
+	if err == nil {
+		t.Fatal("expected error for unknown method, got nil")
+	}
+	if !strings.Contains(err.Error(), "method not found") {
+		t.Errorf("error = %q, expected to contain 'method not found'", err.Error())
+	}
+}
+
+func TestGrpcClient_ProtoMode_InvalidProtoFiles(t *testing.T) {
+	t.Parallel()
+
+	clientCtx := modelsDtoClients.ClientContext{
+		Channel:            modelsEnums.GRPC,
+		RequestTimeout:     5 * time.Second,
+		InsecureSkipVerify: true,
+		ProtoFiles:         []string{"testdata/nonexistent.proto"},
+	}
+	dialer := func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+		return nil, nil
+	}
+	_, err := newGrpcClientWithDialer(clientCtx, dialer)
+	if err == nil {
+		t.Fatal("expected error for invalid proto files, got nil")
+	}
+}
+
+func TestGrpcClient_ProtoMode_FallbackWithoutProtoFiles(t *testing.T) {
+	t.Parallel()
+
+	// Without ProtoFiles, should use JSON codec (existing behavior)
+	svcDesc := grpc.ServiceDesc{
+		ServiceName: "svc.Fallback",
+		Methods: []grpc.MethodDesc{
+			{MethodName: "Echo", Handler: echoHandler},
+		},
+	}
+	dialer := startBufconnServer(t, svcDesc)
+	client := newTestGrpcClient(t, 5*time.Second, dialer)
+
+	req := modelsDtoRequests.NewGrpcChannelRequest("svc.Fallback", "Echo", map[string]any{"v": 1}, nil)
+	resp, err := client.Execute(req, "bufconn")
+	if err != nil {
+		t.Fatalf("Execute() error: %v", err)
+	}
+	if resp.GetStatus() == nil || *resp.GetStatus() != 0 {
+		t.Errorf("GetStatus() = %v, want 0 (OK)", resp.GetStatus())
+	}
+
+	// Verify it's still a json.RawMessage (JSON codec path)
+	grpcResp := resp.(*modelsDtoResponses.GrpcChannelResponse)
+	if _, ok := grpcResp.Body.(json.RawMessage); !ok {
+		t.Errorf("expected json.RawMessage body in JSON codec mode, got %T", grpcResp.Body)
+	}
+}
+
+func TestGrpcClient_KeepaliveConfig(t *testing.T) {
+	t.Parallel()
+
+	svcDesc := grpc.ServiceDesc{
+		ServiceName: "svc.Keepalive",
+		Methods: []grpc.MethodDesc{
+			{MethodName: "Echo", Handler: echoHandler},
+		},
+	}
+	dialer := startBufconnServer(t, svcDesc)
+
+	ctx := modelsDtoClients.ClientContext{
+		Channel:            modelsEnums.GRPC,
+		RequestTimeout:     5 * time.Second,
+		InsecureSkipVerify: true,
+		KeepaliveTime:      10 * time.Second,
+		KeepaliveTimeout:   5 * time.Second,
+	}
+	client, err := newGrpcClientWithDialer(ctx, dialer)
+	if err != nil {
+		t.Fatalf("newGrpcClientWithDialer() error: %v", err)
+	}
+
+	req := modelsDtoRequests.NewGrpcChannelRequest("svc.Keepalive", "Echo", map[string]any{"v": 1}, nil)
+	resp, err := client.Execute(req, "bufconn")
+	if err != nil {
+		t.Fatalf("Execute() error: %v", err)
+	}
+	if resp.GetStatus() == nil || *resp.GetStatus() != 0 {
+		t.Errorf("GetStatus() = %v, want 0 (OK)", resp.GetStatus())
+	}
+}
+
+func TestGrpcClient_MaxMessageSize(t *testing.T) {
+	t.Parallel()
+
+	svcDesc := grpc.ServiceDesc{
+		ServiceName: "svc.MaxMsg",
+		Methods: []grpc.MethodDesc{
+			{MethodName: "Echo", Handler: echoHandler},
+		},
+	}
+	dialer := startBufconnServer(t, svcDesc)
+
+	ctx := modelsDtoClients.ClientContext{
+		Channel:            modelsEnums.GRPC,
+		RequestTimeout:     5 * time.Second,
+		InsecureSkipVerify: true,
+		MaxRecvMsgSize:     8 * 1024 * 1024, // 8MB
+		MaxSendMsgSize:     8 * 1024 * 1024,
+	}
+	client, err := newGrpcClientWithDialer(ctx, dialer)
+	if err != nil {
+		t.Fatalf("newGrpcClientWithDialer() error: %v", err)
+	}
+
+	req := modelsDtoRequests.NewGrpcChannelRequest("svc.MaxMsg", "Echo", map[string]any{"v": 1}, nil)
+	resp, err := client.Execute(req, "bufconn")
 	if err != nil {
 		t.Fatalf("Execute() error: %v", err)
 	}
