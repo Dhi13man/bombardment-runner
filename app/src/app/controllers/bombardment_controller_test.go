@@ -528,6 +528,18 @@ func TestValidateBombardmentRequest_TableDriven(t *testing.T) {
 			wantCount: 1,
 		},
 		{
+			name: "proto_file_contents with absolute path filename",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				r.Client.ProtoFileContents = map[string]string{"/etc/evil.proto": "dGVzdA=="}
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
 			name: "proto_file_contents with non-proto filename",
 			req: func() dto.BombardmentRequest {
 				r := dto.BombardmentRequest{}

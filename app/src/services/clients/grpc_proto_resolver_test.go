@@ -2,6 +2,7 @@ package clients
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -195,5 +196,44 @@ func TestProtoResolver_RoundTrip(t *testing.T) {
 	}
 	if resultMap["name"] != "RoundTrip" {
 		t.Errorf("name = %v, want RoundTrip", resultMap["name"])
+	}
+}
+
+func TestProtoResolver_CreateRequestMessage_UnmarshalableBody(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	resolver, err := NewProtoResolver([]string{"testdata/echo.proto"}, nil)
+	if err != nil {
+		t.Fatalf("NewProtoResolver() error: %v", err)
+	}
+
+	// Act: channels cannot be JSON-marshaled
+	_, err = resolver.CreateRequestMessage("testpkg.EchoService", "Echo", make(chan int))
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error for un-marshalable body, got nil")
+	}
+	if !strings.Contains(err.Error(), "marshal JSON body") {
+		t.Errorf("error = %q, want containing 'marshal JSON body'", err.Error())
+	}
+}
+
+func TestProtoResolver_AvailableMethodsString_Content(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	resolver, err := NewProtoResolver([]string{"testdata/echo.proto"}, nil)
+	if err != nil {
+		t.Fatalf("NewProtoResolver() error: %v", err)
+	}
+
+	// Act
+	methods := resolver.AvailableMethodsString()
+
+	// Assert
+	if !strings.Contains(methods, "testpkg.EchoService/Echo") {
+		t.Errorf("AvailableMethodsString() = %q, want containing 'testpkg.EchoService/Echo'", methods)
 	}
 }

@@ -814,6 +814,65 @@ func TestGrpcClient_ProtoFileContents_Integration(t *testing.T) {
 	}
 }
 
+func protoErrorHandler(resolver *ProtoResolver) grpc.MethodHandler {
+	return func(srv any, ctx context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
+		reqMsg, err := resolver.CreateRequestMessage("testpkg.EchoService", "Echo", map[string]any{})
+		if err != nil {
+			return nil, err
+		}
+		if err := dec(reqMsg); err != nil {
+			return nil, err
+		}
+		return nil, grpcStatus.Error(codes.PermissionDenied, "access denied")
+	}
+}
+
+func TestGrpcClient_ProtoMode_ServerErrorReturnsStatus(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	resolver, err := NewProtoResolver([]string{"testdata/echo.proto"}, nil)
+	if err != nil {
+		t.Fatalf("NewProtoResolver() error: %v", err)
+	}
+
+	svcDesc := grpc.ServiceDesc{
+		ServiceName: "testpkg.EchoService",
+		Methods: []grpc.MethodDesc{
+			{MethodName: "Echo", Handler: protoErrorHandler(resolver)},
+		},
+	}
+	dialer := startBufconnServer(t, svcDesc)
+
+	clientCtx := modelsDtoClients.ClientContext{
+		Channel:            modelsEnums.GRPC,
+		RequestTimeout:     5 * time.Second,
+		InsecureSkipVerify: true,
+		ProtoFiles:         []string{"testdata/echo.proto"},
+	}
+	client, err := newGrpcClientWithDialer(clientCtx, dialer)
+	if err != nil {
+		t.Fatalf("newGrpcClientWithDialer() error: %v", err)
+	}
+
+	req := modelsDtoRequests.NewGrpcChannelRequest(
+		"testpkg.EchoService", "Echo",
+		map[string]any{"id": 1, "name": "Denied"},
+		nil,
+	)
+
+	// Act
+	resp, err := client.Execute(req, "bufconn")
+
+	// Assert
+	if err != nil {
+		t.Fatalf("Execute() error: %v", err)
+	}
+	if resp.GetStatus() == nil || *resp.GetStatus() != int(codes.PermissionDenied) {
+		t.Errorf("GetStatus() = %v, want %d (PermissionDenied)", resp.GetStatus(), codes.PermissionDenied)
+	}
+}
+
 func TestGrpcClient_ProtoFileContents_InvalidBase64(t *testing.T) {
 	t.Parallel()
 
