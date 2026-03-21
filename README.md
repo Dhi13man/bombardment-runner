@@ -62,7 +62,7 @@ flowchart LR
 
     subgraph Pipeline[Processing Pipeline]
         Parser[Parser<br><i>streaming</i>]
-        Transformer[Transformer<br><i>JSONata</i>]
+        Transformer[Transformer<br><i>JSONata / GoTemplate</i>]
         Batcher[Batch<br>Processor]
     end
 
@@ -78,7 +78,7 @@ flowchart LR
 
     File -->|stream records| Parser
     Parser -->|channel per record| Transformer
-    Transformer -->|HTTP request| Batcher
+    Transformer -->|request| Batcher
     Batcher -->|concurrent batch| Strategy
     Strategy --> T1
     Strategy --> T2
@@ -161,8 +161,8 @@ The `POST /v1/bombardment` payload accepts these sections:
 | Section | Key Fields | Description |
 | --- | --- | --- |
 | `parser_context` | `strategy`, `file_path`, `file_content_b64` | Source format (`CSV`, `JSON`, `NDJSON`, `EXCEL`, `PARQUET`) and location |
-| `transformer_context` | `strategy`, `body_expression`, `method_expression`, `endpoint_expression`, `headers_expression` | JSONata expressions to shape each record into an HTTP request |
-| `client_context` | `channel`, `request_timeout`, `insecure_skip_verify` | HTTP client settings (timeouts in nanoseconds) |
+| `transformer_context` | `strategy`, `body_expression`, `method_expression`, `endpoint_expression`, `headers_expression` | Transform strategy (`JSONATA`, `GOTEMPLATE`, `PASSTHROUGH`) and expressions |
+| `client_context` | `channel`, `request_timeout`, `insecure_skip_verify` | Client channel (`REST`, `GRAPHQL`, `GRPC`) and timeout settings (nanoseconds) |
 | `load_balancer_context` | `strategy`, `urls` | Load balancing strategy (`ROUND_ROBIN`, `RANDOM`) and target URLs |
 | `driver_context` | `batch_size`, `should_store_responses`, `responses_storage_path` | Batch size and optional response CSV storage |
 
@@ -269,18 +269,15 @@ flowchart TD
     subgraph LoadBalancers[Load Balancers]
         RR[Round Robin]
         Rand[Random]
-        LC[Least Conn<br><i>planned</i>]
     end
 
     subgraph Clients[Client Channels]
         REST[REST]
         GQL[GraphQL]
         GRPC[gRPC]
-        Kafka[Kafka<br><i>planned</i>]
     end
 
     classDef implemented fill:#2d6a4f,stroke:#1b4332,color:#fff
-    classDef planned fill:#6c757d,stroke:#495057,color:#fff
 
     CSV:::implemented
     JSON_P:::implemented
@@ -292,11 +289,9 @@ flowchart TD
     Pass:::implemented
     RR:::implemented
     Rand:::implemented
-    LC:::planned
     REST:::implemented
     GQL:::implemented
     GRPC:::implemented
-    Kafka:::planned
 ```
 
 ### Project layout
@@ -316,13 +311,14 @@ app/
       enums/                       Strategy enumerations
     services/
       batching/                    Batch processing orchestration
-      clients/                     HTTP client implementations
+      clients/                     REST, GraphQL, gRPC client implementations
       driver/                      Main pipeline orchestrator
       load_balancing/              Load balancer strategies
       parsing/                     File parser strategies
       transforming/                Data transformer strategies
   docs/                            Generated Swagger documentation
 landing-site/                      Static landing page (bombardment.work)
+bench/                             Benchmark mock server and results
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full extension guide.
