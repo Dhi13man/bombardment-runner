@@ -1,6 +1,9 @@
 package controllers
 
 import (
+	"path/filepath"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.dhi13man.com/bombardment-runner/src/models/dto"
 	"github.dhi13man.com/bombardment-runner/src/services"
@@ -108,6 +111,23 @@ func validateBombardmentRequest(req dto.BombardmentRequest) []string {
 		if parsing.ContainsPathTraversal(p) {
 			errs = append(errs, "proto_import_paths must not contain directory traversal sequences")
 			break
+		}
+	}
+
+	// Validate uploaded proto file contents
+	if len(req.Client.ProtoFileContents) > 0 {
+		if len(req.Client.ProtoFiles) > 0 {
+			errs = append(errs, "proto_file_contents and proto_files are mutually exclusive")
+		}
+		for name := range req.Client.ProtoFileContents {
+			if strings.Contains(name, "..") || filepath.IsAbs(name) {
+				errs = append(errs, "proto_file_contents filenames must not contain path traversal or absolute paths")
+				break
+			}
+			if !strings.HasSuffix(name, ".proto") {
+				errs = append(errs, "proto_file_contents filenames must end in .proto")
+				break
+			}
 		}
 	}
 

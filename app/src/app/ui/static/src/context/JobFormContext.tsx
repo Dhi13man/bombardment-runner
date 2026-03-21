@@ -13,6 +13,12 @@ import type {
 } from '../types/api';
 import { msToNs, nsToMs } from '../types/api';
 
+export interface ProtoFile {
+  name: string;
+  size: number;
+  contentB64: string;
+}
+
 /* ---------- Form State ---------- */
 
 interface JobFormState {
@@ -47,6 +53,17 @@ interface JobFormState {
   requestTimeoutMs: number;
   insecureSkipVerify: boolean;
 
+  // Step 3: Target (gRPC proto)
+  protoFiles: ProtoFile[];       // browser-uploaded proto files
+  protoFilePaths: string[];      // server-side paths (fallback mode)
+  protoImportPaths: string;
+
+  // Step 3: Target (gRPC advanced)
+  maxRecvMsgSize: number;
+  maxSendMsgSize: number;
+  keepaliveTimeMs: number;
+  keepaliveTimeoutMs: number;
+
   // Step 3: Target (Load Balancer)
   lbStrategy: LoadBalancerStrategy;
   urls: string[];
@@ -79,6 +96,13 @@ const DEFAULT_STATE: JobFormState = {
   expectContinueMs: 500,
   requestTimeoutMs: 30000,
   insecureSkipVerify: false,
+  protoFiles: [],
+  protoFilePaths: [],
+  protoImportPaths: '',
+  maxRecvMsgSize: 0,
+  maxSendMsgSize: 0,
+  keepaliveTimeMs: 0,
+  keepaliveTimeoutMs: 0,
   lbStrategy: 'ROUND_ROBIN',
   urls: [''],
   batchSize: 100,
@@ -141,6 +165,19 @@ export function JobFormProvider({ children }: { children: ComponentChildren }) {
       expectContinueMs: nsToMs(req.client_context.expect_continue_timeout),
       requestTimeoutMs: nsToMs(req.client_context.request_timeout),
       insecureSkipVerify: req.client_context.insecure_skip_verify,
+      protoFiles: req.client_context.proto_file_contents
+        ? Object.entries(req.client_context.proto_file_contents).map(([name, b64]) => ({
+            name,
+            size: Math.round(b64.length * 3 / 4),
+            contentB64: b64,
+          }))
+        : [],
+      protoFilePaths: req.client_context.proto_files ?? [],
+      protoImportPaths: (req.client_context.proto_import_paths ?? []).join(', '),
+      maxRecvMsgSize: req.client_context.max_recv_msg_size ?? 0,
+      maxSendMsgSize: req.client_context.max_send_msg_size ?? 0,
+      keepaliveTimeMs: req.client_context.keepalive_time ? nsToMs(req.client_context.keepalive_time) : 0,
+      keepaliveTimeoutMs: req.client_context.keepalive_timeout ? nsToMs(req.client_context.keepalive_timeout) : 0,
       lbStrategy: req.load_balancer_context.strategy,
       urls: req.load_balancer_context.urls.length > 0 ? req.load_balancer_context.urls : [''],
       batchSize: req.driver_context.batch_size,
@@ -184,6 +221,27 @@ export function JobFormProvider({ children }: { children: ComponentChildren }) {
         expect_continue_timeout: msToNs(f.expectContinueMs),
         request_timeout: msToNs(f.requestTimeoutMs),
         insecure_skip_verify: f.insecureSkipVerify,
+        ...(f.clientChannel === 'GRPC' ? {
+          // Uploaded proto files take precedence over server-side paths
+          ...(f.protoFiles.length > 0
+            ? {
+                proto_file_contents: Object.fromEntries(
+                  f.protoFiles.map(pf => [pf.name, pf.contentB64])
+                ),
+              }
+            : {
+                proto_files: f.protoFilePaths.filter(p => p.trim() !== '').length > 0
+                  ? f.protoFilePaths.filter(p => p.trim() !== '')
+                  : undefined,
+                proto_import_paths: f.protoImportPaths.trim()
+                  ? f.protoImportPaths.split(',').map(s => s.trim()).filter(Boolean)
+                  : undefined,
+              }),
+          max_recv_msg_size: f.maxRecvMsgSize || undefined,
+          max_send_msg_size: f.maxSendMsgSize || undefined,
+          keepalive_time: f.keepaliveTimeMs ? msToNs(f.keepaliveTimeMs) : undefined,
+          keepalive_timeout: f.keepaliveTimeoutMs ? msToNs(f.keepaliveTimeoutMs) : undefined,
+        } : {}),
       },
       load_balancer_context: {
         strategy: f.lbStrategy,

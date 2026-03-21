@@ -1,6 +1,7 @@
-import { useEffect, useCallback, useRef } from 'preact/hooks';
-import { useJobForm } from '../../context/JobFormContext';
+import { useState, useEffect, useCallback, useRef } from 'preact/hooks';
+import { useJobForm, type ProtoFile } from '../../context/JobFormContext';
 import { useWizard } from '../../context/WizardContext';
+import { formatFileSize } from '../../utils/format';
 import { RadioCardGroup, type RadioOption, Input, Checkbox } from '../primitives';
 import { Icon } from '../Icon';
 import type { ClientChannel, LoadBalancerStrategy } from '../../types/api';
@@ -24,7 +25,7 @@ const LB_STRATEGY_OPTIONS: RadioOption<LoadBalancerStrategy>[] = [
 const CHANNEL_INFO: Record<ClientChannel, string> = {
   REST: 'Send HTTP requests with configurable method, headers, and body',
   GRAPHQL: 'Execute GraphQL queries and mutations over HTTP POST',
-  GRPC: 'Call gRPC services using JSON payloads (no proto files required)',
+  GRPC: 'Call gRPC services with JSON or protobuf encoding',
   KAFKA: 'Publish messages to Kafka topics',
 };
 
@@ -91,6 +92,13 @@ function getResponsesPathError(path: string, isRequired: boolean): string {
   return '';
 }
 
+function getProtoPathError(path: string): string {
+  if (!path.trim()) return '';
+  if (path.includes('..')) return 'Path traversal (..) is not allowed';
+  if (!path.trim().endsWith('.proto')) return 'File must end in .proto';
+  return '';
+}
+
 /* ---------- Component ---------- */
 
 export function TargetStep() {
@@ -99,6 +107,11 @@ export function TargetStep() {
   const urlIdCounter = useRef(form.urls.length);
   const urlKeys = useRef<number[]>(form.urls.map((_, i) => i));
   const lastUrlRef = useRef<HTMLInputElement>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [protoPathMode, setProtoPathMode] = useState(false);
+  const protoFileRef = useRef<HTMLInputElement>(null);
+  const protoIdCounter = useRef(form.protoFilePaths.length);
+  const protoKeys = useRef<number[]>(form.protoFilePaths.map((_, i) => i));
 
   const validate = useCallback(() => {
     // Validate timeouts
@@ -115,13 +128,14 @@ export function TargetStep() {
 
     // Validate responses path (only if storing)
     const pathValid = !getResponsesPathError(form.responsesPath, form.shouldStoreResponses);
+    const protoPathsValid = form.protoFilePaths.every(p => !getProtoPathError(p));
 
-    setValid(3, timeoutsValid && urlsValid && batchValid && pathValid);
+    setValid(3, timeoutsValid && urlsValid && batchValid && pathValid && protoPathsValid);
   }, [
     form.dialTimeoutMs, form.keepAliveMs, form.tlsHandshakeMs,
     form.responseHeaderMs, form.expectContinueMs, form.requestTimeoutMs,
     form.urls, form.batchSize, form.shouldStoreResponses, form.responsesPath,
-    form.clientChannel, setValid,
+    form.clientChannel, form.protoFiles, form.protoFilePaths, setValid,
   ]);
 
   useEffect(() => {
@@ -166,11 +180,67 @@ export function TargetStep() {
     });
   }
 
+  function handleProtoPathChange(index: number, e: JSX.TargetedEvent<HTMLInputElement>) {
+    const newPaths = [...form.protoFilePaths];
+    newPaths[index] = (e.currentTarget as HTMLInputElement).value;
+    update('protoFilePaths', newPaths);
+  }
+
+  function addProtoPath() {
+    protoKeys.current = [...protoKeys.current, ++protoIdCounter.current];
+    const nextIndex = form.protoFilePaths.length;
+    update('protoFilePaths', [...form.protoFilePaths, '']);
+    requestAnimationFrame(() => {
+      const target = document.getElementById(`proto-file-${nextIndex}`);
+      if (target) (target as HTMLElement).focus();
+    });
+  }
+
+  function removeProtoPath(index: number) {
+    const focusIndex = index > 0 ? index - 1 : 0;
+    protoKeys.current = protoKeys.current.filter((_, i) => i !== index);
+    const newPaths = form.protoFilePaths.filter((_, i) => i !== index);
+    update('protoFilePaths', newPaths.length > 0 ? newPaths : []);
+    requestAnimationFrame(() => {
+      const target = document.getElementById(`proto-file-${focusIndex}`);
+      if (target) (target as HTMLElement).focus();
+    });
+  }
+
+  function onProtoFilesSelect(e: Event) {
+    const files = Array.from((e.target as HTMLInputElement).files || []);
+    if (files.length === 0) return;
+
+    const readers = files.map(file => new Promise<ProtoFile>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const b64 = ((ev.target as FileReader).result as string).split(',')[1] || '';
+        resolve({ name: file.name, size: file.size, contentB64: b64 });
+      };
+      reader.readAsDataURL(file);
+    }));
+
+    Promise.all(readers).then(newFiles => {
+      // Merge with existing, deduplicate by name
+      const existing = new Map(form.protoFiles.map(f => [f.name, f]));
+      for (const f of newFiles) existing.set(f.name, f);
+      update('protoFiles', Array.from(existing.values()));
+    });
+
+    // Reset the input so re-selecting the same file triggers onChange
+    (e.target as HTMLInputElement).value = '';
+  }
+
+  function removeProtoFile(name: string) {
+    update('protoFiles', form.protoFiles.filter(f => f.name !== name));
+  }
+
   // Compute errors for display
   const batchSizeError = getBatchSizeError(form.batchSize);
   const responsesPathError = getResponsesPathError(form.responsesPath, form.shouldStoreResponses);
   const nonEmptyUrls = form.urls.filter((u) => u.trim() !== '');
   const noUrlsError = nonEmptyUrls.length === 0 ? 'At least one target URL is required' : '';
+  const hasProtoFiles = form.protoFiles.length > 0 || form.protoFilePaths.some(p => p.trim() !== '');
 
   return (
     <div>
@@ -235,6 +305,158 @@ export function TargetStep() {
           })}
         </div>
 
+        {/* Proto File Configuration (gRPC only) */}
+        {form.clientChannel === 'GRPC' && (
+          <div class="mt-4" style={{ borderTop: '1px solid var(--border-default)', paddingTop: '16px' }}>
+            {/* Mode Banner */}
+            <div
+              class={`grpc-mode-banner ${hasProtoFiles ? 'proto-mode' : 'json-mode'}`}
+              role="status"
+              aria-live="polite"
+            >
+              <Icon name={hasProtoFiles ? 'file-code' : 'code'} size="sm" />
+              <div>
+                <strong>
+                  {hasProtoFiles
+                    ? form.protoFiles.length > 0
+                      ? `Protobuf mode (${form.protoFiles.length} proto file${form.protoFiles.length !== 1 ? 's' : ''} loaded)`
+                      : 'Protobuf mode'
+                    : 'JSON codec mode'}
+                </strong>
+                <p>
+                  {hasProtoFiles
+                    ? 'Requests will be encoded/decoded using proto definitions'
+                    : 'Requests use JSON codec (no proto files needed)'}
+                </p>
+              </div>
+            </div>
+
+            {!protoPathMode ? (
+              <>
+                {/* Upload Mode (default) */}
+                <fieldset class="border-0 m-0 p-0 mb-4">
+                  <legend class="label">Proto Files</legend>
+                  <input
+                    ref={protoFileRef}
+                    type="file"
+                    accept=".proto"
+                    multiple
+                    class="hidden"
+                    aria-label="Upload proto files"
+                    onChange={onProtoFilesSelect}
+                  />
+                  <button
+                    type="button"
+                    class="input flex items-center gap-3 text-left cursor-pointer w-full"
+                    onClick={() => protoFileRef.current?.click()}
+                  >
+                    <Icon name="upload" size="sm" class="text-text-secondary" />
+                    <span class={form.protoFiles.length > 0 ? '' : 'custom-select-placeholder'}>
+                      {form.protoFiles.length > 0
+                        ? `${form.protoFiles.length} file${form.protoFiles.length !== 1 ? 's' : ''} selected`
+                        : 'Click to select .proto files'}
+                    </span>
+                  </button>
+                  {form.protoFiles.length > 0 && (
+                    <div class="mt-2">
+                      {form.protoFiles.map((pf) => (
+                        <div key={pf.name} class="url-row">
+                          <div class="flex items-center gap-2 flex-1 min-w-0">
+                            <Icon name="file-code" size="sm" class="text-text-secondary shrink-0" />
+                            <span class="text-sm font-mono truncate">{pf.name}</span>
+                            <span class="text-xs text-text-tertiary shrink-0">{formatFileSize(pf.size)}</span>
+                          </div>
+                          <button
+                            type="button"
+                            class="btn btn-ghost btn-sm url-remove-btn"
+                            aria-label={`Remove ${pf.name}`}
+                            onClick={() => removeProtoFile(pf.name)}
+                          >
+                            <Icon name="trash-2" size="sm" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </fieldset>
+                <button
+                  type="button"
+                  class="text-sm text-accent-primary underline"
+                  onClick={() => setProtoPathMode(true)}
+                >
+                  Or use server-side file paths
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Path Mode (fallback) */}
+                <fieldset class="border-0 m-0 p-0 mb-4">
+                  <legend class="label">Proto Files</legend>
+                  <div>
+                    {form.protoFilePaths.map((path, i) => {
+                      const pathError = path.trim() ? getProtoPathError(path) : '';
+                      return (
+                        <div key={protoKeys.current[i] ?? i} class="url-row">
+                          <Input
+                            id={`proto-file-${i}`}
+                            aria-label={`Proto file ${i + 1}`}
+                            type="text"
+                            code
+                            value={path}
+                            onInput={(e: JSX.TargetedEvent<HTMLInputElement>) => handleProtoPathChange(i, e)}
+                            placeholder="/path/to/service.proto"
+                            error={pathError || undefined}
+                            class="flex-1"
+                          />
+                          <button
+                            type="button"
+                            class="btn btn-ghost btn-sm url-remove-btn"
+                            aria-label={`Remove proto file ${i + 1}`}
+                            onClick={() => removeProtoPath(i)}
+                          >
+                            <Icon name="trash-2" size="sm" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <button type="button" class="btn btn-ghost btn-sm mt-2" onClick={addProtoPath}>
+                    <Icon name="plus" size="sm" />
+                    Add proto file
+                  </button>
+                </fieldset>
+
+                {/* Import Paths */}
+                <Input
+                  id="proto-import-paths"
+                  label="Import Paths"
+                  icon="folder"
+                  code
+                  type="text"
+                  placeholder="/path/to/protos, /other/path"
+                  value={form.protoImportPaths}
+                  onInput={(e: JSX.TargetedEvent<HTMLInputElement>) =>
+                    update('protoImportPaths', (e.currentTarget as HTMLInputElement).value)
+                  }
+                />
+                <p class="field-help">
+                  <Icon name="info" class="w-3 h-3" />
+                  Comma-separated directories for resolving proto imports
+                </p>
+                <div class="mt-2">
+                  <button
+                    type="button"
+                    class="text-sm text-accent-primary underline"
+                    onClick={() => setProtoPathMode(false)}
+                  >
+                    Or upload proto files
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Insecure Skip Verify */}
         <div class="mt-4">
           <Checkbox
@@ -244,6 +466,79 @@ export function TargetStep() {
             onChange={() => update('insecureSkipVerify', !form.insecureSkipVerify)}
           />
         </div>
+
+        {/* Advanced gRPC Settings (gRPC only, collapsed by default) */}
+        {form.clientChannel === 'GRPC' && (
+          <div class="mt-4">
+            <button
+              type="button"
+              class="disclosure-trigger"
+              aria-expanded={advancedOpen}
+              aria-controls="grpc-advanced-settings"
+              onClick={() => setAdvancedOpen(!advancedOpen)}
+            >
+              <span class="flex items-center gap-2">
+                <Icon name="settings" size="sm" />
+                Advanced gRPC Settings
+              </span>
+              <Icon name="chevron-down" size="sm" class={`disclosure-chevron ${advancedOpen ? 'open' : ''}`} />
+            </button>
+            <div id="grpc-advanced-settings" class={`disclosure-content ${advancedOpen ? 'open' : ''}`}>
+              <div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                  <Input
+                    id="max-recv-msg-size"
+                    label="Max Receive Message (bytes)"
+                    icon="inbox"
+                    type="number"
+                    min={0}
+                    placeholder="4194304 (4 MB)"
+                    value={form.maxRecvMsgSize || ''}
+                    onInput={(e: JSX.TargetedEvent<HTMLInputElement>) =>
+                      update('maxRecvMsgSize', Number((e.currentTarget as HTMLInputElement).value) || 0)
+                    }
+                  />
+                  <Input
+                    id="max-send-msg-size"
+                    label="Max Send Message (bytes)"
+                    icon="upload"
+                    type="number"
+                    min={0}
+                    placeholder="4194304 (4 MB)"
+                    value={form.maxSendMsgSize || ''}
+                    onInput={(e: JSX.TargetedEvent<HTMLInputElement>) =>
+                      update('maxSendMsgSize', Number((e.currentTarget as HTMLInputElement).value) || 0)
+                    }
+                  />
+                  <Input
+                    id="keepalive-time"
+                    label="Keepalive Time (ms)"
+                    icon="heart-pulse"
+                    type="number"
+                    min={0}
+                    placeholder="0 (disabled)"
+                    value={form.keepaliveTimeMs || ''}
+                    onInput={(e: JSX.TargetedEvent<HTMLInputElement>) =>
+                      update('keepaliveTimeMs', Number((e.currentTarget as HTMLInputElement).value) || 0)
+                    }
+                  />
+                  <Input
+                    id="keepalive-timeout"
+                    label="Keepalive Timeout (ms)"
+                    icon="timer"
+                    type="number"
+                    min={0}
+                    placeholder="20000 (20s)"
+                    value={form.keepaliveTimeoutMs || ''}
+                    onInput={(e: JSX.TargetedEvent<HTMLInputElement>) =>
+                      update('keepaliveTimeoutMs', Number((e.currentTarget as HTMLInputElement).value) || 0)
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* === Load Balancer Section === */}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 
 	modelsDtoClients "github.dhi13man.com/bombardment-runner/src/models/dto/clients"
@@ -61,10 +62,25 @@ func NewGrpcClient(clientCtx modelsDtoClients.ClientContext) (GrpcChannelClient,
 }
 
 func newGrpcClientWithDialer(clientCtx modelsDtoClients.ClientContext, dialer GrpcDialer) (GrpcChannelClient, error) {
+	protoFiles := clientCtx.ProtoFiles
+	importPaths := clientCtx.ProtoImportPaths
+
+	// Handle browser-uploaded proto file contents
+	if len(clientCtx.ProtoFileContents) > 0 {
+		tempDir, paths, err := writeProtoContents(clientCtx.ProtoFileContents)
+		if err != nil {
+			return nil, fmt.Errorf("write uploaded proto files: %w", err)
+		}
+		defer os.RemoveAll(tempDir)
+		zap.L().Debug("wrote uploaded proto files to temp dir", zap.String("dir", tempDir), zap.Int("count", len(paths)))
+		protoFiles = paths
+		importPaths = append([]string{tempDir}, importPaths...)
+	}
+
 	var resolver *ProtoResolver
-	if len(clientCtx.ProtoFiles) > 0 {
+	if len(protoFiles) > 0 {
 		var err error
-		resolver, err = NewProtoResolver(clientCtx.ProtoFiles, clientCtx.ProtoImportPaths)
+		resolver, err = NewProtoResolver(protoFiles, importPaths)
 		if err != nil {
 			return nil, fmt.Errorf("init proto resolver: %w", err)
 		}

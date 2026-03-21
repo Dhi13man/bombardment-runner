@@ -75,11 +75,48 @@ export function ReviewStep() {
 
   // Target summary
   const validUrls = form.urls.filter((u) => u.trim() !== '');
+  const uploadedProtos = form.protoFiles;
+  const serverProtoFiles = form.protoFilePaths.filter((p) => p.trim() !== '');
+  const hasProtos = uploadedProtos.length > 0 || serverProtoFiles.length > 0;
+  const isGrpc = form.clientChannel === 'GRPC';
+  const hasAdvanced = isGrpc && (
+    form.maxRecvMsgSize > 0 || form.maxSendMsgSize > 0 ||
+    form.keepaliveTimeMs > 0 || form.keepaliveTimeoutMs > 0
+  );
+
   const targetRows = [
     { label: 'Channel', value: CHANNEL_DISPLAY[form.clientChannel] },
+    ...(isGrpc
+      ? [{
+          label: 'Encoding',
+          value: uploadedProtos.length > 0
+            ? 'Protobuf (uploaded)'
+            : serverProtoFiles.length > 0
+              ? 'Protobuf (server paths)'
+              : 'JSON codec',
+        }]
+      : []),
+    ...(isGrpc && uploadedProtos.length > 0
+      ? [
+          { label: 'Proto files', value: `${uploadedProtos.length} file${uploadedProtos.length !== 1 ? 's' : ''}` },
+          ...uploadedProtos.map((f, i) => ({ label: `File ${i + 1}`, value: f.name, mono: true })),
+        ]
+      : []),
+    ...(isGrpc && serverProtoFiles.length > 0
+      ? [
+          { label: 'Proto files', value: `${serverProtoFiles.length} file${serverProtoFiles.length !== 1 ? 's' : ''}` },
+          ...serverProtoFiles.map((f, i) => ({ label: `File ${i + 1}`, value: f, mono: true })),
+        ]
+      : []),
     { label: 'Load Balancer', value: formatStrategy(form.lbStrategy) },
     { label: 'URLs', value: `${validUrls.length} endpoint${validUrls.length !== 1 ? 's' : ''}` },
     ...validUrls.map((u, i) => ({ label: `URL ${i + 1}`, value: u, mono: true })),
+    ...(hasAdvanced ? [
+      ...(form.maxRecvMsgSize > 0 ? [{ label: 'Max Recv Msg', value: `${form.maxRecvMsgSize} bytes`, mono: true }] : []),
+      ...(form.maxSendMsgSize > 0 ? [{ label: 'Max Send Msg', value: `${form.maxSendMsgSize} bytes`, mono: true }] : []),
+      ...(form.keepaliveTimeMs > 0 ? [{ label: 'Keepalive Time', value: `${form.keepaliveTimeMs} ms`, mono: true }] : []),
+      ...(form.keepaliveTimeoutMs > 0 ? [{ label: 'Keepalive Timeout', value: `${form.keepaliveTimeoutMs} ms`, mono: true }] : []),
+    ] : []),
   ];
 
   // Driver summary
