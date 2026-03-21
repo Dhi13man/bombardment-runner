@@ -162,7 +162,7 @@ The `POST /v1/bombardment` payload accepts these sections:
 | --- | --- | --- |
 | `parser_context` | `strategy`, `file_path`, `file_content_b64` | Source format (`CSV`, `JSON`, `NDJSON`, `EXCEL`, `PARQUET`) and location |
 | `transformer_context` | `strategy`, `body_expression`, `method_expression`, `endpoint_expression`, `headers_expression` | Transform strategy (`JSONATA`, `GOTEMPLATE`, `PASSTHROUGH`) and expressions |
-| `client_context` | `channel`, `request_timeout`, `insecure_skip_verify` | Client channel (`REST`, `GRAPHQL`, `GRPC`) and timeout settings (nanoseconds) |
+| `client_context` | `channel`, `request_timeout`, `insecure_skip_verify`, `proto_files`, `proto_file_contents`, `max_recv_msg_size`, `keepalive_time` | Client channel (`REST`, `GRAPHQL`, `GRPC`), timeout settings (ns), gRPC proto file paths or base64-uploaded contents, and connection tuning |
 | `load_balancer_context` | `strategy`, `urls` | Load balancing strategy (`ROUND_ROBIN`, `RANDOM`) and target URLs |
 | `driver_context` | `batch_size`, `should_store_responses`, `responses_storage_path` | Batch size and optional response CSV storage |
 

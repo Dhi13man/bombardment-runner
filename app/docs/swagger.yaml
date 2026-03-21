@@ -2,20 +2,20 @@ definitions:
   dto.BombardmentRequest:
     properties:
       client_context:
-        $ref: '#/definitions/models_dto_clients.ClientContext'
+        $ref: '#/definitions/modelsDtoClients.ClientContext'
       driver_context:
-        $ref: '#/definitions/models_dto_driver.DriverContext'
+        $ref: '#/definitions/modelsDtoDriver.DriverContext'
       load_balancer_context:
-        $ref: '#/definitions/models_dto_load_balancing.LoadBalancerContext'
+        $ref: '#/definitions/modelsDtoLoadBalancing.LoadBalancerContext'
       parser_context:
-        $ref: '#/definitions/models_dto_parsing.ParserContext'
+        $ref: '#/definitions/modelsDtoParsing.ParserContext'
       transformer_context:
-        $ref: '#/definitions/models_dto_transforming.TransformerContext'
+        $ref: '#/definitions/modelsDtoTransforming.TransformerContext'
     type: object
-  models_dto_clients.ClientContext:
+  modelsDtoClients.ClientContext:
     properties:
       channel:
-        $ref: '#/definitions/models_enums.ClientChannel'
+        $ref: '#/definitions/modelsEnums.ClientChannel'
       dial_keep_alive:
         allOf:
         - $ref: '#/definitions/time.Duration'
@@ -23,12 +23,53 @@ definitions:
       dial_timeout:
         allOf:
         - $ref: '#/definitions/time.Duration'
-        description: Maximum time a dial will wait for a connect to complete.
+        description: Maximum time a dial will wait for connect to complete.
       expect_continue_timeout:
         allOf:
         - $ref: '#/definitions/time.Duration'
         description: Maximum time waiting for a server's first response headers after
           fully writing the request headers.
+      insecure_skip_verify:
+        description: Whether to skip TLS certificate verification
+        type: boolean
+      keepalive_time:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: nanoseconds, 0 = disabled
+      keepalive_timeout:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: nanoseconds, 0 = default (20s)
+      max_recv_msg_size:
+        description: gRPC connection tuning
+        type: integer
+      max_send_msg_size:
+        description: bytes, 0 = default (4MB)
+        type: integer
+      proto_file_contents:
+        additionalProperties:
+          type: string
+        description: |-
+          Browser-uploaded proto file contents: filename -> base64-encoded content.
+          When set, files are decoded to a temp directory for compilation, then cleaned up.
+          Mutually exclusive with ProtoFiles (paths); contents take precedence.
+        type: object
+      proto_files:
+        description: |-
+          gRPC proto file support: paths to .proto files for protobuf encoding.
+          When set, the gRPC client sends standard protobuf instead of JSON codec.
+        items:
+          type: string
+        type: array
+      proto_import_paths:
+        items:
+          type: string
+        type: array
+      request_timeout:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: Overall timeout for the entire request, from dial-to-response
+          reading
       response_header_timeout:
         allOf:
         - $ref: '#/definitions/time.Duration'
@@ -38,30 +79,41 @@ definitions:
         - $ref: '#/definitions/time.Duration'
         description: Maximum time waiting to perform a TLS handshake.
     type: object
-  models_dto_driver.DriverContext:
+  modelsDtoDriver.DriverContext:
     properties:
       batch_size:
         type: integer
+      responses_storage_path:
+        type: string
       should_store_responses:
         type: boolean
     type: object
-  models_dto_load_balancing.LoadBalancerContext:
+  modelsDtoLoadBalancing.LoadBalancerContext:
     properties:
       strategy:
-        $ref: '#/definitions/models_enums.LoadBalancerStrategy'
+        $ref: '#/definitions/modelsEnums.LoadBalancerStrategy'
       urls:
         items:
           type: string
         type: array
     type: object
-  models_dto_parsing.ParserContext:
+  modelsDtoParsing.ParserContext:
     properties:
+      file_content_b64:
+        type: string
       file_path:
         type: string
+      on_error:
+        $ref: '#/definitions/modelsEnums.OnErrorBehavior'
+      options:
+        description: |-
+          Options holds strategy-specific configuration (e.g. CsvParserOptions, ExcelParserOptions).
+          swagger:type object
+        type: object
       strategy:
-        $ref: '#/definitions/models_enums.ParserStrategy'
+        $ref: '#/definitions/modelsEnums.ParserStrategy'
     type: object
-  models_dto_transforming.TransformerContext:
+  modelsDtoTransforming.TransformerContext:
     properties:
       body_expression:
         type: string
@@ -72,19 +124,21 @@ definitions:
       method_expression:
         type: string
       strategy:
-        $ref: '#/definitions/models_enums.TransformerStrategy'
+        $ref: '#/definitions/modelsEnums.TransformerStrategy'
     type: object
-  models_enums.ClientChannel:
+  modelsEnums.ClientChannel:
     enum:
     - REST
+    - GRAPHQL
     - GRPC
     - KAFKA
     type: string
     x-enum-varnames:
     - REST
+    - GRAPHQL
     - GRPC
     - KAFKA
-  models_enums.LoadBalancerStrategy:
+  modelsEnums.LoadBalancerStrategy:
     enum:
     - RANDOM
     - ROUND_ROBIN
@@ -94,22 +148,73 @@ definitions:
     - RANDOM
     - ROUND_ROBIN
     - LEAST_CONNECTION
-  models_enums.ParserStrategy:
+  modelsEnums.OnErrorBehavior:
+    enum:
+    - SKIP
+    - STOP
+    type: string
+    x-enum-varnames:
+    - OnErrorSkip
+    - OnErrorStop
+  modelsEnums.ParserStrategy:
     enum:
     - CSV
     - JSON
+    - NDJSON
+    - EXCEL
+    - PARQUET
     type: string
     x-enum-varnames:
     - CSV
     - JSON
-  models_enums.TransformerStrategy:
+    - NDJSON
+    - EXCEL
+    - PARQUET
+  modelsEnums.TransformerStrategy:
     enum:
     - JSONATA
     - GOTEMPLATE
+    - PASSTHROUGH
     type: string
     x-enum-varnames:
     - JSONATA
     - GO_TEMPLATE
+    - PASSTHROUGH
+  services.JobSnapshot:
+    properties:
+      completed_at:
+        type: string
+      created_at:
+        type: string
+      error_message:
+        type: string
+      failed_rows:
+        type: integer
+      id:
+        type: string
+      original_request:
+        $ref: '#/definitions/dto.BombardmentRequest'
+      processed_rows:
+        type: integer
+      progress_percent:
+        type: number
+      status:
+        $ref: '#/definitions/services.JobStatus'
+      total_rows:
+        type: integer
+    type: object
+  services.JobStatus:
+    enum:
+    - PENDING
+    - RUNNING
+    - COMPLETED
+    - FAILED
+    type: string
+    x-enum-varnames:
+    - JobStatusPending
+    - JobStatusRunning
+    - JobStatusCompleted
+    - JobStatusFailed
   time.Duration:
     enum:
     - -9223372036854775808
@@ -120,24 +225,9 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
+    format: int64
     type: integer
     x-enum-varnames:
-    - minDuration
-    - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
     - minDuration
     - maxDuration
     - Nanosecond
@@ -150,10 +240,26 @@ info:
   contact: {}
 paths:
   /v1/bombardment:
+    get:
+      description: Get a list of all bombardment jobs with their statuses
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/services.JobSnapshot'
+              type: array
+            type: object
+      summary: List all jobs
+      tags:
+      - Bombardment Core
     post:
       consumes:
       - application/json
-      description: Accept contexts payload and trigger processing
+      description: Accept contexts payload and trigger processing asynchronously
       parameters:
       - description: Bombardment contexts
         in: body
@@ -164,12 +270,10 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/services.JobSnapshot'
         "400":
           description: Bad Request
           schema:
@@ -183,6 +287,51 @@ paths:
               type: string
             type: object
       summary: Trigger bombardment process
+      tags:
+      - Bombardment Core
+  /v1/bombardment/{id}:
+    delete:
+      description: Delete a bombardment job by its ID
+      parameters:
+      - description: Job ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a job
+      tags:
+      - Bombardment Core
+    get:
+      description: Get the current status and progress of a bombardment job
+      parameters:
+      - description: Job ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/services.JobSnapshot'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get job status
       tags:
       - Bombardment Core
   /v1/ping:
