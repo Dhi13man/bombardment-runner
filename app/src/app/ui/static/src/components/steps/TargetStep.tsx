@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'preact/hooks';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'preact/hooks';
 import { useJobForm, type ProtoFile } from '../../context/JobFormContext';
 import { useWizard } from '../../context/WizardContext';
-import { formatFileSize } from '../../utils/format';
+import { formatFileSize, readFileAsBase64, hasPathTraversal, nonEmpty, pluralize } from '../../utils/format';
+import { useListField } from '../../hooks/useListField';
 import { RadioCardGroup, type RadioOption, Input, Checkbox } from '../primitives';
 import { Icon } from '../Icon';
 import type { ClientChannel, LoadBalancerStrategy } from '../../types/api';
@@ -88,13 +89,13 @@ function getBatchSizeError(value: number): string {
 function getResponsesPathError(path: string, isRequired: boolean): string {
   if (!isRequired) return '';
   if (!path.trim()) return 'Storage path is required when storing responses';
-  if (path.includes('..')) return 'Path traversal (..) is not allowed';
+  if (hasPathTraversal(path)) return 'Path traversal (..) is not allowed';
   return '';
 }
 
 function getProtoPathError(path: string): string {
   if (!path.trim()) return '';
-  if (path.includes('..')) return 'Path traversal (..) is not allowed';
+  if (hasPathTraversal(path)) return 'Path traversal (..) is not allowed';
   if (!path.trim().endsWith('.proto')) return 'File must end in .proto';
   return '';
 }
@@ -104,29 +105,32 @@ function getProtoPathError(path: string): string {
 export function TargetStep() {
   const { form, update } = useJobForm();
   const { setValid } = useWizard();
-  const urlIdCounter = useRef(form.urls.length);
-  const urlKeys = useRef<number[]>(form.urls.map((_, i) => i));
-  const lastUrlRef = useRef<HTMLInputElement>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [protoPathMode, setProtoPathMode] = useState(false);
   const protoFileRef = useRef<HTMLInputElement>(null);
-  const protoIdCounter = useRef(form.protoFilePaths.length);
-  const protoKeys = useRef<number[]>(form.protoFilePaths.map((_, i) => i));
+
+  const urlList = useListField({
+    items: form.urls,
+    onUpdate: (urls) => update('urls', urls),
+    idPrefix: 'target-url',
+    keepMinOne: true,
+  });
+
+  const protoPathList = useListField({
+    items: form.protoFilePaths,
+    onUpdate: (paths) => update('protoFilePaths', paths),
+    idPrefix: 'proto-file',
+  });
+
+  const validUrls = useMemo(() => nonEmpty(form.urls), [form.urls]);
+  const hasProtoFiles = form.protoFiles.length > 0 || nonEmpty(form.protoFilePaths).length > 0;
 
   const validate = useCallback(() => {
-    // Validate timeouts
     const timeoutsValid = TIMEOUT_FIELDS.every(
       (f) => !getTimeoutError(form[f.key]),
     );
-
-    // Validate URLs: at least one non-empty valid URL
-    const nonEmptyUrls = form.urls.filter((u) => u.trim() !== '');
-    const urlsValid = nonEmptyUrls.length > 0 && nonEmptyUrls.every((u) => !getUrlError(u, form.clientChannel));
-
-    // Validate batch size
+    const urlsValid = validUrls.length > 0 && validUrls.every((u) => !getUrlError(u, form.clientChannel));
     const batchValid = !getBatchSizeError(form.batchSize);
-
-    // Validate responses path (only if storing)
     const pathValid = !getResponsesPathError(form.responsesPath, form.shouldStoreResponses);
     const protoPathsValid = form.protoFilePaths.every(p => !getProtoPathError(p));
 
@@ -134,8 +138,8 @@ export function TargetStep() {
   }, [
     form.dialTimeoutMs, form.keepAliveMs, form.tlsHandshakeMs,
     form.responseHeaderMs, form.expectContinueMs, form.requestTimeoutMs,
-    form.urls, form.batchSize, form.shouldStoreResponses, form.responsesPath,
-    form.clientChannel, form.protoFiles, form.protoFilePaths, setValid,
+    validUrls, form.batchSize, form.shouldStoreResponses, form.responsesPath,
+    form.clientChannel, form.protoFilePaths, setValid,
   ]);
 
   useEffect(() => {
@@ -146,88 +150,20 @@ export function TargetStep() {
     update(key, Number((e.currentTarget as HTMLInputElement).value));
   }
 
-  function handleUrlChange(index: number, e: JSX.TargetedEvent<HTMLInputElement>) {
-    const newUrls = [...form.urls];
-    newUrls[index] = (e.currentTarget as HTMLInputElement).value;
-    update('urls', newUrls);
-  }
-
-  function addUrl() {
-    urlKeys.current = [...urlKeys.current, ++urlIdCounter.current];
-    update('urls', [...form.urls, '']);
-    // Focus the new input after render
-    requestAnimationFrame(() => lastUrlRef.current?.focus());
-  }
-
-  function removeUrl(index: number) {
-    // Determine focus target before removing
-    const focusIndex = index > 0 ? index - 1 : 0;
-
-    urlKeys.current = urlKeys.current.filter((_, i) => i !== index);
-    const newUrls = form.urls.filter((_, i) => i !== index);
-    // Keep at least one URL field
-    if (newUrls.length === 0) {
-      urlKeys.current = [++urlIdCounter.current];
-    }
-    update('urls', newUrls.length > 0 ? newUrls : ['']);
-
-    // Restore focus to nearest remaining URL input
-    requestAnimationFrame(() => {
-      const target = document.getElementById(`target-url-${focusIndex}`);
-      if (target) {
-        (target as HTMLElement).focus();
-      }
-    });
-  }
-
-  function handleProtoPathChange(index: number, e: JSX.TargetedEvent<HTMLInputElement>) {
-    const newPaths = [...form.protoFilePaths];
-    newPaths[index] = (e.currentTarget as HTMLInputElement).value;
-    update('protoFilePaths', newPaths);
-  }
-
-  function addProtoPath() {
-    protoKeys.current = [...protoKeys.current, ++protoIdCounter.current];
-    const nextIndex = form.protoFilePaths.length;
-    update('protoFilePaths', [...form.protoFilePaths, '']);
-    requestAnimationFrame(() => {
-      const target = document.getElementById(`proto-file-${nextIndex}`);
-      if (target) (target as HTMLElement).focus();
-    });
-  }
-
-  function removeProtoPath(index: number) {
-    const focusIndex = index > 0 ? index - 1 : 0;
-    protoKeys.current = protoKeys.current.filter((_, i) => i !== index);
-    const newPaths = form.protoFilePaths.filter((_, i) => i !== index);
-    update('protoFilePaths', newPaths.length > 0 ? newPaths : []);
-    requestAnimationFrame(() => {
-      const target = document.getElementById(`proto-file-${focusIndex}`);
-      if (target) (target as HTMLElement).focus();
-    });
-  }
-
   function onProtoFilesSelect(e: Event) {
     const files = Array.from((e.target as HTMLInputElement).files || []);
     if (files.length === 0) return;
 
-    const readers = files.map(file => new Promise<ProtoFile>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const b64 = ((ev.target as FileReader).result as string).split(',')[1] || '';
-        resolve({ name: file.name, size: file.size, contentB64: b64 });
-      };
-      reader.readAsDataURL(file);
-    }));
-
-    Promise.all(readers).then(newFiles => {
-      // Merge with existing, deduplicate by name
+    Promise.all(
+      files.map(file =>
+        readFileAsBase64(file).then(b64 => ({ name: file.name, size: file.size, contentB64: b64 } as ProtoFile))
+      )
+    ).then(newFiles => {
       const existing = new Map(form.protoFiles.map(f => [f.name, f]));
       for (const f of newFiles) existing.set(f.name, f);
       update('protoFiles', Array.from(existing.values()));
     });
 
-    // Reset the input so re-selecting the same file triggers onChange
     (e.target as HTMLInputElement).value = '';
   }
 
@@ -235,12 +171,9 @@ export function TargetStep() {
     update('protoFiles', form.protoFiles.filter(f => f.name !== name));
   }
 
-  // Compute errors for display
   const batchSizeError = getBatchSizeError(form.batchSize);
   const responsesPathError = getResponsesPathError(form.responsesPath, form.shouldStoreResponses);
-  const nonEmptyUrls = form.urls.filter((u) => u.trim() !== '');
-  const noUrlsError = nonEmptyUrls.length === 0 ? 'At least one target URL is required' : '';
-  const hasProtoFiles = form.protoFiles.length > 0 || form.protoFilePaths.some(p => p.trim() !== '');
+  const noUrlsError = validUrls.length === 0 ? 'At least one target URL is required' : '';
 
   return (
     <div>
@@ -307,7 +240,7 @@ export function TargetStep() {
 
         {/* Proto File Configuration (gRPC only) */}
         {form.clientChannel === 'GRPC' && (
-          <div class="mt-4" style={{ borderTop: '1px solid var(--border-default)', paddingTop: '16px' }}>
+          <div class="proto-config-section">
             {/* Mode Banner */}
             <div
               class={`grpc-mode-banner ${hasProtoFiles ? 'proto-mode' : 'json-mode'}`}
@@ -319,7 +252,7 @@ export function TargetStep() {
                 <strong>
                   {hasProtoFiles
                     ? form.protoFiles.length > 0
-                      ? `Protobuf mode (${form.protoFiles.length} proto file${form.protoFiles.length !== 1 ? 's' : ''} loaded)`
+                      ? `Protobuf mode (${pluralize(form.protoFiles.length, 'proto file')} loaded)`
                       : 'Protobuf mode'
                     : 'JSON codec mode'}
                 </strong>
@@ -353,7 +286,7 @@ export function TargetStep() {
                     <Icon name="upload" size="sm" class="text-text-secondary" />
                     <span class={form.protoFiles.length > 0 ? '' : 'custom-select-placeholder'}>
                       {form.protoFiles.length > 0
-                        ? `${form.protoFiles.length} file${form.protoFiles.length !== 1 ? 's' : ''} selected`
+                        ? `${pluralize(form.protoFiles.length, 'file')} selected`
                         : 'Click to select .proto files'}
                     </span>
                   </button>
@@ -396,14 +329,14 @@ export function TargetStep() {
                     {form.protoFilePaths.map((path, i) => {
                       const pathError = path.trim() ? getProtoPathError(path) : '';
                       return (
-                        <div key={protoKeys.current[i] ?? i} class="url-row">
+                        <div key={protoPathList.keys.current[i] ?? i} class="url-row">
                           <Input
                             id={`proto-file-${i}`}
                             aria-label={`Proto file ${i + 1}`}
                             type="text"
                             code
                             value={path}
-                            onInput={(e: JSX.TargetedEvent<HTMLInputElement>) => handleProtoPathChange(i, e)}
+                            onInput={(e: JSX.TargetedEvent<HTMLInputElement>) => protoPathList.handleChange(i, e)}
                             placeholder="/path/to/service.proto"
                             error={pathError || undefined}
                             class="flex-1"
@@ -412,7 +345,7 @@ export function TargetStep() {
                             type="button"
                             class="btn btn-ghost btn-sm url-remove-btn"
                             aria-label={`Remove proto file ${i + 1}`}
-                            onClick={() => removeProtoPath(i)}
+                            onClick={() => protoPathList.remove(i)}
                           >
                             <Icon name="trash-2" size="sm" />
                           </button>
@@ -420,7 +353,7 @@ export function TargetStep() {
                       );
                     })}
                   </div>
-                  <button type="button" class="btn btn-ghost btn-sm mt-2" onClick={addProtoPath}>
+                  <button type="button" class="btn btn-ghost btn-sm mt-2" onClick={protoPathList.add}>
                     <Icon name="plus" size="sm" />
                     Add proto file
                   </button>
@@ -565,16 +498,14 @@ export function TargetStep() {
           <div>
             {form.urls.map((url, i) => {
               const urlError = url.trim() ? getUrlError(url, form.clientChannel) : '';
-              const isLast = i === form.urls.length - 1;
               return (
-                <div key={urlKeys.current[i] ?? i} class="url-row">
+                <div key={urlList.keys.current[i] ?? i} class="url-row">
                   <Input
                     id={`target-url-${i}`}
                     aria-label={`Target URL ${i + 1}`}
-                    ref={isLast ? lastUrlRef : undefined}
                     type="text"
                     value={url}
-                    onInput={(e: JSX.TargetedEvent<HTMLInputElement>) => handleUrlChange(i, e)}
+                    onInput={(e: JSX.TargetedEvent<HTMLInputElement>) => urlList.handleChange(i, e)}
                     placeholder={URL_PLACEHOLDER[form.clientChannel]}
                     error={urlError || undefined}
                     class="flex-1"
@@ -583,7 +514,7 @@ export function TargetStep() {
                     type="button"
                     class="btn btn-ghost btn-sm url-remove-btn"
                     aria-label={`Remove URL ${i + 1}`}
-                    onClick={() => removeUrl(i)}
+                    onClick={() => urlList.remove(i)}
                   >
                     <Icon name="trash-2" size="sm" />
                   </button>
@@ -594,7 +525,7 @@ export function TargetStep() {
           <button
             type="button"
             class="btn btn-ghost btn-sm mt-2"
-            onClick={addUrl}
+            onClick={urlList.add}
           >
             <Icon name="plus" size="sm" />
             Add URL

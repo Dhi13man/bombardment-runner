@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sort"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/bufbuild/protocompile"
@@ -17,10 +18,7 @@ import (
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
-var (
-	ErrMethodNotFound       = errors.New("method not found in proto descriptors")
-	ErrStreamingUnsupported = errors.New("streaming methods are not supported")
-)
+var ErrMethodNotFound = errors.New("method not found in proto descriptors")
 
 type methodInfo struct {
 	inputDesc  protoreflect.MessageDescriptor
@@ -30,7 +28,8 @@ type methodInfo struct {
 // ProtoResolver parses .proto files at init time and converts between JSON
 // and protobuf wire format for dynamic gRPC calls. Thread-safe after creation.
 type ProtoResolver struct {
-	methods map[string]*methodInfo // "ServiceName/MethodName" -> descriptors
+	methods       map[string]*methodInfo // "ServiceName/MethodName" -> descriptors
+	sortedMethods []string               // cached sorted keys for error messages
 }
 
 // NewProtoResolver compiles the given .proto files and indexes all unary methods.
@@ -79,7 +78,10 @@ func NewProtoResolver(protoFiles, importPaths []string) (*ProtoResolver, error) 
 		return nil, fmt.Errorf("no unary methods found in proto files %v", protoFiles)
 	}
 
-	return &ProtoResolver{methods: methods}, nil
+	return &ProtoResolver{
+		methods:       methods,
+		sortedMethods: slices.Sorted(maps.Keys(methods)),
+	}, nil
 }
 
 // CreateRequestMessage converts a JSON body (typically map[string]any from the
@@ -88,7 +90,7 @@ func (r *ProtoResolver) CreateRequestMessage(service, method string, jsonBody an
 	key := service + "/" + method
 	info, ok := r.methods[key]
 	if !ok {
-		return nil, fmt.Errorf("%w: %s/%s (available: %v)", ErrMethodNotFound, service, method, r.availableMethods())
+		return nil, fmt.Errorf("%w: %s/%s (available: %v)", ErrMethodNotFound, service, method, r.sortedMethods)
 	}
 
 	jsonBytes, err := json.Marshal(jsonBody)
@@ -130,16 +132,7 @@ func (r *ProtoResolver) ResponseToJSON(msg proto.Message) (any, error) {
 	return result, nil
 }
 
-func (r *ProtoResolver) availableMethods() []string {
-	keys := make([]string, 0, len(r.methods))
-	for k := range r.methods {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
 // AvailableMethodsString returns a comma-separated list of available methods for diagnostics.
 func (r *ProtoResolver) AvailableMethodsString() string {
-	return strings.Join(r.availableMethods(), ", ")
+	return strings.Join(r.sortedMethods, ", ")
 }

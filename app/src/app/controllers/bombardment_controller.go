@@ -11,6 +11,13 @@ import (
 	"github.dhi13man.com/bombardment-runner/src/services/parsing"
 )
 
+const (
+	// MaxGrpcMsgSize is the upper bound for max_recv_msg_size and max_send_msg_size (64 MB).
+	MaxGrpcMsgSize = 64 << 20
+	// MinGrpcKeepalive is the minimum keepalive_time allowed (10 seconds in nanoseconds).
+	MinGrpcKeepalive = 10_000_000_000
+)
+
 // BombardmentController Handles Bombardment as an API endpoints
 type BombardmentController interface {
 	BaseController
@@ -132,15 +139,13 @@ func validateBombardmentRequest(req dto.BombardmentRequest) []string {
 	}
 
 	// Validate gRPC connection tuning bounds
-	const maxMsgSize = 64 << 20 // 64 MB
-	if req.Client.MaxRecvMsgSize > maxMsgSize {
+	if req.Client.MaxRecvMsgSize > MaxGrpcMsgSize {
 		errs = append(errs, "max_recv_msg_size must not exceed 64 MB")
 	}
-	if req.Client.MaxSendMsgSize > maxMsgSize {
+	if req.Client.MaxSendMsgSize > MaxGrpcMsgSize {
 		errs = append(errs, "max_send_msg_size must not exceed 64 MB")
 	}
-	const minKeepalive = 10_000_000_000 // 10 seconds in nanoseconds
-	if req.Client.KeepaliveTime > 0 && req.Client.KeepaliveTime < minKeepalive {
+	if req.Client.KeepaliveTime > 0 && req.Client.KeepaliveTime < MinGrpcKeepalive {
 		errs = append(errs, "keepalive_time must be at least 10 seconds (10000000000 ns)")
 	}
 

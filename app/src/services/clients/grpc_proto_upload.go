@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.dhi13man.com/bombardment-runner/src/services/parsing"
 	"go.uber.org/zap"
 )
 
@@ -40,8 +41,7 @@ func writeProtoContents(contents map[string]string) (string, []string, error) {
 		b64 := contents[name]
 
 		// Sanitize filename: reject path traversal and non-.proto files.
-		// Check the raw name before filepath.Clean to catch all ".." patterns.
-		if strings.Contains(name, "..") || filepath.IsAbs(name) {
+		if parsing.ContainsPathTraversal(name) || filepath.IsAbs(name) {
 			cleanupTempDir(tempDir)
 			return "", nil, fmt.Errorf("invalid proto filename: %s", name)
 		}

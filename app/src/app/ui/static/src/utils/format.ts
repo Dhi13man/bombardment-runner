@@ -45,3 +45,38 @@ export function formatFileSize(bytes: number): string {
   const size = bytes / Math.pow(k, i);
   return `${size % 1 === 0 ? size : size.toFixed(1)} ${units[i]}`;
 }
+
+/**
+ * Pluralize a word based on count (e.g., pluralize(3, 'file') => '3 files').
+ */
+export function pluralize(count: number, singular: string): string {
+  return `${count} ${singular}${count !== 1 ? 's' : ''}`;
+}
+
+/**
+ * Filter out empty/whitespace-only strings from an array.
+ */
+export function nonEmpty(arr: string[]): string[] {
+  return arr.filter(s => s.trim() !== '');
+}
+
+/**
+ * Check if a path contains traversal sequences (..).
+ */
+export function hasPathTraversal(path: string): boolean {
+  return path.includes('..');
+}
+
+/**
+ * Read a File as base64-encoded string (without the data URL prefix).
+ */
+export function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = (ev.target as FileReader).result as string;
+      resolve(result.split(',')[1] || '');
+    };
+    reader.readAsDataURL(file);
+  });
+}

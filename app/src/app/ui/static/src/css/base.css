@@ -1523,6 +1523,10 @@
   }
 
   /* ---- gRPC Proto & Disclosure ---- */
+  .proto-config-section {
+    @apply mt-4 pt-4;
+    border-top: 1px solid var(--border-default);
+  }
   .grpc-mode-banner {
     display: flex;
     align-items: flex-start;

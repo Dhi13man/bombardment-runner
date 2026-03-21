@@ -4,7 +4,7 @@ import { useWizard } from '../../context/WizardContext';
 import { RadioCardGroup, type RadioOption } from '../primitives';
 import { useToast } from '../composites/Toast';
 import { Icon } from '../Icon';
-import { formatFileSize } from '../../utils/format';
+import { formatFileSize, readFileAsBase64, hasPathTraversal } from '../../utils/format';
 import { detectJsonMode, detectDelimiter, detectStrategyFromExt } from '../../utils/detect';
 import type { ParserStrategy } from '../../types/api';
 
@@ -36,7 +36,7 @@ export function SourceStep() {
     const hasFile = !!form.fileContentB64;
     const p = form.filePath.trim();
     if (!hasFile && !p) { setValid(1, false); return; }
-    if (p && (p.includes('..') || !PATH_RE.test(p))) { setValid(1, false); return; }
+    if (p && (hasPathTraversal(p) || !PATH_RE.test(p))) { setValid(1, false); return; }
     setValid(1, true);
   }, [form.fileContentB64, form.filePath, setValid]);
 
@@ -58,13 +58,10 @@ export function SourceStep() {
     setPathMode(false);
     if (file.size > BLOCK_B) { showToast('error', 'File exceeds 100MB. Use a server-side file path instead.'); return; }
     if (file.size > WARN_B) showToast('warning', 'Large file. Consider using a server-side file path.');
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const b64 = ((ev.target as FileReader).result as string).split(',')[1] || '';
+    readFileAsBase64(file).then(b64 => {
       update('fileContentB64', b64);
       autoDetect(file.name.split('.').pop()?.toLowerCase(), b64);
-    };
-    reader.readAsDataURL(file);
+    });
   }
 
   function clearFile() {
@@ -85,7 +82,7 @@ export function SourceStep() {
   const path = form.filePath.trim();
   let pathErr = '';
   if (path) {
-    if (path.includes('..')) pathErr = 'Path traversal (..) is not allowed';
+    if (hasPathTraversal(path)) pathErr = 'Path traversal (..) is not allowed';
     else if (!PATH_RE.test(path)) pathErr = 'Invalid file path format';
   }
 

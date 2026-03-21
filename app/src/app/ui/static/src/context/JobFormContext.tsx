@@ -12,6 +12,7 @@ import type {
   ExcelParserOptions,
 } from '../types/api';
 import { msToNs, nsToMs } from '../types/api';
+import { nonEmpty } from '../utils/format';
 
 export interface ProtoFile {
   name: string;
@@ -230,11 +231,12 @@ export function JobFormProvider({ children }: { children: ComponentChildren }) {
                 ),
               }
             : {
-                proto_files: f.protoFilePaths.filter(p => p.trim() !== '').length > 0
-                  ? f.protoFilePaths.filter(p => p.trim() !== '')
-                  : undefined,
+                proto_files: (() => {
+                  const paths = nonEmpty(f.protoFilePaths);
+                  return paths.length > 0 ? paths : undefined;
+                })(),
                 proto_import_paths: f.protoImportPaths.trim()
-                  ? f.protoImportPaths.split(',').map(s => s.trim()).filter(Boolean)
+                  ? nonEmpty(f.protoImportPaths.split(',').map(s => s.trim()))
                   : undefined,
               }),
           max_recv_msg_size: f.maxRecvMsgSize || undefined,
@@ -245,7 +247,7 @@ export function JobFormProvider({ children }: { children: ComponentChildren }) {
       },
       load_balancer_context: {
         strategy: f.lbStrategy,
-        urls: f.urls.filter((u) => u.trim() !== ''),
+        urls: nonEmpty(f.urls),
       },
       driver_context: {
         batch_size: f.batchSize,

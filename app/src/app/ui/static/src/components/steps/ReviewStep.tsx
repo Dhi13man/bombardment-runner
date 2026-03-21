@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from 'preact/hooks';
 import { useJobForm } from '../../context/JobFormContext';
 import { useWizard } from '../../context/WizardContext';
+import { nonEmpty, pluralize } from '../../utils/format';
 import { ConfigCard } from '../composites/ConfigCard';
 import { PipelineStrip, DEFAULT_STAGES } from '../composites/PipelineStrip';
 import { StatusBadge } from '../composites/StatusBadge';
@@ -74,10 +75,11 @@ export function ReviewStep() {
   ];
 
   // Target summary
-  const validUrls = form.urls.filter((u) => u.trim() !== '');
-  const uploadedProtos = form.protoFiles;
-  const serverProtoFiles = form.protoFilePaths.filter((p) => p.trim() !== '');
-  const hasProtos = uploadedProtos.length > 0 || serverProtoFiles.length > 0;
+  const validUrls = nonEmpty(form.urls);
+  const serverProtoFiles = nonEmpty(form.protoFilePaths);
+  const protoFileNames = form.protoFiles.length > 0
+    ? form.protoFiles.map(f => f.name)
+    : serverProtoFiles;
   const isGrpc = form.clientChannel === 'GRPC';
   const hasAdvanced = isGrpc && (
     form.maxRecvMsgSize > 0 || form.maxSendMsgSize > 0 ||
@@ -89,27 +91,21 @@ export function ReviewStep() {
     ...(isGrpc
       ? [{
           label: 'Encoding',
-          value: uploadedProtos.length > 0
+          value: form.protoFiles.length > 0
             ? 'Protobuf (uploaded)'
             : serverProtoFiles.length > 0
               ? 'Protobuf (server paths)'
               : 'JSON codec',
         }]
       : []),
-    ...(isGrpc && uploadedProtos.length > 0
+    ...(isGrpc && protoFileNames.length > 0
       ? [
-          { label: 'Proto files', value: `${uploadedProtos.length} file${uploadedProtos.length !== 1 ? 's' : ''}` },
-          ...uploadedProtos.map((f, i) => ({ label: `File ${i + 1}`, value: f.name, mono: true })),
-        ]
-      : []),
-    ...(isGrpc && serverProtoFiles.length > 0
-      ? [
-          { label: 'Proto files', value: `${serverProtoFiles.length} file${serverProtoFiles.length !== 1 ? 's' : ''}` },
-          ...serverProtoFiles.map((f, i) => ({ label: `File ${i + 1}`, value: f, mono: true })),
+          { label: 'Proto files', value: pluralize(protoFileNames.length, 'file') },
+          ...protoFileNames.map((name, i) => ({ label: `File ${i + 1}`, value: name, mono: true })),
         ]
       : []),
     { label: 'Load Balancer', value: formatStrategy(form.lbStrategy) },
-    { label: 'URLs', value: `${validUrls.length} endpoint${validUrls.length !== 1 ? 's' : ''}` },
+    { label: 'URLs', value: pluralize(validUrls.length, 'endpoint') },
     ...validUrls.map((u, i) => ({ label: `URL ${i + 1}`, value: u, mono: true })),
     ...(hasAdvanced ? [
       ...(form.maxRecvMsgSize > 0 ? [{ label: 'Max Recv Msg', value: `${form.maxRecvMsgSize} bytes`, mono: true }] : []),
