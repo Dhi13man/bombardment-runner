@@ -3,6 +3,7 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -595,6 +596,46 @@ func TestValidateBombardmentRequest_TableDriven(t *testing.T) {
 				r.LoadBalancer.Urls = []string{"http://example.com"}
 				r.Parser.FileContentB64 = "dGVzdA=="
 				r.Client.KeepaliveTime = 1_000_000_000 // 1 second
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "negative max_recv_msg_size rejected",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				r.Client.MaxRecvMsgSize = -1
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "negative max_send_msg_size rejected",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				r.Client.MaxSendMsgSize = -1
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "proto_file_contents exceeds 100 files",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				contents := make(map[string]string, 101)
+				for i := range 101 {
+					contents[fmt.Sprintf("file_%d.proto", i)] = "dGVzdA=="
+				}
+				r.Client.ProtoFileContents = contents
 				return r
 			}(),
 			wantCount: 1,

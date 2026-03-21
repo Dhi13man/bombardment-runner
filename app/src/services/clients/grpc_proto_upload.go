@@ -8,10 +8,26 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.dhi13man.com/bombardment-runner/src/services/parsing"
 	"go.uber.org/zap"
 )
+
+const maxFilenameLogLen = 200
+
+// sanitizeFilename truncates and strips control characters from a filename for safe use in error messages.
+func sanitizeFilename(name string) string {
+	if len(name) > maxFilenameLogLen {
+		name = name[:maxFilenameLogLen] + "..."
+	}
+	return strings.Map(func(r rune) rune {
+		if r == utf8.RuneError || r < 0x20 {
+			return '?'
+		}
+		return r
+	}, name)
+}
 
 const (
 	// maxProtoFileSize is the maximum decoded size of a single uploaded proto file (10 MB).
@@ -24,6 +40,9 @@ const (
 // Returns the temp directory path and a slice of written file paths.
 // Caller is responsible for cleaning up the temp directory.
 func writeProtoContents(contents map[string]string) (string, []string, error) {
+	if len(contents) == 0 {
+		return "", nil, nil
+	}
 	if len(contents) > maxProtoFileCount {
 		return "", nil, fmt.Errorf("too many proto files: %d (max %d)", len(contents), maxProtoFileCount)
 	}
@@ -41,14 +60,15 @@ func writeProtoContents(contents map[string]string) (string, []string, error) {
 		b64 := contents[name]
 
 		// Sanitize filename: reject path traversal and non-.proto files.
+		safeName := sanitizeFilename(name)
 		if parsing.ContainsPathTraversal(name) || filepath.IsAbs(name) {
 			cleanupTempDir(tempDir)
-			return "", nil, fmt.Errorf("invalid proto filename: %s", name)
+			return "", nil, fmt.Errorf("invalid proto filename: %s", safeName)
 		}
 		clean := filepath.Clean(name)
 		if !strings.HasSuffix(clean, ".proto") {
 			cleanupTempDir(tempDir)
-			return "", nil, fmt.Errorf("file must end in .proto: %s", name)
+			return "", nil, fmt.Errorf("file must end in .proto: %s", safeName)
 		}
 
 		// Reject oversized content before allocating memory for decoding.

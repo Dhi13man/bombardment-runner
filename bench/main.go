@@ -133,18 +133,18 @@ func main() {
 		if r.URL.Path == "/reset" {
 			s.reset()
 			w.WriteHeader(200)
-			w.Write([]byte(`{"reset":true}`))
+			_, _ = w.Write([]byte(`{"reset":true}`))
 			return
 		}
 
 		if err := s.record(*latency, *errorRate); err != nil {
 			w.WriteHeader(500)
-			w.Write([]byte(`{"error":"simulated failure"}`))
+			_, _ = w.Write([]byte(`{"error":"simulated failure"}`))
 			return
 		}
 
 		w.WriteHeader(200)
-		w.Write([]byte(`{"data":{"ok":true}}`))
+		_, _ = w.Write([]byte(`{"data":{"ok":true}}`))
 	})
 
 	httpServer := &http.Server{
@@ -221,7 +221,7 @@ func writeStats(w http.ResponseWriter, s *stats) {
 		rps = float64(total) / elapsed
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(statsResponse{
+	_ = json.NewEncoder(w).Encode(statsResponse{
 		Total:     total,
 		Succeeded: s.succeeded.Load(),
 		Failed:    s.failed.Load(),

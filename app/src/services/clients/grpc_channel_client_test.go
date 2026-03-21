@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -306,7 +307,7 @@ func TestGrpcClient_GetOrDial_CachedConnectionFastPath(t *testing.T) {
 	t.Parallel()
 
 	// Arrange: count how many times the dialer is invoked
-	dialCount := 0
+	var dialCount atomic.Int32
 	svcDesc := grpc.ServiceDesc{
 		ServiceName: "svc.CacheTest",
 		Methods: []grpc.MethodDesc{
@@ -315,7 +316,7 @@ func TestGrpcClient_GetOrDial_CachedConnectionFastPath(t *testing.T) {
 	}
 	baseDial := startBufconnServer(t, svcDesc)
 	countingDialer := func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
-		dialCount++
+		dialCount.Add(1)
 		return baseDial(target, opts...)
 	}
 	client := newTestGrpcClient(t, 5*time.Second, countingDialer)
@@ -334,8 +335,8 @@ func TestGrpcClient_GetOrDial_CachedConnectionFastPath(t *testing.T) {
 		t.Fatalf("second Execute() error: %v", err2)
 	}
 	// Dialer should only be called once; second call hits cache
-	if dialCount != 1 {
-		t.Errorf("dialer was called %d times, want 1 (cached fast path)", dialCount)
+	if dialCount.Load() != 1 {
+		t.Errorf("dialer was called %d times, want 1 (cached fast path)", dialCount.Load())
 	}
 }
 
@@ -870,6 +871,33 @@ func TestGrpcClient_ProtoMode_ServerErrorReturnsStatus(t *testing.T) {
 	}
 	if resp.GetStatus() == nil || *resp.GetStatus() != int(codes.PermissionDenied) {
 		t.Errorf("GetStatus() = %v, want %d (PermissionDenied)", resp.GetStatus(), codes.PermissionDenied)
+	}
+}
+
+func TestGrpcClient_ProtoFileContents_MutualExclusivityWithProtoFiles(t *testing.T) {
+	t.Parallel()
+
+	// Arrange: both ProtoFiles and ProtoFileContents set
+	clientCtx := modelsDtoClients.ClientContext{
+		Channel:            modelsEnums.GRPC,
+		RequestTimeout:     5 * time.Second,
+		InsecureSkipVerify: true,
+		ProtoFiles:         []string{"testdata/echo.proto"},
+		ProtoFileContents:  map[string]string{"echo.proto": "dGVzdA=="},
+	}
+	dialer := func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+		return nil, nil
+	}
+
+	// Act
+	_, err := newGrpcClientWithDialer(clientCtx, dialer)
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected error for mutually exclusive proto sources, got nil")
+	}
+	if !strings.Contains(err.Error(), "mutually exclusive") {
+		t.Errorf("error = %q, want containing 'mutually exclusive'", err.Error())
 	}
 }
 

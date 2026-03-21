@@ -64,6 +64,12 @@ func newGrpcClientWithDialer(clientCtx modelsDtoClients.ClientContext, dialer Gr
 	protoFiles := clientCtx.ProtoFiles
 	importPaths := clientCtx.ProtoImportPaths
 
+	// Guard: proto_file_contents and proto_files are mutually exclusive.
+	// The controller validates this for API callers; this guard covers CLI and direct library use.
+	if len(clientCtx.ProtoFileContents) > 0 && len(clientCtx.ProtoFiles) > 0 {
+		return nil, fmt.Errorf("proto_file_contents and proto_files are mutually exclusive")
+	}
+
 	// Handle browser-uploaded proto file contents
 	if len(clientCtx.ProtoFileContents) > 0 {
 		tempDir, paths, err := writeProtoContents(clientCtx.ProtoFileContents)

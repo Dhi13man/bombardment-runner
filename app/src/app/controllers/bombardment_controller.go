@@ -138,12 +138,17 @@ func validateBombardmentRequest(req dto.BombardmentRequest) []string {
 		}
 	}
 
-	// Validate gRPC connection tuning bounds
-	if req.Client.MaxRecvMsgSize > MaxGrpcMsgSize {
-		errs = append(errs, "max_recv_msg_size must not exceed 64 MB")
+	// Validate uploaded proto file count at controller level (defense in depth with writeProtoContents)
+	if len(req.Client.ProtoFileContents) > 100 {
+		errs = append(errs, "proto_file_contents must not exceed 100 files")
 	}
-	if req.Client.MaxSendMsgSize > MaxGrpcMsgSize {
-		errs = append(errs, "max_send_msg_size must not exceed 64 MB")
+
+	// Validate gRPC connection tuning bounds
+	if req.Client.MaxRecvMsgSize < 0 || req.Client.MaxRecvMsgSize > MaxGrpcMsgSize {
+		errs = append(errs, "max_recv_msg_size must be between 0 and 64 MB")
+	}
+	if req.Client.MaxSendMsgSize < 0 || req.Client.MaxSendMsgSize > MaxGrpcMsgSize {
+		errs = append(errs, "max_send_msg_size must be between 0 and 64 MB")
 	}
 	if req.Client.KeepaliveTime > 0 && req.Client.KeepaliveTime < MinGrpcKeepalive {
 		errs = append(errs, "keepalive_time must be at least 10 seconds (10000000000 ns)")
