@@ -61,16 +61,34 @@ func (s *stats) record(latency time.Duration, errorRate float64) error {
 	return nil
 }
 
-// --- JSON codec for gRPC (matches Bombardment's jsonCodec) ---
+// --- Passthrough codec for gRPC ---
+//
+// The bench server echoes request bytes back as the response. This codec
+// passes raw bytes through without deserialization, supporting both standard
+// protobuf and JSON codec clients. Registered for both "proto" and "json"
+// codec names so the UnknownServiceHandler can recv/send raw []byte.
+type passthroughCodec struct{ name string }
 
-type jsonCodec struct{}
+func (c passthroughCodec) Marshal(v any) ([]byte, error) {
+	if b, ok := v.(*[]byte); ok {
+		return *b, nil
+	}
+	return json.Marshal(v)
+}
 
-func (jsonCodec) Marshal(v any) ([]byte, error)   { return json.Marshal(v) }
-func (jsonCodec) Unmarshal(data []byte, v any) error { return json.Unmarshal(data, v) }
-func (jsonCodec) Name() string                     { return "json" }
+func (c passthroughCodec) Unmarshal(data []byte, v any) error {
+	if b, ok := v.(*[]byte); ok {
+		*b = append((*b)[:0], data...)
+		return nil
+	}
+	return json.Unmarshal(data, v)
+}
+
+func (c passthroughCodec) Name() string { return c.name }
 
 func init() {
-	encoding.RegisterCodec(jsonCodec{})
+	encoding.RegisterCodec(passthroughCodec{name: "proto"})
+	encoding.RegisterCodec(passthroughCodec{name: "json"})
 }
 
 // --- gRPC catch-all handler ---
@@ -81,12 +99,19 @@ type catchAllHandler struct {
 	errorRate float64
 }
 
-// unknownHandler handles any unregistered gRPC method.
-func (h *catchAllHandler) handler(_ any, _ grpc.ServerStream) error {
+// handler handles any gRPC method (both JSON and protobuf codecs).
+// It reads the request bytes and echoes them back as the response.
+func (h *catchAllHandler) handler(_ any, stream grpc.ServerStream) error {
+	var raw []byte
+	if err := stream.RecvMsg(&raw); err != nil {
+		return grpcstatus.Error(codes.Internal, fmt.Sprintf("recv: %v", err))
+	}
+
 	if err := h.s.record(h.latency, h.errorRate); err != nil {
 		return grpcstatus.Error(codes.Internal, err.Error())
 	}
-	return nil
+
+	return stream.SendMsg(&raw)
 }
 
 func main() {
@@ -151,7 +176,7 @@ func main() {
 	// --- Start both ---
 	fmt.Printf("Bench server ready\n")
 	fmt.Printf("  HTTP  %s  (REST, GraphQL, /stats, /reset)\n", *addr)
-	fmt.Printf("  gRPC  %s  (any service/method, JSON codec)\n", *grpcAddr)
+	fmt.Printf("  gRPC  %s  (any service/method, JSON + protobuf codec)\n", *grpcAddr)
 	if *latency > 0 {
 		fmt.Printf("  Latency: %v\n", *latency)
 	}
