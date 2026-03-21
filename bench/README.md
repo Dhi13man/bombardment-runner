@@ -135,12 +135,28 @@ time go run main.go cli \
   --client-context '{"channel":"REST","request_timeout":30000000000}' \
   --driver-context '{"batch_size":100}'
 
-# gRPC
+# GraphQL
+time go run main.go cli \
+  --parser-context '{"strategy":"CSV","file_path":"/tmp/bench-data.csv"}' \
+  --transformer-context '{"strategy":"JSONATA","method_expression":"\"POST\"","endpoint_expression":"\"/graphql\"","body_expression":"{ \"query\": \"mutation { createUser(id: \" & id & \", name: \\\"\" & name & \"\\\") { id } }\" }"}' \
+  --load-balancer-context '{"strategy":"ROUND_ROBIN","urls":["http://localhost:9999"]}' \
+  --client-context '{"channel":"GRAPHQL","request_timeout":30000000000}' \
+  --driver-context '{"batch_size":100}'
+
+# gRPC (JSON codec)
 time go run main.go cli \
   --parser-context '{"strategy":"CSV","file_path":"/tmp/bench-data.csv"}' \
   --transformer-context '{"strategy":"JSONATA","method_expression":"\"CreateUser\"","endpoint_expression":"\"users.UserService\"","body_expression":"{ \"id\": id, \"name\": name }"}' \
   --load-balancer-context '{"strategy":"ROUND_ROBIN","urls":["localhost:50051"]}' \
   --client-context '{"channel":"GRPC","request_timeout":30000000000,"insecure_skip_verify":true}' \
+  --driver-context '{"batch_size":100}'
+
+# gRPC (proto mode, using bench/echo.proto)
+time go run main.go cli \
+  --parser-context '{"strategy":"CSV","file_path":"/tmp/bench-data.csv"}' \
+  --transformer-context '{"strategy":"JSONATA","method_expression":"\"Echo\"","endpoint_expression":"\"bench.EchoService\"","body_expression":"{ \"id\": id, \"name\": name }"}' \
+  --load-balancer-context '{"strategy":"ROUND_ROBIN","urls":["localhost:50051"]}' \
+  --client-context '{"channel":"GRPC","request_timeout":30000000000,"insecure_skip_verify":true,"proto_files":["../bench/echo.proto"]}' \
   --driver-context '{"batch_size":100}'
 
 # Check results

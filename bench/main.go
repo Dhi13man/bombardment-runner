@@ -119,7 +119,7 @@ func main() {
 		}
 
 		w.WriteHeader(200)
-		w.Write([]byte(`{"ok":true}`))
+		w.Write([]byte(`{"data":{"ok":true}}`))
 	})
 
 	httpServer := &http.Server{
