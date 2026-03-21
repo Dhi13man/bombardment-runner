@@ -202,31 +202,26 @@ The `POST /v1/bombardment` payload accepts these sections:
 
 ## Benchmarks
 
-All benchmarks run on Apple M3 Pro (macOS, Go 1.25), batch_size=100, JSONata transformer, REST client. Mock server: `go run ./bench`.
+All benchmarks: Apple M3 Pro, Go 1.25, batch_size=100, single target, 100K rows. Mock server: `go run ./bench` (HTTP + gRPC).
 
-### Parser throughput (100K rows, 1 target)
-
-| Parser | Duration | Throughput |
+| Category | Strategy | Throughput |
 | --- | --- | --- |
-| CSV | 2.6s | ~37.5K req/s |
-| JSON | 2.2s | ~45.8K req/s |
-| NDJSON | 2.2s | ~45.1K req/s |
+| **Parsers** | CSV | ~38.5K req/s |
+| | JSON | ~46.7K req/s |
+| | NDJSON | ~48.6K req/s |
+| | Excel | ~43.0K req/s |
+| | Parquet | ~48.7K req/s |
+| **Transformers** | JSONata | ~48.9K req/s |
+| | GoTemplate | ~46.7K req/s |
+| | Passthrough | ~44.6K req/s |
+| **Clients** | REST | ~48.4K req/s |
+| | GraphQL | ~46.0K req/s |
+| | gRPC | ~47.4K req/s |
+| **Load Balancers** | Round Robin | ~49.6K req/s |
+| | Random | ~48.7K req/s |
+| **Scale (1M rows)** | CSV + REST | ~54K req/s |
 
-### Load balancer (100K rows, CSV, 2 targets)
-
-| Strategy | Duration | Combined throughput | Distribution |
-| --- | --- | --- | --- |
-| Round Robin | 2.5s | ~39K req/s | 50/50 exact |
-| Random | 2.2s | ~45K req/s | ~50/50 |
-
-### Scale (1M rows)
-
-| Config | Duration | Throughput |
-| --- | --- | --- |
-| CSV, 1 target | 18s | ~54K req/s |
-| NDJSON, 2 targets | 19s | ~51K req/s |
-
-Zero failures across all runs. Full methodology and reproduction steps in [`bench/README.md`](bench/README.md).
+Zero failures across all runs. Full methodology, reproduction steps, and batch size analysis in [`bench/README.md`](bench/README.md).
 
 ## Development
 
@@ -267,7 +262,8 @@ flowchart TD
 
     subgraph Transformers
         JSONata[JSONata]
-        GoTpl[Go Template<br><i>planned</i>]
+        GoTpl[GoTemplate]
+        Pass[Passthrough]
     end
 
     subgraph LoadBalancers[Load Balancers]
@@ -278,7 +274,8 @@ flowchart TD
 
     subgraph Clients[Client Channels]
         REST[REST]
-        GRPC[gRPC<br><i>planned</i>]
+        GQL[GraphQL]
+        GRPC[gRPC]
         Kafka[Kafka<br><i>planned</i>]
     end
 
@@ -291,12 +288,14 @@ flowchart TD
     EXCEL:::implemented
     PARQUET:::implemented
     JSONata:::implemented
-    GoTpl:::planned
+    GoTpl:::implemented
+    Pass:::implemented
     RR:::implemented
     Rand:::implemented
     LC:::planned
     REST:::implemented
-    GRPC:::planned
+    GQL:::implemented
+    GRPC:::implemented
     Kafka:::planned
 ```
 
