@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-03-21
+
+### Added
+
+- **Landing site**: Full redesign of bombardment.work with Clinical-Glass aesthetic, dark-first responsive design, and self-hosted fonts.
+- **Theme toggle**: Manual dark/light switch with FOUC prevention, localStorage persistence, and OS preference sync.
+- **Release binaries**: First GitHub release with pre-built binaries for Linux (amd64/arm64), macOS (Intel/Apple Silicon), and Windows (amd64/arm64).
+- Dark-mode screenshots for all 5 Web UI workflow steps.
+- WebP image format with PNG fallback for all screenshots.
+- OG/Twitter meta tags, structured data, privacy policy, and sitemap.
+
+### Changed
+
+- Landing page hero consolidated: removed comparison section, moved stats strip into hero, added pipeline benefits list.
+- All theme CSS uses `data-theme` attribute as single source of truth (eliminated ~120 lines of duplicated `@media prefers-color-scheme` blocks).
+- Nav items reordered to match page flow: How It Works, Get Started, Features, GitHub.
+- README rewritten for v1.0.0 with download quick start, platform matrix, and website link.
+
 ## [0.5.0] - 2026-03-12
 
 ### Added
