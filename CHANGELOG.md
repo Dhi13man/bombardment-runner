@@ -6,7 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
-## [0.5.0] - 2026-03-12
+## [1.0.0] - 2026-03-21
+
+### Added
+
+- **Landing site**: Full redesign of bombardment.work with Clinical-Glass aesthetic, dark-first responsive design, and self-hosted fonts.
+- **Theme toggle**: Manual dark/light switch with FOUC prevention, localStorage persistence, and OS preference sync.
+- **Release binaries**: First GitHub release with pre-built binaries for Linux (amd64/arm64), macOS (Intel/Apple Silicon), and Windows (amd64/arm64).
+- Dark-mode screenshots for all 5 Web UI workflow steps.
+- WebP image format with PNG fallback for all screenshots.
+- OG/Twitter meta tags, structured data, privacy policy, and sitemap.
+
+### Changed
+
+- Landing page hero consolidated: removed comparison section, moved stats strip into hero, added pipeline benefits list.
+- All theme CSS uses `data-theme` attribute as single source of truth (eliminated ~120 lines of duplicated `@media prefers-color-scheme` blocks).
+- Nav items reordered to match page flow: How It Works, Get Started, Features, GitHub.
+- README rewritten for v1.0.0 with download quick start, platform matrix, and website link.
+
+## [0.5.0] - 2025-03-12
 
 ### Added
 
@@ -22,7 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - Removed unused JS validation sub-objects (`source`, `transform`, `target`, `driver`).
 - Removed redundant `init()` logger setup in same-package test files.
 
-## [0.4.0] - 2026-03-12
+## [0.4.0] - 2025-03-12
 
 ### Added
 
@@ -54,7 +72,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - CSV flush batching every 100 rows instead of per-row for reduced syscall overhead.
 - `docker-compose.yml` resource limits (2 CPU, 1G RAM), `no-new-privileges`, JSON log rotation.
 
-## [0.3.0] - 2026-03-12
+## [0.3.0] - 2025-03-12
 
 ### Added
 
@@ -62,7 +80,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - CI workflow with lint, test, and Docker build checks.
 - Docker networking fix for container-to-host communication.
 
-## [0.2.0] - 2026-03-11
+## [0.2.0] - 2025-03-11
 
 ### Added
 
@@ -79,7 +97,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 - Removed deprecated `bombardment_runner/` Buffalo framework directory.
 
-## [0.1.0] - 2026-03-11
+## [0.1.0] - 2025-03-11
 
 ### Added
 

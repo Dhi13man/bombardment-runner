@@ -1,60 +1,74 @@
-# Bombardment
+<p align="center">
+  <strong>Bombardment</strong><br>
+  <em>Stop writing throwaway scripts. Stream, transform, and dispatch millions of API requests from local files.</em>
+</p>
 
-[![License](https://img.shields.io/github/license/dhi13man/bombardment-runner)](https://github.com/Dhi13man/bombardment-runner/blob/main/LICENSE)
-[![Go Version](https://img.shields.io/badge/Go-1.23+-00ADD8?style=flat&logo=go)](https://go.dev)
-[![CI](https://github.com/Dhi13man/bombardment-runner/actions/workflows/ci.yml/badge.svg)](https://github.com/Dhi13man/bombardment-runner/actions/workflows/ci.yml)
-[![Contributors](https://img.shields.io/github/contributors-anon/dhi13man/bombardment-runner?style=flat)](https://github.com/Dhi13man/bombardment-runner/graphs/contributors)
-[![Last Commit](https://img.shields.io/github/last-commit/dhi13man/bombardment-runner)](https://github.com/Dhi13man/bombardment-runner/commits/main)
-[![GitHub forks](https://img.shields.io/github/forks/dhi13man/bombardment-runner?style=social)](https://github.com/Dhi13man/bombardment-runner/network/members)
-[![GitHub Repo stars](https://img.shields.io/github/stars/dhi13man/bombardment-runner?style=social)](https://github.com/Dhi13man/bombardment-runner/stargazers)
+<p align="center">
+  <a href="https://bombardment.work">Website</a> &middot;
+  <a href="https://github.com/Dhi13man/bombardment-runner/releases">Download</a> &middot;
+  <a href="#quick-start">Quick Start</a> &middot;
+  <a href="#api-reference">API Docs</a>
+</p>
 
-[!["Buy Me A Coffee"](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20an%20Ego%20boost&emoji=%F0%9F%98%B3&slug=dhi13man&button_colour=FF5F5F&font_colour=ffffff&font_family=Lato&outline_colour=000000&coffee_colour=FFDD00)](https://www.buymeacoffee.com/dhi13man)
+<p align="center">
+  <a href="https://github.com/Dhi13man/bombardment-runner/releases"><img src="https://img.shields.io/github/v/release/dhi13man/bombardment-runner?label=release&style=flat" alt="Release"></a>
+  <a href="https://github.com/Dhi13man/bombardment-runner/actions/workflows/ci.yml"><img src="https://github.com/Dhi13man/bombardment-runner/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/Dhi13man/bombardment-runner/blob/main/LICENSE"><img src="https://img.shields.io/github/license/dhi13man/bombardment-runner" alt="License"></a>
+  <a href="https://go.dev"><img src="https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go" alt="Go Version"></a>
+  <a href="https://github.com/Dhi13man/bombardment-runner/stargazers"><img src="https://img.shields.io/github/stars/dhi13man/bombardment-runner?style=social" alt="Stars"></a>
+</p>
 
-> A lightweight, extensible tool for bulk API testing and data migration with streaming processing, JSONata transformations, and real-time progress tracking.
+---
 
-## Contents
-
-- [Bombardment](#bombardment)
-  - [Contents](#contents)
-  - [Features](#features)
-  - [Architecture](#architecture)
-  - [Quick Start](#quick-start)
-  - [API Reference](#api-reference)
-  - [Configuration](#configuration)
-  - [Development](#development)
-  - [Extending Bombardment](#extending-bombardment)
-  - [Contributing](#contributing)
-  - [Changelog](#changelog)
-  - [License](#license)
+Bombardment is a lightweight, extensible tool for bulk API testing and data migration. It streams records from CSV/JSON files, transforms them via JSONata expressions, batches them, and dispatches HTTP requests concurrently across load-balanced targets. It runs as both a Gin HTTP server (with Web UI) and a Cobra CLI.
 
 ## Features
 
-- **Streaming file parsing** - CSV, JSON, NDJSON, Excel, and Parquet files processed via Go channels, not loaded entirely into memory
-- **JSONata transformations** - Shape each record into an HTTP request using [JSONata](https://jsonata.org) expressions
-- **Concurrent batch processing** - Configurable batch sizes with goroutine-per-request parallelism
-- **Load balancing** - Round-robin and random strategies across multiple target URLs
-- **Real-time progress** - REST API for job status with processed/failed/total counters
-- **Web UI** - Guided wizard for configuring and monitoring bombardment jobs
-- **CLI mode** - Full feature access from the command line for scripting and CI/CD
-- **Response capture** - Optional CSV export of all API responses with status codes, timestamps, and latencies
-- **Extensible architecture** - Strategy pattern makes it trivial to add new parsers, transformers, clients, and load balancers
+- **Streaming file parsing** via Go channels for CSV, JSON, NDJSON, Excel, and Parquet (never loads full files into memory)
+- **JSONata transformations** to reshape each record into an HTTP request (method, endpoint, headers, body)
+- **Concurrent batch processing** with configurable batch sizes and goroutine-per-request parallelism
+- **Client-side load balancing** with Round Robin and Random strategies across multiple targets
+- **Dual interface**: guided Web UI wizard + CLI for scripting and CI/CD
+- **Real-time job tracking** with processed/failed/total counters and throughput metrics
+- **Response capture** with optional CSV export of status codes, timestamps, and latencies
+- **Extensible architecture** via strategy pattern for parsers, transformers, clients, and load balancers
+
+## Benchmarks
+
+Measured on Apple M3 Pro (macOS), batch_size=100, single target, CSV source with JSONata transform:
+
+| Rows | Duration | Throughput | Failed |
+| --- | --- | --- | --- |
+| 100,000 | 2.5s | ~39K req/s | 0 |
+| 1,000,000 | 18s | ~54K req/s | 0 |
+
+Throughput scales with warmed connection pools. Run the included bench server to reproduce:
+
+```bash
+go run ./bench              # start mock server on :9999
+go run ./app cli \
+  --parser-context '{"strategy":"CSV","file_path":"./data.csv"}' \
+  --load-balancer-context '{"strategy":"ROUND_ROBIN","urls":["http://localhost:9999"]}' \
+  ...
+curl http://localhost:9999/stats   # live req/s counter
+```
 
 ## Web UI
 
-Bombardment includes a guided 4-step wizard for configuring and monitoring jobs — no code required.
+A guided 4-step wizard for configuring and monitoring jobs, no code required.
 
 | Source Configuration | Transform Rules | Target & Batching | Review & Submit |
 | --- | --- | --- | --- |
-| ![Source step with CSV file uploaded and format auto-detected](screenshots/02-source-step-filled.png) | ![Transform step with JSONata expressions for method, endpoint, headers, body](screenshots/03-transform-step.png) | ![Target step with REST client, round-robin load balancer, and batch settings](screenshots/04-target-step.png) | ![Review step showing all-green validation before launch](screenshots/05-review-step.png) |
+| ![Source step](screenshots/02-source-step-filled.png) | ![Transform step](screenshots/03-transform-step.png) | ![Target step](screenshots/04-target-step.png) | ![Review step](screenshots/05-review-step.png) |
 
 | Job Progress | Job History |
 | --- | --- |
-| ![Completed bombardment job with pipeline visualization and throughput metrics](screenshots/06-job-complete.png) | ![Job history dashboard with success rate, duration, and per-job pipeline status](screenshots/07-job-history-light.png) |
+| ![Job progress](screenshots/06-job-complete.png) | ![Job history](screenshots/07-job-history-light.png) |
 
 <details>
 <summary>Dark mode</summary>
 
-![Source step in dark mode showing all format cards](screenshots/08-source-step-dark.png)
+![Source step in dark mode](screenshots/08-source-step-dark.png)
 
 </details>
 
@@ -63,12 +77,12 @@ Bombardment includes a guided 4-step wizard for configuring and monitoring jobs 
 ```mermaid
 flowchart LR
     subgraph Input[Data Source]
-        File[/CSV, JSON, NDJSON,<br>Excel, or Parquet File/]
+        File[/CSV, JSON, NDJSON,<br>Excel, or Parquet/]
     end
 
     subgraph Pipeline[Processing Pipeline]
-        Parser[Parser<br>Streaming]
-        Transformer[Transformer<br>JSONata]
+        Parser[Parser<br><i>streaming</i>]
+        Transformer[Transformer<br><i>JSONata</i>]
         Batcher[Batch<br>Processor]
     end
 
@@ -82,51 +96,69 @@ flowchart LR
         TN[Target N]
     end
 
-    File -->|"stream records"| Parser
-    Parser -->|"channel per record"| Transformer
-    Transformer -->|"HTTP request"| Batcher
-    Batcher -->|"concurrent batch"| Strategy
-    Strategy -->|"distribute"| T1
-    Strategy -->|"distribute"| T2
-    Strategy -->|"distribute"| TN
+    File -->|stream records| Parser
+    Parser -->|channel per record| Transformer
+    Transformer -->|HTTP request| Batcher
+    Batcher -->|concurrent batch| Strategy
+    Strategy --> T1
+    Strategy --> T2
+    Strategy --> TN
 ```
 
-Source files are streamed record-by-record through a parser, each record is transformed into an HTTP request via JSONata expressions, requests are grouped into configurable batches, and each batch is dispatched concurrently across load-balanced target URLs.
+Source files are streamed record-by-record through a parser, each record is transformed into an HTTP request via JSONata, requests are grouped into configurable batches, and each batch is dispatched concurrently across load-balanced target URLs.
 
 ## Quick Start
 
-### Prerequisites
+### Download a binary
 
-- **Go 1.23+** (for building from source)
-- **Docker** and **Docker Compose** (for containerized deployment)
-
-### Docker (recommended)
+Grab the latest release for your platform from [GitHub Releases](https://github.com/Dhi13man/bombardment-runner/releases):
 
 ```bash
-docker compose up --build
-# Visit http://localhost:8080
+# Example: Linux x86_64
+curl -L https://github.com/Dhi13man/bombardment-runner/releases/latest/download/bombardment-linux-amd64.tar.gz | tar xz
+./bombardment-linux-amd64 server
+# Open http://localhost:8080
 ```
 
-### From Source
+| Platform | Architecture | Binary |
+| --- | --- | --- |
+| Linux | x86_64 | `bombardment-linux-amd64` |
+| Linux | ARM64 | `bombardment-linux-arm64` |
+| macOS | Intel | `bombardment-darwin-amd64` |
+| macOS | Apple Silicon | `bombardment-darwin-arm64` |
+| Windows | x86_64 | `bombardment-windows-amd64.exe` |
+| Windows | ARM64 | `bombardment-windows-arm64.exe` |
+
+### Docker
 
 ```bash
 git clone https://github.com/Dhi13man/bombardment-runner.git
-cd bombardment-runner/app
-go mod download
-go run main.go server --bind-addr 0.0.0.0
-# Visit http://localhost:8080
+cd bombardment-runner
+docker compose up --build
+# Open http://localhost:8080
 ```
 
-### CLI Mode
+### From source
+
+Requires Go 1.25+ and Node.js (for the Web UI frontend build).
 
 ```bash
-cd bombardment-runner/app
-go run main.go cli \
-  --client-context '{"channel":"REST","request_timeout":30000000000}' \
-  --driver-context '{"batch_size":100}' \
+git clone https://github.com/Dhi13man/bombardment-runner.git
+cd bombardment-runner
+make build
+./app/bombardment server
+# Open http://localhost:8080
+```
+
+### CLI mode
+
+```bash
+bombardment cli \
   --parser-context '{"strategy":"CSV","file_path":"./data.csv"}' \
+  --transformer-context '{"strategy":"JSONATA","method_expression":"\"POST\"","endpoint_expression":"\"/api/v1/users\"","body_expression":"{ \"name\": name, \"email\": email }"}' \
   --load-balancer-context '{"strategy":"ROUND_ROBIN","urls":["https://api.example.com"]}' \
-  --transformer-context '{"strategy":"JSONATA","method_expression":"\"POST\"","endpoint_expression":"\"/api/v1/users\"","body_expression":"{ \"name\": name, \"email\": email }"}'
+  --client-context '{"channel":"REST","request_timeout":30000000000}' \
+  --driver-context '{"batch_size":100}'
 ```
 
 ## API Reference
@@ -136,25 +168,26 @@ go run main.go cli \
 | `/v1/bombardment` | `POST` | Start a new bombardment job |
 | `/v1/bombardment` | `GET` | List all jobs with status |
 | `/v1/bombardment/{id}` | `GET` | Get job status and progress |
-| `/v1/ping` | `GET` | Health check (returns `{"message": "pong"}`) |
-| `/swagger/*any` | `GET` | Interactive Swagger API documentation |
+| `/v1/ping` | `GET` | Health check |
+| `/swagger/*any` | `GET` | Interactive Swagger documentation |
 | `/` | `GET` | Web UI |
 
-For detailed schema documentation, start the server and visit `/swagger/index.html`.
+Start the server and visit `/swagger/index.html` for full schema documentation.
 
 ## Configuration
 
-The `POST /v1/bombardment` payload accepts these configuration sections:
+The `POST /v1/bombardment` payload accepts these sections:
 
 | Section | Key Fields | Description |
 | --- | --- | --- |
-| `parser_context` | `strategy`, `file_path`, `file_content_b64` | Source data format (`CSV`, `JSON`, `NDJSON`, `EXCEL`, `PARQUET`) and location |
+| `parser_context` | `strategy`, `file_path`, `file_content_b64` | Source format (`CSV`, `JSON`, `NDJSON`, `EXCEL`, `PARQUET`) and location |
 | `transformer_context` | `strategy`, `body_expression`, `method_expression`, `endpoint_expression`, `headers_expression` | JSONata expressions to shape each record into an HTTP request |
-| `client_context` | `channel`, `request_timeout`, `insecure_skip_verify` | HTTP client channel and timeout settings (nanoseconds) |
+| `client_context` | `channel`, `request_timeout`, `insecure_skip_verify` | HTTP client settings (timeouts in nanoseconds) |
 | `load_balancer_context` | `strategy`, `urls` | Load balancing strategy (`ROUND_ROBIN`, `RANDOM`) and target URLs |
 | `driver_context` | `batch_size`, `should_store_responses`, `responses_storage_path` | Batch size and optional response CSV storage |
 
-### Example Request Body
+<details>
+<summary>Example request body</summary>
 
 ```json
 {
@@ -185,59 +218,60 @@ The `POST /v1/bombardment` payload accepts these configuration sections:
 }
 ```
 
+</details>
+
 ## Development
 
 ```bash
 make help          # Show all available targets
-make build         # Build the binary
+make build         # Build frontend + Go binary
 make test          # Run tests with race detector
-make test-cover    # Run tests with coverage report
-make lint          # Run golangci-lint
-make run           # Start the server
-make docker        # Build Docker image
-make docker-run    # Run via Docker Compose
+make test-cover    # Tests + coverage report
+make lint          # golangci-lint
+make run           # Start the server (localhost:8080)
 make swagger       # Regenerate Swagger docs
 make clean         # Remove build artifacts
 ```
 
+Run a single test:
+
+```bash
+cd app && go test -v -race -run TestFunctionName ./src/services/path/...
+```
+
 ## Extending Bombardment
 
-Bombardment uses the strategy pattern throughout. To add support for a new protocol, format, or algorithm:
+Every pipeline stage uses the same strategy pattern:
 
-1. **New file parser** - Implement `BaseFileParser[T]`, add an enum value to `ParserStrategy`, and register it in `CreateFileParser()`
-2. **New transformer** - Implement `BaseTransformer`, add an enum value to `TransformerStrategy`, and register it in `CreateTransformer()`
-3. **New load balancer** - Implement `BaseLoadBalancer`, add an enum value to `LoadBalancerStrategy`, and register it in `CreateLoadBalancer()`
-4. **New client channel** - Implement `BaseChannelClient`, add an enum value to `ClientChannel`, and register it in `CreateChannelClient()`
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full extension guide.
-
-### Implemented Strategies
+1. Implement the `Base*` interface
+2. Add an enum value in `models/enums/`
+3. Register it in the `Create*()` factory function
 
 ```mermaid
 flowchart TD
     subgraph Parsers[File Parsers]
-        CSV[CSV Parser]
-        JSON_P[JSON Parser]
-        NDJSON[NDJSON Parser]
-        EXCEL[Excel Parser]
-        PARQUET[Parquet Parser]
+        CSV[CSV]
+        JSON_P[JSON]
+        NDJSON[NDJSON]
+        EXCEL[Excel]
+        PARQUET[Parquet]
     end
 
-    subgraph Transformers[Transformers]
-        JSONata[JSONata Transformer]
-        GoTpl[Go Template<br>planned]
+    subgraph Transformers
+        JSONata[JSONata]
+        GoTpl[Go Template<br><i>planned</i>]
     end
 
     subgraph LoadBalancers[Load Balancers]
         RR[Round Robin]
         Rand[Random]
-        LC[Least Connection<br>planned]
+        LC[Least Conn<br><i>planned</i>]
     end
 
     subgraph Clients[Client Channels]
-        REST[REST Client]
-        GRPC[gRPC Client<br>planned]
-        Kafka[Kafka Client<br>planned]
+        REST[REST]
+        GRPC[gRPC<br><i>planned</i>]
+        Kafka[Kafka<br><i>planned</i>]
     end
 
     classDef implemented fill:#2d6a4f,stroke:#1b4332,color:#fff
@@ -258,38 +292,40 @@ flowchart TD
     Kafka:::planned
 ```
 
-### Project Layout
+### Project layout
 
 ```text
 app/
-├── main.go                          # Entrypoint (Cobra CLI + Gin server)
-├── src/
-│   ├── app/
-│   │   ├── bootstrap/               # Server and CLI bootstrap
-│   │   ├── cli/                     # Cobra CLI command definitions
-│   │   ├── controllers/             # Gin HTTP controllers
-│   │   └── ui/                      # Web UI (HTML, CSS, JS)
-│   ├── models/
-│   │   ├── dto/                     # Data transfer objects (request/response payloads)
-│   │   ├── entities/                # Database entities (Bun ORM)
-│   │   └── enums/                   # Strategy and channel enumerations
-│   ├── repositories/                # Data access layer
-│   └── services/
-│       ├── batching/                # Batch processing orchestration
-│       ├── clients/                 # HTTP client implementations
-│       ├── driver/                  # Bombardment driver (main orchestrator)
-│       ├── load_balancing/          # Load balancer strategies
-│       ├── parsing/                 # File parser strategies
-│       └── transforming/            # Data transformer strategies
-└── docs/                            # Generated Swagger documentation
+  main.go                          Entrypoint (Cobra CLI + Gin server)
+  src/
+    app/
+      bootstrap/                   Server and CLI bootstrap
+      cli/                         Cobra CLI commands
+      controllers/                 Gin HTTP controllers
+      ui/                          Web UI (HTML, CSS, JS)
+    models/
+      dto/                         Request/response payloads
+      entities/                    Database entities (Bun ORM)
+      enums/                       Strategy enumerations
+    services/
+      batching/                    Batch processing orchestration
+      clients/                     HTTP client implementations
+      driver/                      Main pipeline orchestrator
+      load_balancing/              Load balancer strategies
+      parsing/                     File parser strategies
+      transforming/                Data transformer strategies
+  docs/                            Generated Swagger documentation
+landing-site/                      Static landing page (bombardment.work)
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full extension guide.
 
 ## Contributing
 
-Contributions are welcome! Check the [in-depth Contributing Guide](CONTRIBUTING.md) for exact steps on how to contribute.
+Contributions are welcome. Check the [Contributing Guide](CONTRIBUTING.md) for exact steps.
 
-- File any [issues or feature requests here](https://github.com/Dhi13man/bombardment-runner/issues), or help resolve existing ones.
-- This project follows the [Contributor Covenant v2.1](CODE_OF_CONDUCT.md). Be respectful and constructive in all interactions.
+- File [issues or feature requests](https://github.com/Dhi13man/bombardment-runner/issues), or help resolve existing ones
+- This project follows the [Contributor Covenant v2.1](CODE_OF_CONDUCT.md)
 
 ## Changelog
 
@@ -297,6 +333,13 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## License
 
-MIT - see [LICENSE](LICENSE) for details.
+MIT. See [LICENSE](LICENSE) for details.
 
-Reach out to me directly @dhi13man on [GitHub](https://github.com/Dhi13man) if you have any general questions or suggestions.
+---
+
+<p align="center">
+  <a href="https://bombardment.work">bombardment.work</a> &middot;
+  Built by <a href="https://github.com/Dhi13man">Dhiman Seal</a>
+</p>
+
+[!["Buy Me A Coffee"](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20an%20Ego%20boost&emoji=%F0%9F%98%B3&slug=dhi13man&button_colour=FF5F5F&font_colour=ffffff&font_family=Lato&outline_colour=000000&coffee_colour=FFDD00)](https://www.buymeacoffee.com/dhi13man)
