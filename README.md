@@ -26,32 +26,12 @@ Bombardment is a lightweight, extensible tool for bulk API testing and data migr
 
 - **Streaming file parsing** via Go channels for CSV, JSON, NDJSON, Excel, and Parquet (never loads full files into memory)
 - **JSONata transformations** to reshape each record into an HTTP request (method, endpoint, headers, body)
-- **Concurrent batch processing** with configurable batch sizes and goroutine-per-request parallelism
+- **Concurrent batch processing** with configurable batch sizes and goroutine-per-request parallelism (54K+ req/s sustained; see [Benchmarks](#benchmarks))
 - **Client-side load balancing** with Round Robin and Random strategies across multiple targets
 - **Dual interface**: guided Web UI wizard + CLI for scripting and CI/CD
 - **Real-time job tracking** with processed/failed/total counters and throughput metrics
 - **Response capture** with optional CSV export of status codes, timestamps, and latencies
 - **Extensible architecture** via strategy pattern for parsers, transformers, clients, and load balancers
-
-## Benchmarks
-
-Measured on Apple M3 Pro (macOS), batch_size=100, single target, CSV source with JSONata transform:
-
-| Rows | Duration | Throughput | Failed |
-| --- | --- | --- | --- |
-| 100,000 | 2.5s | ~39K req/s | 0 |
-| 1,000,000 | 18s | ~54K req/s | 0 |
-
-Throughput scales with warmed connection pools. Run the included bench server to reproduce:
-
-```bash
-go run ./bench              # start mock server on :9999
-go run ./app cli \
-  --parser-context '{"strategy":"CSV","file_path":"./data.csv"}' \
-  --load-balancer-context '{"strategy":"ROUND_ROBIN","urls":["http://localhost:9999"]}' \
-  ...
-curl http://localhost:9999/stats   # live req/s counter
-```
 
 ## Web UI
 
@@ -82,7 +62,7 @@ flowchart LR
 
     subgraph Pipeline[Processing Pipeline]
         Parser[Parser<br><i>streaming</i>]
-        Transformer[Transformer<br><i>JSONata</i>]
+        Transformer[Transformer<br><i>JSONata / GoTemplate</i>]
         Batcher[Batch<br>Processor]
     end
 
@@ -98,7 +78,7 @@ flowchart LR
 
     File -->|stream records| Parser
     Parser -->|channel per record| Transformer
-    Transformer -->|HTTP request| Batcher
+    Transformer -->|request| Batcher
     Batcher -->|concurrent batch| Strategy
     Strategy --> T1
     Strategy --> T2
@@ -181,8 +161,8 @@ The `POST /v1/bombardment` payload accepts these sections:
 | Section | Key Fields | Description |
 | --- | --- | --- |
 | `parser_context` | `strategy`, `file_path`, `file_content_b64` | Source format (`CSV`, `JSON`, `NDJSON`, `EXCEL`, `PARQUET`) and location |
-| `transformer_context` | `strategy`, `body_expression`, `method_expression`, `endpoint_expression`, `headers_expression` | JSONata expressions to shape each record into an HTTP request |
-| `client_context` | `channel`, `request_timeout`, `insecure_skip_verify` | HTTP client settings (timeouts in nanoseconds) |
+| `transformer_context` | `strategy`, `body_expression`, `method_expression`, `endpoint_expression`, `headers_expression` | Transform strategy (`JSONATA`, `GOTEMPLATE`, `PASSTHROUGH`) and expressions |
+| `client_context` | `channel`, `request_timeout`, `insecure_skip_verify` | Client channel (`REST`, `GRAPHQL`, `GRPC`) and timeout settings (nanoseconds) |
 | `load_balancer_context` | `strategy`, `urls` | Load balancing strategy (`ROUND_ROBIN`, `RANDOM`) and target URLs |
 | `driver_context` | `batch_size`, `should_store_responses`, `responses_storage_path` | Batch size and optional response CSV storage |
 
@@ -219,6 +199,29 @@ The `POST /v1/bombardment` payload accepts these sections:
 ```
 
 </details>
+
+## Benchmarks
+
+All benchmarks: Apple M3 Pro, Go 1.25, batch_size=100, single target, 100K rows. Mock server: `go run ./bench` (HTTP + gRPC).
+
+| Category | Strategy | Throughput |
+| --- | --- | --- |
+| **Parsers** | CSV | ~38.5K req/s |
+| | JSON | ~46.7K req/s |
+| | NDJSON | ~48.6K req/s |
+| | Excel | ~43.0K req/s |
+| | Parquet | ~48.7K req/s |
+| **Transformers** | JSONata | ~48.9K req/s |
+| | GoTemplate | ~46.7K req/s |
+| | Passthrough | ~44.6K req/s |
+| **Clients** | REST | ~48.4K req/s |
+| | GraphQL | ~46.0K req/s |
+| | gRPC | ~47.4K req/s |
+| **Load Balancers** | Round Robin | ~49.6K req/s |
+| | Random | ~48.7K req/s |
+| **Scale (1M rows)** | CSV + REST | ~54K req/s |
+
+Zero failures across all runs. Full methodology, reproduction steps, and batch size analysis in [`bench/README.md`](bench/README.md).
 
 ## Development
 
@@ -259,23 +262,22 @@ flowchart TD
 
     subgraph Transformers
         JSONata[JSONata]
-        GoTpl[Go Template<br><i>planned</i>]
+        GoTpl[GoTemplate]
+        Pass[Passthrough]
     end
 
     subgraph LoadBalancers[Load Balancers]
         RR[Round Robin]
         Rand[Random]
-        LC[Least Conn<br><i>planned</i>]
     end
 
     subgraph Clients[Client Channels]
         REST[REST]
-        GRPC[gRPC<br><i>planned</i>]
-        Kafka[Kafka<br><i>planned</i>]
+        GQL[GraphQL]
+        GRPC[gRPC]
     end
 
     classDef implemented fill:#2d6a4f,stroke:#1b4332,color:#fff
-    classDef planned fill:#6c757d,stroke:#495057,color:#fff
 
     CSV:::implemented
     JSON_P:::implemented
@@ -283,13 +285,13 @@ flowchart TD
     EXCEL:::implemented
     PARQUET:::implemented
     JSONata:::implemented
-    GoTpl:::planned
+    GoTpl:::implemented
+    Pass:::implemented
     RR:::implemented
     Rand:::implemented
-    LC:::planned
     REST:::implemented
-    GRPC:::planned
-    Kafka:::planned
+    GQL:::implemented
+    GRPC:::implemented
 ```
 
 ### Project layout
@@ -309,13 +311,14 @@ app/
       enums/                       Strategy enumerations
     services/
       batching/                    Batch processing orchestration
-      clients/                     HTTP client implementations
+      clients/                     REST, GraphQL, gRPC client implementations
       driver/                      Main pipeline orchestrator
       load_balancing/              Load balancer strategies
       parsing/                     File parser strategies
       transforming/                Data transformer strategies
   docs/                            Generated Swagger documentation
 landing-site/                      Static landing page (bombardment.work)
+bench/                             Benchmark mock server and results
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full extension guide.
