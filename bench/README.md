@@ -21,7 +21,7 @@ go run ./bench -error-rate 0.05      # 5% random failures
 | HTTP `*` | `:9999` (any path) | Echo endpoint for REST/GraphQL clients |
 | HTTP `GET /stats` | `:9999/stats` | Live metrics (total, succeeded, failed, rps) |
 | HTTP `GET /reset` | `:9999/reset` | Reset all counters |
-| gRPC `*` | `:50051` (any service/method) | Echo endpoint for gRPC client (JSON codec) |
+| gRPC `*` | `:50051` (any service/method) | Echo endpoint for gRPC client (JSON + protobuf codec) |
 
 Stats are shared across HTTP and gRPC; all requests increment the same counters.
 

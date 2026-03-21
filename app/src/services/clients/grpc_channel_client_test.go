@@ -2,9 +2,11 @@ package clients
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -748,5 +750,88 @@ func TestGrpcClient_MaxMessageSize(t *testing.T) {
 	}
 	if resp.GetStatus() == nil || *resp.GetStatus() != 0 {
 		t.Errorf("GetStatus() = %v, want 0 (OK)", resp.GetStatus())
+	}
+}
+
+func TestGrpcClient_ProtoFileContents_Integration(t *testing.T) {
+	t.Parallel()
+
+	// Read the real echo.proto test file and encode it as base64
+	protoBytes, err := os.ReadFile("testdata/echo.proto")
+	if err != nil {
+		t.Fatalf("read testdata/echo.proto: %v", err)
+	}
+	b64Content := base64.StdEncoding.EncodeToString(protoBytes)
+
+	// Build a proto-aware server handler using file-path-based resolver
+	resolver, err := NewProtoResolver([]string{"testdata/echo.proto"}, nil)
+	if err != nil {
+		t.Fatalf("NewProtoResolver() error: %v", err)
+	}
+	svcDesc := grpc.ServiceDesc{
+		ServiceName: "testpkg.EchoService",
+		Methods: []grpc.MethodDesc{
+			{MethodName: "Echo", Handler: protoEchoHandler(resolver)},
+		},
+	}
+	dialer := startBufconnServer(t, svcDesc)
+
+	// Create client using ProtoFileContents (the browser upload path)
+	clientCtx := modelsDtoClients.ClientContext{
+		Channel:            modelsEnums.GRPC,
+		RequestTimeout:     5 * time.Second,
+		InsecureSkipVerify: true,
+		ProtoFileContents:  map[string]string{"echo.proto": b64Content},
+	}
+	client, err := newGrpcClientWithDialer(clientCtx, dialer)
+	if err != nil {
+		t.Fatalf("newGrpcClientWithDialer() error: %v", err)
+	}
+
+	req := modelsDtoRequests.NewGrpcChannelRequest(
+		"testpkg.EchoService", "Echo",
+		map[string]any{"id": 7, "name": "Upload"},
+		nil,
+	)
+	resp, err := client.Execute(req, "bufconn")
+	if err != nil {
+		t.Fatalf("Execute() error: %v", err)
+	}
+	if resp.GetStatus() == nil || *resp.GetStatus() != 0 {
+		t.Errorf("GetStatus() = %v, want 0 (OK)", resp.GetStatus())
+	}
+
+	grpcResp, ok := resp.(*modelsDtoResponses.GrpcChannelResponse)
+	if !ok {
+		t.Fatalf("expected *GrpcChannelResponse, got %T", resp)
+	}
+	bodyMap, ok := grpcResp.Body.(map[string]any)
+	if !ok {
+		t.Fatalf("expected map body, got %T", grpcResp.Body)
+	}
+	if bodyMap["name"] != "Upload" {
+		t.Errorf("name = %v, want Upload", bodyMap["name"])
+	}
+}
+
+func TestGrpcClient_ProtoFileContents_InvalidBase64(t *testing.T) {
+	t.Parallel()
+
+	clientCtx := modelsDtoClients.ClientContext{
+		Channel:            modelsEnums.GRPC,
+		RequestTimeout:     5 * time.Second,
+		InsecureSkipVerify: true,
+		ProtoFileContents:  map[string]string{"bad.proto": "not-valid-base64!!!"},
+	}
+	dialer := func(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
+		return nil, nil
+	}
+
+	_, err := newGrpcClientWithDialer(clientCtx, dialer)
+	if err == nil {
+		t.Fatal("expected error for invalid base64, got nil")
+	}
+	if !strings.Contains(err.Error(), "write uploaded proto files") {
+		t.Errorf("error = %q, want containing 'write uploaded proto files'", err.Error())
 	}
 }

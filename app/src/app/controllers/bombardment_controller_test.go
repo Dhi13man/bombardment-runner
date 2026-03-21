@@ -479,6 +479,129 @@ func TestValidateBombardmentRequest_TableDriven(t *testing.T) {
 			wantCount: 1,
 		},
 		{
+			name: "proto_files with path traversal",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				r.Client.ProtoFiles = []string{"../../etc/passwd"}
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "proto_import_paths with path traversal",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				r.Client.ProtoImportPaths = []string{"../../../tmp"}
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "proto_file_contents and proto_files mutually exclusive",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				r.Client.ProtoFiles = []string{"echo.proto"}
+				r.Client.ProtoFileContents = map[string]string{"a.proto": "dGVzdA=="}
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "proto_file_contents with traversal filename",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				r.Client.ProtoFileContents = map[string]string{"../evil.proto": "dGVzdA=="}
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "proto_file_contents with non-proto filename",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				r.Client.ProtoFileContents = map[string]string{"script.sh": "dGVzdA=="}
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "valid proto_file_contents passes",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				r.Client.ProtoFileContents = map[string]string{"echo.proto": "dGVzdA=="}
+				return r
+			}(),
+			wantCount: 0,
+		},
+		{
+			name: "max_recv_msg_size exceeds limit",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				r.Client.MaxRecvMsgSize = 128 << 20 // 128 MB
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "max_send_msg_size exceeds limit",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				r.Client.MaxSendMsgSize = 128 << 20 // 128 MB
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "keepalive_time below minimum",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				r.Client.KeepaliveTime = 1_000_000_000 // 1 second
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "valid gRPC tuning params pass",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				r.Client.MaxRecvMsgSize = 8 << 20                // 8 MB
+				r.Client.MaxSendMsgSize = 8 << 20                // 8 MB
+				r.Client.KeepaliveTime = 30_000_000_000          // 30 seconds
+				return r
+			}(),
+			wantCount: 0,
+		},
+		{
 			name: "all validations fail simultaneously",
 			req:  dto.BombardmentRequest{},
 			// BatchSize=0, no URLs, no file_content_b64 = 3 errors

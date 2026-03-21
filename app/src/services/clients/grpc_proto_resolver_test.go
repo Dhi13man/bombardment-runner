@@ -185,7 +185,10 @@ func TestProtoResolver_RoundTrip(t *testing.T) {
 		t.Fatalf("ResponseToJSON() error: %v", err)
 	}
 
-	resultMap := result.(map[string]any)
+	resultMap, ok := result.(map[string]any)
+	if !ok {
+		t.Fatalf("expected map[string]any, got %T", result)
+	}
 	// protojson marshals int32 as number
 	if resultMap["id"] != float64(99) {
 		t.Errorf("id = %v, want 99", resultMap["id"])

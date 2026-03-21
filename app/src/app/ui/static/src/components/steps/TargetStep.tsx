@@ -382,7 +382,7 @@ export function TargetStep() {
                 <button
                   type="button"
                   class="text-sm text-accent-primary underline"
-                  onClick={() => setProtoPathMode(true)}
+                  onClick={() => { update('protoFiles', []); setProtoPathMode(true); }}
                 >
                   Or use server-side file paths
                 </button>
@@ -447,7 +447,7 @@ export function TargetStep() {
                   <button
                     type="button"
                     class="text-sm text-accent-primary underline"
-                    onClick={() => setProtoPathMode(false)}
+                    onClick={() => { update('protoFilePaths', []); update('protoImportPaths', ''); setProtoPathMode(false); }}
                   >
                     Or upload proto files
                   </button>

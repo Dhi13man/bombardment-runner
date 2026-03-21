@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"sync"
 
 	modelsDtoClients "github.dhi13man.com/bombardment-runner/src/models/dto/clients"
@@ -71,7 +70,9 @@ func newGrpcClientWithDialer(clientCtx modelsDtoClients.ClientContext, dialer Gr
 		if err != nil {
 			return nil, fmt.Errorf("write uploaded proto files: %w", err)
 		}
-		defer os.RemoveAll(tempDir)
+		// Safe to delete immediately after NewProtoResolver below: protocompile reads
+		// all file contents eagerly during Compile() and holds only in-memory descriptors.
+		defer cleanupTempDir(tempDir)
 		zap.L().Debug("wrote uploaded proto files to temp dir", zap.String("dir", tempDir), zap.Int("count", len(paths)))
 		protoFiles = paths
 		importPaths = append([]string{tempDir}, importPaths...)
@@ -217,6 +218,9 @@ func (c *grpcChannelClient) executeProto(
 	}
 
 	respMsg := c.resolver.CreateResponseMessage(grpcRequest.Service, grpcRequest.Method)
+	if respMsg == nil {
+		return nil, fmt.Errorf("no response descriptor for %s/%s", grpcRequest.Service, grpcRequest.Method)
+	}
 
 	err = conn.Invoke(ctx, fullMethod, reqMsg, respMsg)
 	if err != nil {

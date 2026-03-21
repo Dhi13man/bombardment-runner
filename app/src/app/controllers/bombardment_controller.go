@@ -120,7 +120,7 @@ func validateBombardmentRequest(req dto.BombardmentRequest) []string {
 			errs = append(errs, "proto_file_contents and proto_files are mutually exclusive")
 		}
 		for name := range req.Client.ProtoFileContents {
-			if strings.Contains(name, "..") || filepath.IsAbs(name) {
+			if parsing.ContainsPathTraversal(name) || filepath.IsAbs(name) {
 				errs = append(errs, "proto_file_contents filenames must not contain path traversal or absolute paths")
 				break
 			}
@@ -129,6 +129,19 @@ func validateBombardmentRequest(req dto.BombardmentRequest) []string {
 				break
 			}
 		}
+	}
+
+	// Validate gRPC connection tuning bounds
+	const maxMsgSize = 64 << 20 // 64 MB
+	if req.Client.MaxRecvMsgSize > maxMsgSize {
+		errs = append(errs, "max_recv_msg_size must not exceed 64 MB")
+	}
+	if req.Client.MaxSendMsgSize > maxMsgSize {
+		errs = append(errs, "max_send_msg_size must not exceed 64 MB")
+	}
+	const minKeepalive = 10_000_000_000 // 10 seconds in nanoseconds
+	if req.Client.KeepaliveTime > 0 && req.Client.KeepaliveTime < minKeepalive {
+		errs = append(errs, "keepalive_time must be at least 10 seconds (10000000000 ns)")
 	}
 
 	return errs
