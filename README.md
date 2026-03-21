@@ -344,5 +344,3 @@ MIT. See [LICENSE](LICENSE) for details.
   <a href="https://bombardment.work">bombardment.work</a> &middot;
   Built by <a href="https://github.com/Dhi13man">Dhiman Seal</a>
 </p>
-
-[!["Buy Me A Coffee"](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20an%20Ego%20boost&emoji=%F0%9F%98%B3&slug=dhi13man&button_colour=FF5F5F&font_colour=ffffff&font_family=Lato&outline_colour=000000&coffee_colour=FFDD00)](https://www.buymeacoffee.com/dhi13man)
