@@ -26,32 +26,12 @@ Bombardment is a lightweight, extensible tool for bulk API testing and data migr
 
 - **Streaming file parsing** via Go channels for CSV, JSON, NDJSON, Excel, and Parquet (never loads full files into memory)
 - **JSONata transformations** to reshape each record into an HTTP request (method, endpoint, headers, body)
-- **Concurrent batch processing** with configurable batch sizes and goroutine-per-request parallelism
+- **Concurrent batch processing** with configurable batch sizes and goroutine-per-request parallelism (54K+ req/s sustained; see [Benchmarks](#benchmarks))
 - **Client-side load balancing** with Round Robin and Random strategies across multiple targets
 - **Dual interface**: guided Web UI wizard + CLI for scripting and CI/CD
 - **Real-time job tracking** with processed/failed/total counters and throughput metrics
 - **Response capture** with optional CSV export of status codes, timestamps, and latencies
 - **Extensible architecture** via strategy pattern for parsers, transformers, clients, and load balancers
-
-## Benchmarks
-
-Measured on Apple M3 Pro (macOS), batch_size=100, single target, CSV source with JSONata transform:
-
-| Rows | Duration | Throughput | Failed |
-| --- | --- | --- | --- |
-| 100,000 | 2.5s | ~39K req/s | 0 |
-| 1,000,000 | 18s | ~54K req/s | 0 |
-
-Throughput scales with warmed connection pools. Run the included bench server to reproduce:
-
-```bash
-go run ./bench              # start mock server on :9999
-go run ./app cli \
-  --parser-context '{"strategy":"CSV","file_path":"./data.csv"}' \
-  --load-balancer-context '{"strategy":"ROUND_ROBIN","urls":["http://localhost:9999"]}' \
-  ...
-curl http://localhost:9999/stats   # live req/s counter
-```
 
 ## Web UI
 
@@ -219,6 +199,34 @@ The `POST /v1/bombardment` payload accepts these sections:
 ```
 
 </details>
+
+## Benchmarks
+
+All benchmarks run on Apple M3 Pro (macOS, Go 1.25), batch_size=100, JSONata transformer, REST client. Mock server: `go run ./bench`.
+
+### Parser throughput (100K rows, 1 target)
+
+| Parser | Duration | Throughput |
+| --- | --- | --- |
+| CSV | 2.6s | ~37.5K req/s |
+| JSON | 2.2s | ~45.8K req/s |
+| NDJSON | 2.2s | ~45.1K req/s |
+
+### Load balancer (100K rows, CSV, 2 targets)
+
+| Strategy | Duration | Combined throughput | Distribution |
+| --- | --- | --- | --- |
+| Round Robin | 2.5s | ~39K req/s | 50/50 exact |
+| Random | 2.2s | ~45K req/s | ~50/50 |
+
+### Scale (1M rows)
+
+| Config | Duration | Throughput |
+| --- | --- | --- |
+| CSV, 1 target | 18s | ~54K req/s |
+| NDJSON, 2 targets | 19s | ~51K req/s |
+
+Zero failures across all runs. Full methodology and reproduction steps in [`bench/README.md`](bench/README.md).
 
 ## Development
 
