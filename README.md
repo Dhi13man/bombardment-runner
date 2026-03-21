@@ -33,6 +33,26 @@ Bombardment is a lightweight, extensible tool for bulk API testing and data migr
 - **Response capture** with optional CSV export of status codes, timestamps, and latencies
 - **Extensible architecture** via strategy pattern for parsers, transformers, clients, and load balancers
 
+## Benchmarks
+
+Measured on Apple M3 Pro (macOS), batch_size=100, single target, CSV source with JSONata transform:
+
+| Rows | Duration | Throughput | Failed |
+| --- | --- | --- | --- |
+| 100,000 | 2.5s | ~39K req/s | 0 |
+| 1,000,000 | 18s | ~54K req/s | 0 |
+
+Throughput scales with warmed connection pools. Run the included bench server to reproduce:
+
+```bash
+go run ./bench              # start mock server on :9999
+go run ./app cli \
+  --parser-context '{"strategy":"CSV","file_path":"./data.csv"}' \
+  --load-balancer-context '{"strategy":"ROUND_ROBIN","urls":["http://localhost:9999"]}' \
+  ...
+curl http://localhost:9999/stats   # live req/s counter
+```
+
 ## Web UI
 
 A guided 4-step wizard for configuring and monitoring jobs, no code required.
