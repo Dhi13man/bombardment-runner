@@ -17,7 +17,7 @@ COPY --from=frontend /build/src/app/ui/static/css/ ./src/app/ui/static/css/
 COPY --from=frontend /build/src/app/ui/static/js/ ./src/app/ui/static/js/
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o bombardment .
 
-FROM alpine:3.24@sha256:28bd5cf9e22e9d4896477b2dd25899953443683ee5429b0b868cf55ac0f0d9e8
+FROM alpine:3.24@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
 RUN apk --no-cache add ca-certificates && \
     addgroup -S appgroup && adduser -S appuser -G appgroup
 WORKDIR /app
