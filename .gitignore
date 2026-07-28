@@ -66,3 +66,4 @@ app/node_modules/
 app/src/app/ui/static/css/app.min.css
 app/src/app/ui/static/js/app.min.js
 bench/bench
+dist/

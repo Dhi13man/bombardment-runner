@@ -91,7 +91,7 @@ Source files are streamed record-by-record through a parser, each record is tran
 
 ### Download a binary
 
-Grab the latest release for your platform from [GitHub Releases](https://github.com/Dhi13man/bombardment-runner/releases):
+Grab the latest release archive for your platform from [GitHub Releases](https://github.com/Dhi13man/bombardment-runner/releases). Extract it into its own directory and run Bombardment from there; the bundled `src/app/ui` directory is required for server mode.
 
 ```bash
 # Example: Linux x86_64
@@ -100,14 +100,14 @@ curl -L https://github.com/Dhi13man/bombardment-runner/releases/latest/download/
 # Open http://localhost:8080
 ```
 
-| Platform | Architecture | Binary |
+| Platform | Architecture | Archive |
 | --- | --- | --- |
-| Linux | x86_64 | `bombardment-linux-amd64` |
-| Linux | ARM64 | `bombardment-linux-arm64` |
-| macOS | Intel | `bombardment-darwin-amd64` |
-| macOS | Apple Silicon | `bombardment-darwin-arm64` |
-| Windows | x86_64 | `bombardment-windows-amd64.exe` |
-| Windows | ARM64 | `bombardment-windows-arm64.exe` |
+| Linux | x86_64 | `bombardment-linux-amd64.tar.gz` |
+| Linux | ARM64 | `bombardment-linux-arm64.tar.gz` |
+| macOS | Intel | `bombardment-darwin-amd64.tar.gz` |
+| macOS | Apple Silicon | `bombardment-darwin-arm64.tar.gz` |
+| Windows | x86_64 | `bombardment-windows-amd64.zip` |
+| Windows | ARM64 | `bombardment-windows-arm64.zip` |
 
 ### Docker
 
