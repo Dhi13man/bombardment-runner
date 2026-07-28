@@ -61,7 +61,7 @@ func writeProtoContents(contents map[string]string) (string, []string, error) {
 
 		// Sanitize filename: reject path traversal and non-.proto files.
 		safeName := sanitizeFilename(name)
-		if parsing.ContainsPathTraversal(name) || filepath.IsAbs(name) {
+		if !parsing.IsPortableLocalPath(name) {
 			cleanupTempDir(tempDir)
 			return "", nil, fmt.Errorf("invalid proto filename: %s", safeName)
 		}

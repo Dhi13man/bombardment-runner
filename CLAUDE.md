@@ -49,7 +49,7 @@ Every pipeline stage uses the same extension pattern:
 3. Concrete implementations in the same package
 
 | Stage | Interface | Factory | Enum |
-|-------|-----------|---------|------|
+| ----- | --------- | ------- | ---- |
 | Parsing | `BaseFileParser[T]` | `CreateFileParser()` | `ParserStrategy` (CSV, JSON) |
 | Transforming | `BaseTransformer` | `CreateTransformer()` | `TransformerStrategy` (JSONATA) |
 | Load Balancing | `BaseLoadBalancer` | `CreateLoadBalancer()` | `LoadBalancerStrategy` (ROUND_ROBIN, RANDOM) |

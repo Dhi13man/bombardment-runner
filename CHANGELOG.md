@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Fixed
+
+- Updated esbuild to 0.28.1 to address GHSA-g7r4-m6w7-qqqr in the local development server.
+- Enforced platform-correct local paths for uploaded proto filenames.
+
+### Changed
+
+- Updated the supported frontend runtime to Node.js 22.
+- Hardened automation with Go 1.25.12, current immutable action and container pins, scheduled dependency updates, and OpenSSF Scorecard checks.
+
 ## [1.0.0] - 2026-03-21
 
 ### Added

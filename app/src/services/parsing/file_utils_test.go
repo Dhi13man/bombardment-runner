@@ -8,6 +8,38 @@ import (
 	"testing"
 )
 
+func TestIsPortableLocalPath_WhenVariousInputs_ThenClassifiesPortably(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	tests := []struct {
+		name     string
+		path     string
+		expected bool
+	}{
+		{name: "filename", path: "echo.proto", expected: true},
+		{name: "nested filename", path: "google/protobuf/timestamp.proto", expected: true},
+		{name: "parent traversal", path: "../evil.proto", expected: false},
+		{name: "backslash traversal", path: `..\evil.proto`, expected: false},
+		{name: "POSIX absolute", path: "/etc/evil.proto", expected: false},
+		{name: "Windows drive absolute", path: `C:\Windows\evil.proto`, expected: false},
+		{name: "Windows drive relative", path: `C:evil.proto`, expected: false},
+		{name: "UNC path", path: `\\server\share\evil.proto`, expected: false},
+		{name: "empty path", path: "", expected: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Act + Assert
+			if actual := IsPortableLocalPath(tt.path); actual != tt.expected {
+				t.Fatalf("IsPortableLocalPath(%q) = %t, want %t", tt.path, actual, tt.expected)
+			}
+		})
+	}
+}
+
 // --- OpenFileFromPathOrContent ---
 
 func TestOpenFileFromPathOrContent_WhenBase64Content_ThenCreatesFileAndReturnsHandle(t *testing.T) {

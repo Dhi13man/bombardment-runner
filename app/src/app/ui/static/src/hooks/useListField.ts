@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'preact/hooks';
-import type { RefObject, JSX } from 'preact';
+import type { JSX } from 'preact';
 
 interface UseListFieldOptions {
   /** Current array value */
@@ -13,7 +13,7 @@ interface UseListFieldOptions {
 }
 
 export interface ListFieldActions {
-  keys: RefObject<number[]>;
+  keys: { current: number[] };
   handleChange: (index: number, e: JSX.TargetedEvent<HTMLInputElement>) => void;
   add: () => void;
   remove: (index: number) => void;

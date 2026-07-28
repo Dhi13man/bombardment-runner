@@ -1,6 +1,6 @@
 module github.dhi13man.com/bombardment-runner
 
-go 1.25.8
+go 1.25.12
 
 require (
 	github.com/bufbuild/protocompile v0.14.1

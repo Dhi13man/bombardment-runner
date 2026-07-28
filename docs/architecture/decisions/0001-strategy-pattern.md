@@ -8,6 +8,7 @@ title: "0001. Strategy Pattern for Pipeline Extensibility"
 type: adr
 ---
 
+<!-- markdownlint-disable-next-line MD025 -->
 # 0001. Strategy Pattern for Pipeline Extensibility
 
 Date: 2026-03-16

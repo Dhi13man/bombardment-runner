@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
-	"slices"
 	"strings"
 
 	"go.uber.org/zap"
@@ -18,12 +18,20 @@ const allowedDataDir = "./data"
 // MaxUploadSize is the maximum decoded size for base64 file uploads (100MB).
 const MaxUploadSize = 100 * 1024 * 1024
 
-// ContainsPathTraversal checks if the cleaned path contains a ".." component,
-// indicating an attempt to escape the current directory. It uses filepath.Clean
-// first so that benign substrings like "file..txt" are not falsely rejected.
-func ContainsPathTraversal(path string) bool {
-	cleaned := filepath.Clean(path)
-	return slices.Contains(strings.Split(cleaned, string(filepath.Separator)), "..")
+// ContainsPathTraversal reports whether a path escapes its starting directory.
+// Both slash styles are normalized so validation is independent of the host OS.
+func ContainsPathTraversal(filePath string) bool {
+	cleaned := path.Clean(strings.ReplaceAll(filePath, `\`, "/"))
+	return cleaned == ".." || strings.HasPrefix(cleaned, "../")
+}
+
+// IsPortableLocalPath reports whether a path remains relative on Windows and Unix.
+func IsPortableLocalPath(filePath string) bool {
+	normalized := strings.ReplaceAll(filePath, `\`, "/")
+	return normalized != "" &&
+		!path.IsAbs(normalized) &&
+		!strings.Contains(normalized, ":") &&
+		!ContainsPathTraversal(normalized)
 }
 
 // OpenFileFromPathOrContent opens a file from either a file path or base64 encoded content.

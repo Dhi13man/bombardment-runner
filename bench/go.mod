@@ -1,6 +1,6 @@
 module github.dhi13man.com/bombardment-runner/bench
 
-go 1.25.5
+go 1.25.12
 
 require google.golang.org/grpc v1.82.1
 
