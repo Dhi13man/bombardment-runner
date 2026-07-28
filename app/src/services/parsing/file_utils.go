@@ -6,16 +6,11 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"slices"
 	"strings"
 
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
-
-// safeFilenameRe keeps only alphanumeric, dash, underscore, and dot characters.
-var safeFilenameRe = regexp.MustCompile(`[^a-zA-Z0-9._-]`)
 
 // allowedDataDir is the base directory for uploaded file storage.
 const allowedDataDir = "./data"
@@ -38,7 +33,7 @@ func ContainsPathTraversal(path string) bool {
 func OpenFileFromPathOrContent(filePath, fileContentB64 string) (*os.File, string, error) {
 	// Base64 content provided: decode and save to a temp file
 	if fileContentB64 != "" {
-		file, path, err := openFromBase64Content(filePath, fileContentB64)
+		file, path, err := openFromBase64Content(fileContentB64)
 		if err != nil {
 			return nil, "", err
 		}
@@ -55,8 +50,8 @@ func OpenFileFromPathOrContent(filePath, fileContentB64 string) (*os.File, strin
 	return file, path, nil
 }
 
-func openFromBase64Content(originalFilename, fileContentB64 string) (*os.File, string, error) {
-	if err := os.MkdirAll(allowedDataDir, 0755); err != nil {
+func openFromBase64Content(fileContentB64 string) (*os.File, string, error) {
+	if err := os.MkdirAll(allowedDataDir, 0o750); err != nil {
 		zap.L().Error("Failed to create data directory", zap.Error(err))
 		return nil, "", err
 	}
@@ -76,14 +71,12 @@ func openFromBase64Content(originalFilename, fileContentB64 string) (*os.File, s
 		return nil, "", fmt.Errorf("decoded file size %d bytes exceeds maximum %d bytes", len(data), MaxUploadSize)
 	}
 
-	fileName := generateSafeFilename(originalFilename)
-
-	tempFilePath := filepath.Join(allowedDataDir, fileName)
-	tempFile, err := os.Create(tempFilePath)
+	tempFile, err := os.CreateTemp(allowedDataDir, "upload-*")
 	if err != nil {
 		zap.L().Error("Failed to create temporary file", zap.Error(err))
 		return nil, "", err
 	}
+	tempFilePath := tempFile.Name()
 
 	cleanup := func() { _ = tempFile.Close(); removeTempFile(tempFilePath) }
 
@@ -117,7 +110,18 @@ func openFromPath(filePath string) (*os.File, string, error) {
 		return nil, "", fmt.Errorf("invalid file path: %w", err)
 	}
 
-	file, err := os.Open(absPath)
+	root, err := os.OpenRoot(filepath.Dir(absPath))
+	if err != nil {
+		zap.L().Error("Error opening file directory", zap.Error(err))
+		return nil, "", err
+	}
+	defer func() {
+		if closeErr := root.Close(); closeErr != nil {
+			zap.L().Error("Error closing file directory", zap.Error(closeErr))
+		}
+	}()
+
+	file, err := root.Open(filepath.Base(absPath))
 	if err != nil {
 		zap.L().Error("Error opening file", zap.Error(err))
 		return nil, "", err
@@ -132,22 +136,28 @@ func removeTempFile(path string) {
 	if path == "" {
 		return
 	}
-	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-		zap.L().Error("Failed to remove temp file", zap.String("path", path), zap.Error(err))
-	}
-}
 
-// generateSafeFilename creates a sanitized filename from the given path,
-// or generates a UUID-based filename if the path is empty.
-// Uses an allowlist (alphanumeric, dash, underscore, dot) to strip
-// potentially dangerous characters like null bytes or unicode overrides.
-func generateSafeFilename(filePath string) string {
-	if filePath == "" {
-		return "upload_" + uuid.New().String()
+	cleanedPath := filepath.Clean(path)
+	managedPath := filepath.Clean(filepath.Join(allowedDataDir, filepath.Base(cleanedPath)))
+	if cleanedPath != managedPath {
+		zap.L().Warn("Refusing to remove file outside managed data directory", zap.String("path", path))
+		return
 	}
 
-	base := filepath.Base(filePath)
-	safe := safeFilenameRe.ReplaceAllString(base, "_")
-	// Prefix with a UUID to avoid collisions
-	return uuid.New().String() + "_" + safe
+	dataRoot, err := os.OpenRoot(allowedDataDir)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			zap.L().Error("Failed to open managed data directory", zap.Error(err))
+		}
+		return
+	}
+	defer func() {
+		if closeErr := dataRoot.Close(); closeErr != nil {
+			zap.L().Error("Failed to close managed data directory", zap.Error(closeErr))
+		}
+	}()
+
+	if err := dataRoot.Remove(filepath.Base(managedPath)); err != nil && !os.IsNotExist(err) {
+		zap.L().Error("Failed to remove temp file", zap.String("path", managedPath), zap.Error(err))
+	}
 }

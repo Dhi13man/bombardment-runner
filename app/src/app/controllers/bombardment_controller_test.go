@@ -94,6 +94,45 @@ func TestBombardmentController_Bombard_Success(t *testing.T) {
 	}
 }
 
+func TestBombardmentController_Bombard_whenHostPathsProvided_thenForwardsServerManagedPaths(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	driver := &mockDriver{}
+	router := setupRouter(driver)
+	reqBody := dto.BombardmentRequest{}
+	reqBody.Driver.BatchSize = 10
+	reqBody.Driver.ShouldStoreResponses = true
+	reqBody.Driver.ResponsesStoragePath = "./responses"
+	reqBody.LoadBalancer.Urls = []string{"http://example.com"}
+	reqBody.Parser.FilePath = "/etc/passwd"
+	reqBody.Parser.FileContentB64 = "dGVzdA=="
+	body, err := json.Marshal(reqBody)
+	if err != nil {
+		t.Fatalf("failed to marshal request: %v", err)
+	}
+
+	// Act
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/v1/bombardment", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	// Assert
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d; body: %s", http.StatusCreated, w.Code, w.Body.String())
+	}
+	if driver.receivedReq == nil {
+		t.Fatal("expected request to reach driver")
+	}
+	if driver.receivedReq.Parser.FilePath != "" {
+		t.Errorf("expected API file path to be cleared, got %q", driver.receivedReq.Parser.FilePath)
+	}
+	if driver.receivedReq.Driver.ResponsesStoragePath != "" {
+		t.Errorf("expected API response path to use the server default, got %q", driver.receivedReq.Driver.ResponsesStoragePath)
+	}
+}
+
 func TestBombardmentController_Bombard_InvalidJSON(t *testing.T) {
 	t.Parallel()
 
@@ -426,6 +465,17 @@ func TestValidateBombardmentRequest_TableDriven(t *testing.T) {
 			wantCount: 1,
 		},
 		{
+			name: "batch size above server limit",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10_001
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
 			name: "empty URLs",
 			req: func() dto.BombardmentRequest {
 				r := dto.BombardmentRequest{}
@@ -473,6 +523,18 @@ func TestValidateBombardmentRequest_TableDriven(t *testing.T) {
 				r := dto.BombardmentRequest{}
 				r.Driver.BatchSize = 10
 				r.Driver.ResponsesStoragePath = "../evil"
+				r.LoadBalancer.Urls = []string{"http://example.com"}
+				r.Parser.FileContentB64 = "dGVzdA=="
+				return r
+			}(),
+			wantCount: 1,
+		},
+		{
+			name: "custom responses_storage_path",
+			req: func() dto.BombardmentRequest {
+				r := dto.BombardmentRequest{}
+				r.Driver.BatchSize = 10
+				r.Driver.ResponsesStoragePath = "custom-output"
 				r.LoadBalancer.Urls = []string{"http://example.com"}
 				r.Parser.FileContentB64 = "dGVzdA=="
 				return r
@@ -647,9 +709,9 @@ func TestValidateBombardmentRequest_TableDriven(t *testing.T) {
 				r.Driver.BatchSize = 10
 				r.LoadBalancer.Urls = []string{"http://example.com"}
 				r.Parser.FileContentB64 = "dGVzdA=="
-				r.Client.MaxRecvMsgSize = 8 << 20                // 8 MB
-				r.Client.MaxSendMsgSize = 8 << 20                // 8 MB
-				r.Client.KeepaliveTime = 30_000_000_000          // 30 seconds
+				r.Client.MaxRecvMsgSize = 8 << 20       // 8 MB
+				r.Client.MaxSendMsgSize = 8 << 20       // 8 MB
+				r.Client.KeepaliveTime = 30_000_000_000 // 30 seconds
 				return r
 			}(),
 			wantCount: 0,

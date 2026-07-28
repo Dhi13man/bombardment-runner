@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -769,7 +770,11 @@ func TestExecuteBombardment_FullPipeline_WithResponseStorage(t *testing.T) {
 	}))
 	defer server.Close()
 
-	responsesDir := tmpDir + "/responses"
+	responsesDir, err := os.MkdirTemp(".", "responses-test-*")
+	if err != nil {
+		t.Fatalf("failed to create responses directory: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(responsesDir) })
 
 	store := services.NewJobStore()
 	driver := NewBombardmentDriver(store)
@@ -798,7 +803,7 @@ func TestExecuteBombardment_FullPipeline_WithResponseStorage(t *testing.T) {
 		},
 		LoadBalancer: loadBalancerDto.LoadBalancerContext{
 			Strategy: modelsEnums.ROUND_ROBIN,
-			Urls: []string{server.URL},
+			Urls:     []string{server.URL},
 		},
 	}
 
@@ -870,7 +875,7 @@ func TestExecuteBombardment_FullPipeline_WithoutResponseStorage(t *testing.T) {
 		},
 		LoadBalancer: loadBalancerDto.LoadBalancerContext{
 			Strategy: modelsEnums.ROUND_ROBIN,
-			Urls: []string{server.URL},
+			Urls:     []string{server.URL},
 		},
 	}
 
@@ -925,7 +930,7 @@ func TestExecuteBombardment_TransformerFailure_IncrementsFailed(t *testing.T) {
 		},
 		LoadBalancer: loadBalancerDto.LoadBalancerContext{
 			Strategy: modelsEnums.ROUND_ROBIN,
-			Urls: []string{server.URL},
+			Urls:     []string{server.URL},
 		},
 	}
 
@@ -1063,6 +1068,47 @@ func TestCreateBombardment_PathTraversal_ReturnsError(t *testing.T) {
 	// Assert: should fail due to either path traversal check or parser issue
 	if err == nil {
 		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestCreateBombardment_whenBatchSizeExceedsLimit_thenReturnsError(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	driver := NewBombardmentDriver(services.NewJobStore())
+	req := buildMinimalBombardmentRequest()
+	req.Driver.BatchSize = 10_001
+
+	// Act
+	err := driver.CreateBombardment(req)
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected oversized batch to be rejected")
+	}
+	if !strings.Contains(err.Error(), "batch_size") {
+		t.Errorf("expected batch_size error, got %q", err)
+	}
+}
+
+func TestCreateBombardment_whenResponsePathIsAbsolute_thenReturnsError(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	driver := NewBombardmentDriver(services.NewJobStore())
+	req := buildMinimalBombardmentRequest()
+	req.Driver.ShouldStoreResponses = true
+	req.Driver.ResponsesStoragePath = t.TempDir()
+
+	// Act
+	err := driver.CreateBombardment(req)
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected absolute response path to be rejected")
+	}
+	if !strings.Contains(err.Error(), "working directory") {
+		t.Errorf("expected working directory error, got %q", err)
 	}
 }
 

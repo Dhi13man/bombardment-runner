@@ -1,6 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
+const { normalizeSvgContent } = require('./svg-content');
+
 const ICONS_SRC = path.join(__dirname, '..', 'node_modules', 'lucide-static', 'icons');
 const SPRITE_OUT = path.join(__dirname, '..', 'src', 'app', 'ui', 'static', 'icons', 'sprite.svg');
 
@@ -73,12 +75,7 @@ for (const name of ICON_LIST) {
     continue;
   }
 
-  // Clean up inner content: remove comments, collapse whitespace, strip redundant attrs
-  let inner = innerMatch[1]
-    .trim()
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/\s+/g, ' ')
-    .replace(/ ?(\/?>)/g, '$1');
+  const inner = normalizeSvgContent(innerMatch[1]);
 
   symbols.push(
     `<symbol id="icon-${name}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</symbol>`
