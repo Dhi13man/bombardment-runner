@@ -11,7 +11,7 @@
     "watch": "concurrently \"npm run watch:css\" \"npm run watch:js\"",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run && node --test scripts/*.test.js",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },

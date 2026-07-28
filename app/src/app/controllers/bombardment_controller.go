@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -81,6 +82,9 @@ func (bc *bombardmentControllerImpl) Bombard(c *gin.Context) {
 
 	// Create a job and run asynchronously
 	job := bc.jobStore.Create(&req)
+	// API jobs use uploaded content and the server-managed response directory.
+	req.Parser.FilePath = ""
+	req.Driver.ResponsesStoragePath = ""
 	bc.driver.CreateBombardmentAsync(req, job)
 
 	c.JSON(201, job.Snapshot())
@@ -92,6 +96,8 @@ func validateBombardmentRequest(req dto.BombardmentRequest) []string {
 
 	if req.Driver.BatchSize <= 0 {
 		errs = append(errs, "batch_size must be greater than 0")
+	} else if req.Driver.BatchSize > serviceDriver.MaxBatchSize {
+		errs = append(errs, fmt.Sprintf("batch_size must not exceed %d", serviceDriver.MaxBatchSize))
 	}
 
 	if len(req.LoadBalancer.Urls) == 0 {
@@ -102,9 +108,10 @@ func validateBombardmentRequest(req dto.BombardmentRequest) []string {
 		errs = append(errs, "file_content_b64 is required (use base64-encoded file content for API requests)")
 	}
 
-	// Validate ResponsesStoragePath doesn't contain traversal sequences
-	if req.Driver.ResponsesStoragePath != "" && parsing.ContainsPathTraversal(req.Driver.ResponsesStoragePath) {
-		errs = append(errs, "responses_storage_path must not contain directory traversal sequences")
+	if req.Driver.ResponsesStoragePath != "" &&
+		req.Driver.ResponsesStoragePath != "./responses" &&
+		req.Driver.ResponsesStoragePath != "responses" {
+		errs = append(errs, "responses_storage_path must be the server-managed ./responses directory")
 	}
 
 	// Validate proto file paths don't contain traversal sequences

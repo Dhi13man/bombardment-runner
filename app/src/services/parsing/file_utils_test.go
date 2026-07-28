@@ -145,7 +145,7 @@ func TestOpenFileFromPathOrContent_WhenFileNotFound_ThenReturnsError(t *testing.
 	}
 }
 
-func TestOpenFileFromPathOrContent_WhenBase64WithEmptyFilePath_ThenGeneratesUUIDFilename(t *testing.T) {
+func TestOpenFileFromPathOrContent_WhenBase64WithEmptyFilePath_ThenGeneratesTemporaryFilename(t *testing.T) {
 	t.Parallel()
 
 	// Arrange
@@ -164,99 +164,33 @@ func TestOpenFileFromPathOrContent_WhenBase64WithEmptyFilePath_ThenGeneratesUUID
 	}()
 
 	baseName := filepath.Base(path)
-	if !strings.HasPrefix(baseName, "upload_") {
-		t.Errorf("expected UUID-based filename starting with 'upload_', got %q", baseName)
+	if !strings.HasPrefix(baseName, "upload-") {
+		t.Errorf("expected temporary filename starting with 'upload-', got %q", baseName)
 	}
 }
 
-// --- generateSafeFilename ---
-
-func TestGenerateSafeFilename_WhenEmptyPath_ThenReturnsUploadPrefixedUUID(t *testing.T) {
+func TestOpenFileFromPathOrContent_whenUploadedFilenameEscapesDirectory_thenUsesManagedTempPath(t *testing.T) {
 	t.Parallel()
+
+	// Arrange
+	encoded := base64.StdEncoding.EncodeToString([]byte("safe data"))
 
 	// Act
-	name := generateSafeFilename("")
+	file, path, err := OpenFileFromPathOrContent("../../outside.csv", encoded)
 
 	// Assert
-	if !strings.HasPrefix(name, "upload_") {
-		t.Errorf("expected prefix 'upload_', got %q", name)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	// UUID is 36 chars; "upload_" is 7 chars; total at least 43
-	if len(name) < 43 {
-		t.Errorf("expected length >= 43 (upload_ + UUID), got %d", len(name))
+	defer func() {
+		_ = file.Close()
+		removeTempFile(path)
+	}()
+	if filepath.Clean(filepath.Dir(path)) != filepath.Clean(allowedDataDir) {
+		t.Errorf("expected managed data directory, got %q", path)
 	}
-}
-
-func TestGenerateSafeFilename_WhenPathProvided_ThenReturnsUUIDPrefixedBase(t *testing.T) {
-	t.Parallel()
-
-	// Act
-	name := generateSafeFilename("/some/dir/myfile.csv")
-
-	// Assert
-	if !strings.HasSuffix(name, "_myfile.csv") {
-		t.Errorf("expected suffix '_myfile.csv', got %q", name)
-	}
-	// UUID (36) + "_" (1) + "myfile.csv" (10) = 47
-	if len(name) < 47 {
-		t.Errorf("expected length >= 47, got %d", len(name))
-	}
-}
-
-func TestGenerateSafeFilename_WhenPathHasSpaces_ThenReplacesWithUnderscores(t *testing.T) {
-	t.Parallel()
-
-	// Act
-	name := generateSafeFilename("my file name.csv")
-
-	// Assert
-	if strings.Contains(name, " ") {
-		t.Errorf("expected no spaces in filename, got %q", name)
-	}
-	if !strings.HasSuffix(name, "_my_file_name.csv") {
-		t.Errorf("expected suffix '_my_file_name.csv', got %q", name)
-	}
-}
-
-func TestGenerateSafeFilename_WhenCalledTwice_ThenReturnsDifferentNames(t *testing.T) {
-	t.Parallel()
-
-	// Act
-	name1 := generateSafeFilename("file.csv")
-	name2 := generateSafeFilename("file.csv")
-
-	// Assert
-	if name1 == name2 {
-		t.Error("expected unique filenames on each call due to UUID, got identical")
-	}
-}
-
-func TestGenerateSafeFilename_WhenSpecialChars_ThenStripsToAllowlist(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name     string
-		input    string
-		wantSafe string
-	}{
-		{"null byte", "file\x00.csv", "file_.csv"},
-		{"unicode", "caf\u00e9.csv", "caf_.csv"},
-		{"slashes after base", "dir/sub/my@file#1.csv", "my_file_1.csv"},
-		{"rtl override", "file\u202e.csv", "file_.csv"},
-		{"all special chars", "!@#$%.csv", "_____.csv"},
-		{"hidden file preserved", ".gitignore", ".gitignore"},
-		{"dashes and underscores preserved", "my-file_v2.csv", "my-file_v2.csv"},
-		{"consecutive dots", "file..bak.csv", "file..bak.csv"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			got := generateSafeFilename(tt.input)
-			if !strings.HasSuffix(got, "_"+tt.wantSafe) {
-				t.Errorf("generateSafeFilename(%q): got %q, want suffix %q", tt.input, got, "_"+tt.wantSafe)
-			}
-		})
+	if !strings.HasPrefix(filepath.Base(path), "upload-") {
+		t.Errorf("expected OS-managed upload filename, got %q", filepath.Base(path))
 	}
 }
 
@@ -312,12 +246,16 @@ func TestRemoveTempFile_WhenFileExists_ThenRemovesFile(t *testing.T) {
 	t.Parallel()
 
 	// Arrange
-	tmpFile, err := os.CreateTemp(t.TempDir(), "remove-test-*")
+	if err := os.MkdirAll(allowedDataDir, 0o750); err != nil {
+		t.Fatalf("failed to create managed data directory: %v", err)
+	}
+	tmpFile, err := os.CreateTemp(allowedDataDir, "remove-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp file: %v", err)
 	}
 	path := tmpFile.Name()
 	_ = tmpFile.Close()
+	t.Cleanup(func() { _ = os.Remove(path) })
 
 	// Act
 	removeTempFile(path)
@@ -333,6 +271,24 @@ func TestRemoveTempFile_WhenFileNotExists_ThenNoError(t *testing.T) {
 
 	// Act - should not panic on non-existent path
 	removeTempFile("/nonexistent/path/that/does/not/exist.tmp")
+}
+
+func TestRemoveTempFile_whenPathIsOutsideManagedDirectory_thenPreservesFile(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	path := filepath.Join(t.TempDir(), "keep.txt")
+	if err := os.WriteFile(path, []byte("keep"), 0o600); err != nil {
+		t.Fatalf("failed to create file: %v", err)
+	}
+
+	// Act
+	removeTempFile(path)
+
+	// Assert
+	if _, err := os.Stat(path); err != nil {
+		t.Errorf("expected unmanaged file to remain, got %v", err)
+	}
 }
 
 // --- MaxUploadSize enforcement ---

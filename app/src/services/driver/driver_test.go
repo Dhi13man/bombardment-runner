@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -798,7 +799,7 @@ func TestExecuteBombardment_FullPipeline_WithResponseStorage(t *testing.T) {
 		},
 		LoadBalancer: loadBalancerDto.LoadBalancerContext{
 			Strategy: modelsEnums.ROUND_ROBIN,
-			Urls: []string{server.URL},
+			Urls:     []string{server.URL},
 		},
 	}
 
@@ -870,7 +871,7 @@ func TestExecuteBombardment_FullPipeline_WithoutResponseStorage(t *testing.T) {
 		},
 		LoadBalancer: loadBalancerDto.LoadBalancerContext{
 			Strategy: modelsEnums.ROUND_ROBIN,
-			Urls: []string{server.URL},
+			Urls:     []string{server.URL},
 		},
 	}
 
@@ -925,7 +926,7 @@ func TestExecuteBombardment_TransformerFailure_IncrementsFailed(t *testing.T) {
 		},
 		LoadBalancer: loadBalancerDto.LoadBalancerContext{
 			Strategy: modelsEnums.ROUND_ROBIN,
-			Urls: []string{server.URL},
+			Urls:     []string{server.URL},
 		},
 	}
 
@@ -1063,6 +1064,26 @@ func TestCreateBombardment_PathTraversal_ReturnsError(t *testing.T) {
 	// Assert: should fail due to either path traversal check or parser issue
 	if err == nil {
 		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestCreateBombardment_whenBatchSizeExceedsLimit_thenReturnsError(t *testing.T) {
+	t.Parallel()
+
+	// Arrange
+	driver := NewBombardmentDriver(services.NewJobStore())
+	req := buildMinimalBombardmentRequest()
+	req.Driver.BatchSize = 10_001
+
+	// Act
+	err := driver.CreateBombardment(req)
+
+	// Assert
+	if err == nil {
+		t.Fatal("expected oversized batch to be rejected")
+	}
+	if !strings.Contains(err.Error(), "batch_size") {
+		t.Errorf("expected batch_size error, got %q", err)
 	}
 }
 

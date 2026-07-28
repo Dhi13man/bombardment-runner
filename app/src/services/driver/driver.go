@@ -32,6 +32,9 @@ type bombardmentDriver struct {
 	jobStore *services.JobStore
 }
 
+// MaxBatchSize bounds request-controlled channel and slice allocations.
+const MaxBatchSize = 10_000
+
 func NewBombardmentDriver(jobStore *services.JobStore) BombardmentDriver {
 	return &bombardmentDriver{jobStore: jobStore}
 }
@@ -92,6 +95,13 @@ func (b *bombardmentDriver) executeBombardment(
 		}
 	}
 
+	batchSize := bombardmentRequest.Driver.BatchSize
+	if batchSize < 1 || batchSize > MaxBatchSize {
+		err := fmt.Errorf("batch_size must be between 1 and %d", MaxBatchSize)
+		failJob(err)
+		return err
+	}
+
 	setRunning()
 
 	parser, err := parsing.CreateFileParser[map[string]string](bombardmentRequest.Parser)
@@ -141,17 +151,25 @@ func (b *bombardmentDriver) executeBombardment(
 			return pathErr
 		}
 
-		err = os.MkdirAll(storagePath, 0755)
+		err = os.MkdirAll(storagePath, 0o750)
 		if err != nil {
 			zap.L().Error("Failed to create responses directory", zap.Error(err))
 			failJob(err)
 			return err
 		}
+		storageRoot, err := os.OpenRoot(storagePath)
+		if err != nil {
+			zap.L().Error("Failed to open responses directory", zap.Error(err))
+			failJob(err)
+			return err
+		}
+		defer closeAndLog(storageRoot, "responses directory")
 
 		timestamp := time.Now().Format("20060102_150405")
-		responseFilePath := filepath.Join(storagePath, fmt.Sprintf("responses_%s.csv", timestamp))
+		responseFileName := fmt.Sprintf("responses_%s.csv", timestamp)
+		responseFilePath := filepath.Join(storagePath, responseFileName)
 
-		responseFile, err = os.Create(responseFilePath)
+		responseFile, err = storageRoot.OpenFile(responseFileName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 		if err != nil {
 			zap.L().Error("Failed to create responses file", zap.Error(err))
 			failJob(err)
@@ -171,7 +189,7 @@ func (b *bombardmentDriver) executeBombardment(
 	}
 
 	var batchProcessor = batching.NewBatchProcessor(
-		bombardmentRequest.Driver.BatchSize,
+		batchSize,
 		func(rawData map[string]string) *modelsDtoResponses.ResponseSummary {
 			requestID := rawData["request_id"]
 			if requestID == "" {
@@ -217,7 +235,7 @@ func (b *bombardmentDriver) executeBombardment(
 	}
 
 	// Buffered to allow parser read-ahead while batch processor is working.
-	countedChannel := make(chan map[string]string, bombardmentRequest.Driver.BatchSize)
+	countedChannel := make(chan map[string]string, batchSize)
 	go func() {
 		defer close(countedChannel)
 		var totalCount int64
