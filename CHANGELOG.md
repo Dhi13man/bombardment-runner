@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ### Fixed
 
+- Packaged the Web UI with release binaries and added artifact manifests, checksums, provenance, and runtime smoke verification.
 - Updated esbuild to 0.28.1 to address GHSA-g7r4-m6w7-qqqr in the local development server.
 - Enforced platform-correct local paths for uploaded proto filenames.
 

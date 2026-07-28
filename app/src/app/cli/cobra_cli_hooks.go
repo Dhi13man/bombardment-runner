@@ -42,11 +42,18 @@ const (
 	DefaultServerPort     int    = 8080
 )
 
+var version = "dev"
+
 type cobraCliHooks struct {
 	rootCmd *cobra.Command
+	version string
 }
 
 func NewCobraCliHooks() CliHook {
+	return newCobraCliHooks(version)
+}
+
+func newCobraCliHooks(appVersion string) *cobraCliHooks {
 	rootCmd := &cobra.Command{
 		Use:   "bombardment",
 		Short: "Run Bombardment in CLI or Server mode",
@@ -67,10 +74,10 @@ func NewCobraCliHooks() CliHook {
 			# Run Bombardment in Server mode
 			bombardment server --help`,
 		),
-		Version: "v0.0.1",
+		Version: appVersion,
 	}
 	rootCmd.AddGroup(&cobra.Group{ID: RunModeGroupId, Title: "Run Mode"})
-	return &cobraCliHooks{rootCmd: rootCmd}
+	return &cobraCliHooks{rootCmd: rootCmd, version: appVersion}
 }
 
 func (c *cobraCliHooks) AttachCliRunCommand(
@@ -138,7 +145,7 @@ func (c *cobraCliHooks) AttachCliRunCommand(
 			}
 			return nil
 		},
-		Version: "v0.0.1",
+		Version: c.version,
 		Run: func(cmd *cobra.Command, args []string) {
 			// Get the Flags
 			clientContextCommand := cmd.Flag(ClientContextLongKey)
@@ -336,7 +343,7 @@ func (c *cobraCliHooks) AttachServerRunCommand(
 
 			runServerCallback(bindAddr, port)
 		},
-		Version: "v0.0.1",
+		Version: c.version,
 	}
 	// Define flags for server command
 	serverCommand.Flags().StringP(
