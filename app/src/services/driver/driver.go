@@ -101,6 +101,16 @@ func (b *bombardmentDriver) executeBombardment(
 		failJob(err)
 		return err
 	}
+	storagePath := bombardmentRequest.Driver.ResponsesStoragePath
+	if storagePath == "" {
+		storagePath = "./responses"
+	}
+	if bombardmentRequest.Driver.ShouldStoreResponses &&
+		(filepath.IsAbs(storagePath) || parsing.ContainsPathTraversal(storagePath)) {
+		err := fmt.Errorf("responses_storage_path must stay within the working directory")
+		failJob(err)
+		return err
+	}
 
 	setRunning()
 
@@ -140,24 +150,21 @@ func (b *bombardmentDriver) executeBombardment(
 	var responseWriter *csv.Writer
 
 	if bombardmentRequest.Driver.ShouldStoreResponses {
-		storagePath := bombardmentRequest.Driver.ResponsesStoragePath
-		if storagePath == "" {
-			storagePath = "./responses"
+		workingRoot, err := os.OpenRoot(".")
+		if err != nil {
+			zap.L().Error("Failed to open working directory", zap.Error(err))
+			failJob(err)
+			return err
 		}
+		defer closeAndLog(workingRoot, "working directory")
 
-		if parsing.ContainsPathTraversal(storagePath) {
-			pathErr := fmt.Errorf("responses_storage_path must not contain directory traversal sequences")
-			failJob(pathErr)
-			return pathErr
-		}
-
-		err = os.MkdirAll(storagePath, 0o750)
+		err = workingRoot.MkdirAll(storagePath, 0o750)
 		if err != nil {
 			zap.L().Error("Failed to create responses directory", zap.Error(err))
 			failJob(err)
 			return err
 		}
-		storageRoot, err := os.OpenRoot(storagePath)
+		storageRoot, err := workingRoot.OpenRoot(storagePath)
 		if err != nil {
 			zap.L().Error("Failed to open responses directory", zap.Error(err))
 			failJob(err)

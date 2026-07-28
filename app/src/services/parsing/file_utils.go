@@ -144,7 +144,20 @@ func removeTempFile(path string) {
 		return
 	}
 
-	if err := os.Remove(managedPath); err != nil && !os.IsNotExist(err) {
+	dataRoot, err := os.OpenRoot(allowedDataDir)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			zap.L().Error("Failed to open managed data directory", zap.Error(err))
+		}
+		return
+	}
+	defer func() {
+		if closeErr := dataRoot.Close(); closeErr != nil {
+			zap.L().Error("Failed to close managed data directory", zap.Error(closeErr))
+		}
+	}()
+
+	if err := dataRoot.Remove(filepath.Base(managedPath)); err != nil && !os.IsNotExist(err) {
 		zap.L().Error("Failed to remove temp file", zap.String("path", managedPath), zap.Error(err))
 	}
 }
