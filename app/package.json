@@ -18,18 +18,18 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "@fontsource/ibm-plex-sans": "^5.0.0",
-    "@fontsource/jetbrains-mono": "^5.0.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
     "@testing-library/preact": "^3.2.4",
-    "concurrently": "^8.0.0",
+    "concurrently": "^10.0.4",
     "esbuild": "^0.28.1",
     "happy-dom": "^20.11.1",
-    "lucide-static": "^0.577.0",
-    "tailwindcss": "^3.4.0",
-    "typescript": "^5.5.0",
-    "vitest": "^3.2.6"
+    "lucide-static": "^1.27.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   },
   "dependencies": {
-    "preact": "^10.25.0"
+    "preact": "^10.29.7"
   }
 }
