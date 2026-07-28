@@ -9,7 +9,10 @@ readonly APP_DIR="${ROOT_DIR}/app"
 readonly DIST_DIR="${ROOT_DIR}/dist"
 readonly EXPECTED_GO_VERSION="go1.25.12"
 readonly SMOKE_PORT="${SMOKE_PORT:-18080}"
-readonly VERSION_PATTERN='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$'
+readonly SEMVER_CORE_IDENTIFIER='(0|[1-9][0-9]*)'
+readonly SEMVER_PRERELEASE_IDENTIFIER='(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)'
+readonly SEMVER_BUILD_IDENTIFIER='[0-9A-Za-z-]+'
+readonly VERSION_PATTERN="^v${SEMVER_CORE_IDENTIFIER}\.${SEMVER_CORE_IDENTIFIER}\.${SEMVER_CORE_IDENTIFIER}(-${SEMVER_PRERELEASE_IDENTIFIER}(\.${SEMVER_PRERELEASE_IDENTIFIER})*)?(\+${SEMVER_BUILD_IDENTIFIER}(\.${SEMVER_BUILD_IDENTIFIER})*)?$"
 readonly -a PLATFORMS=(
     "linux amd64"
     "linux arm64"
@@ -34,6 +37,10 @@ die() {
 
 require() {
     command -v "$1" >/dev/null 2>&1 || die "$1 is required"
+}
+
+is_valid_semver() {
+    [[ "$1" =~ ${VERSION_PATTERN} ]]
 }
 
 cleanup() {
@@ -180,7 +187,7 @@ main() {
     fi
     [[ $# -eq 1 ]] || { usage >&2; return 1; }
     readonly VERSION="$1"
-    [[ "${VERSION}" =~ ${VERSION_PATTERN} ]] || die "version must be semantic and start with v"
+    is_valid_semver "${VERSION}" || die "version must follow SemVer 2.0.0 and start with v"
     [[ "${SMOKE_PORT}" =~ ^[0-9]+$ ]] || die "SMOKE_PORT must be numeric"
     ((SMOKE_PORT >= 1 && SMOKE_PORT <= 65535)) || die "SMOKE_PORT must be between 1 and 65535"
 
@@ -210,4 +217,6 @@ main() {
     printf 'Verified six release archives for %s in %s\n' "${VERSION}" "${DIST_DIR}"
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    main "$@"
+fi
