@@ -14,8 +14,8 @@
   <a href="https://github.com/Dhi13man/bombardment-runner/releases"><img src="https://img.shields.io/github/v/release/dhi13man/bombardment-runner?label=release&style=flat" alt="Release"></a>
   <a href="https://github.com/Dhi13man/bombardment-runner/actions/workflows/ci.yml"><img src="https://github.com/Dhi13man/bombardment-runner/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/Dhi13man/bombardment-runner/blob/main/LICENSE"><img src="https://img.shields.io/github/license/dhi13man/bombardment-runner" alt="License"></a>
-  <a href="https://go.dev"><img src="https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go" alt="Go Version"></a>
-  <a href="https://github.com/Dhi13man/bombardment-runner/stargazers"><img src="https://img.shields.io/github/stars/dhi13man/bombardment-runner?style=social" alt="Stars"></a>
+  <a href="https://go.dev"><img src="https://img.shields.io/badge/Go-1.25.12+-00ADD8?style=flat&logo=go" alt="Go Version"></a>
+  <a href="https://securityscorecards.dev/viewer/?uri=github.com/Dhi13man/bombardment-runner"><img src="https://api.securityscorecards.dev/projects/github.com/Dhi13man/bombardment-runner/badge" alt="OpenSSF Scorecard"></a>
 </p>
 
 ---
@@ -120,7 +120,7 @@ docker compose up --build
 
 ### From source
 
-Requires Go 1.25+ and Node.js (for the Web UI frontend build).
+Requires Go 1.25.12+ and Node.js 22.12+ (for the Web UI frontend build).
 
 ```bash
 git clone https://github.com/Dhi13man/bombardment-runner.git

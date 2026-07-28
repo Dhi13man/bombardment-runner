@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -134,7 +133,7 @@ func validateBombardmentRequest(req dto.BombardmentRequest) []string {
 			errs = append(errs, "proto_file_contents and proto_files are mutually exclusive")
 		}
 		for name := range req.Client.ProtoFileContents {
-			if parsing.ContainsPathTraversal(name) || filepath.IsAbs(name) {
+			if !parsing.IsPortableLocalPath(name) {
 				errs = append(errs, "proto_file_contents filenames must not contain path traversal or absolute paths")
 				break
 			}

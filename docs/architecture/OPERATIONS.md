@@ -5,6 +5,7 @@ title: "Service Operations Catalog"
 type: operations
 ---
 
+<!-- markdownlint-disable-next-line MD025 -->
 # Service Operations Catalog
 
 Operational semantics of the Bombardment Runner pipeline, documenting data transformations, configuration-driven behavior, and service responsibility boundaries.

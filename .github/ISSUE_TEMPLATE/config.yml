@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/Dhi13man/bombardment-runner/discussions
+    about: Ask for help or discuss a feature before opening an issue.
+  - name: Security vulnerability
+    url: https://github.com/Dhi13man/bombardment-runner/security/advisories/new
+    about: Report suspected vulnerabilities privately.

@@ -16,6 +16,7 @@ title: "Architecture: bombardment-runner"
 type: architecture
 ---
 
+<!-- markdownlint-disable-next-line MD025 -->
 # Architecture: Bombardment Runner
 
 Bombardment Runner is a lightweight, extensible tool for bulk API testing and data migration. It streams records from CSV/JSON files, transforms them via JSONata expressions, batches them, and dispatches HTTP requests concurrently across load-balanced targets. It runs as both a Gin HTTP server (with Preact Web UI) and a Cobra CLI.
@@ -32,8 +33,8 @@ Bombardment Runner is a lightweight, extensible tool for bulk API testing and da
 
 ### Languages and Runtimes
 
-- Primary: Go 1.23+ (`app/go.mod`)
-- Frontend: TypeScript 5.5 / Preact 10.25 (`app/package.json`)
+- Primary: Go 1.25.12+ (`app/go.mod`)
+- Frontend: TypeScript 5 / Preact 10 (`app/package.json`)
 
 ### Frameworks
 
@@ -43,7 +44,7 @@ Bombardment Runner is a lightweight, extensible tool for bulk API testing and da
 
 ### Infrastructure
 
-- Container: Docker (multi-stage build: Node 20 + Go 1.23 + Alpine 3.20)
+- Container: Docker (multi-stage build: Node 22 + Go 1.25.12 + Alpine 3.23)
 - Orchestration: Docker Compose (single service)
 - Cloud: None (self-hosted / local)
 
@@ -235,9 +236,9 @@ Bundle size budgets enforced in CI: CSS 32KB, JS 55KB, Icons 12KB (`Makefile:48-
 
 | Stage | Base Image | Purpose |
 | ----- | ---------- | ------- |
-| 1: Frontend | `node:20-alpine` | npm ci, Tailwind CSS + esbuild bundling |
-| 2: Builder | `golang:1.23-alpine` | CGO_ENABLED=0, `-ldflags="-s -w"` |
-| 3: Runtime | `alpine:3.20` | Non-root `appuser`, health check on `/v1/ping` |
+| 1: Frontend | `node:22-alpine` | npm ci, Tailwind CSS + esbuild bundling |
+| 2: Builder | `golang:1.25.12-alpine` | CGO_ENABLED=0, `-ldflags="-s -w"` |
+| 3: Runtime | `alpine:3.23` | Non-root `appuser`, health check on `/v1/ping` |
 
 ### Docker Compose
 

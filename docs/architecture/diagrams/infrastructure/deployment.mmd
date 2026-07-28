@@ -1,7 +1,7 @@
 flowchart TB
     subgraph DockerBuild[Docker Multi-Stage Build]
         subgraph Stage1[Stage 1: Frontend]
-            NodeAlpine[node:20-alpine]
+            NodeAlpine[node:22-alpine]
             NPM[npm ci + npm run build]
             CSSBundle[app.min.css<br/>Tailwind CSS]
             JSBundle[app.min.js<br/>Preact + esbuild]
@@ -11,7 +11,7 @@ flowchart TB
         end
 
         subgraph Stage2[Stage 2: Go Builder]
-            GoAlpine[golang:1.23-alpine]
+            GoAlpine[golang:1.25.12-alpine]
             GoBuild["CGO_ENABLED=0<br/>go build -ldflags='-s -w'"]
             Binary[bombardment binary]
             GoAlpine --> GoBuild
@@ -21,7 +21,7 @@ flowchart TB
         end
 
         subgraph Stage3[Stage 3: Runtime]
-            Alpine[alpine:3.20]
+            Alpine[alpine:3.23]
             Security["Non-root: appuser:appgroup<br/>no-new-privileges"]
             HealthCheck["HEALTHCHECK<br/>GET /v1/ping every 30s"]
             Alpine --> Security
