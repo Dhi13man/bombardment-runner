@@ -8,6 +8,10 @@ updates:
       frontend-dependencies:
         patterns:
           - "*"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
     open-pull-requests-limit: 5
 
   - package-ecosystem: gomod
@@ -34,6 +38,14 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    ignore:
+      - dependency-name: golang
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+      - dependency-name: node
+        update-types:
+          - version-update:semver-major
     open-pull-requests-limit: 5
 
   - package-ecosystem: github-actions
