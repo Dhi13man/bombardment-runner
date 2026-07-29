@@ -162,10 +162,14 @@ smoke_linux_archive() {
     mkdir -p "${smoke_dir}"
     tar -xzf "${DIST_DIR}/bombardment-linux-amd64.tar.gz" -C "${smoke_dir}"
 
+    local version_output_file="${TEMP_DIR}/version.stdout"
+    local version_stderr
+    version_stderr="$("${binary}" --version 2>&1 >"${version_output_file}")"
     local version_output
-    version_output="$("${binary}" --version 2>"${TEMP_DIR}/version.log")"
+    version_output="$(<"${version_output_file}")"
     [[ "${version_output}" == "bombardment version ${VERSION}" ]] || \
         die "--version returned ${version_output@Q}"
+    [[ -z "${version_stderr}" ]] || die "--version wrote to stderr: ${version_stderr@Q}"
 
     (
         cd "${smoke_dir}"

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"os"
+	"syscall"
 
 	appBootstrap "github.dhi13man.com/bombardment-runner/src/app/bootstrap"
 	appCli "github.dhi13man.com/bombardment-runner/src/app/cli"
@@ -16,7 +18,7 @@ func main() {
 	zap.ReplaceGlobals(logger)
 	defer func(logger *zap.Logger) {
 		err := logger.Sync()
-		if err != nil {
+		if isActionableLoggerSyncError(err) {
 			logger.Error("Failed to sync logger", zap.Error(err))
 		}
 	}(logger)
@@ -41,4 +43,8 @@ func main() {
 		zap.L().Error("Application exited with error", zap.Error(err))
 		os.Exit(1)
 	}
+}
+
+func isActionableLoggerSyncError(err error) bool {
+	return err != nil && !errors.Is(err, syscall.EINVAL)
 }
