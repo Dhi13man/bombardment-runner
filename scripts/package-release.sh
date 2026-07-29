@@ -162,10 +162,19 @@ smoke_linux_archive() {
     mkdir -p "${smoke_dir}"
     tar -xzf "${DIST_DIR}/bombardment-linux-amd64.tar.gz" -C "${smoke_dir}"
 
+    local version_output_file="${TEMP_DIR}/version.stdout"
+    local version_stderr_file="${TEMP_DIR}/version.stderr"
+    "${binary}" --version 3>&1 1>"${version_output_file}" 2>&3 3>&- |
+        cat >"${version_stderr_file}"
     local version_output
-    version_output="$("${binary}" --version 2>"${TEMP_DIR}/version.log")"
+    version_output="$(<"${version_output_file}")"
     [[ "${version_output}" == "bombardment version ${VERSION}" ]] || \
         die "--version returned ${version_output@Q}"
+    if [[ -s "${version_stderr_file}" ]]; then
+        local version_stderr_size
+        version_stderr_size="$(wc -c <"${version_stderr_file}")"
+        die "--version wrote ${version_stderr_size} bytes to stderr"
+    fi
 
     (
         cd "${smoke_dir}"
@@ -191,7 +200,7 @@ main() {
     [[ "${SMOKE_PORT}" =~ ^[0-9]+$ ]] || die "SMOKE_PORT must be numeric"
     ((SMOKE_PORT >= 1 && SMOKE_PORT <= 65535)) || die "SMOKE_PORT must be between 1 and 65535"
 
-    for command in curl diff find go grep npm sed sha256sum sort tar unzip zip; do
+    for command in cat curl diff find go grep npm sed sha256sum sort tar unzip wc zip; do
         require "${command}"
     done
     [[ "$(cd "${APP_DIR}" && go env GOVERSION)" == "${EXPECTED_GO_VERSION}" ]] || \
