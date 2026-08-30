@@ -6,17 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
-### Fixed
+## [1.0.3] - 2026-08-30
 
-- Kept successful version output free of non-actionable stderr sync errors.
-- Packaged the Web UI with release binaries and added artifact manifests, checksums, provenance, and runtime smoke verification.
-- Updated esbuild to 0.28.1 to address GHSA-g7r4-m6w7-qqqr in the local development server.
-- Enforced platform-correct local paths for uploaded proto filenames.
+### Security
+
+- Updated `github.com/quic-go/quic-go` from 0.59.0 to 0.59.1 (CVE-2026-40898: HTTP/3 QPACK trailer expansion memory exhaustion).
+- Updated `google.golang.org/grpc` from 1.82.1 to 1.83.2 (reject requests missing `:authority`/Host, xDS RBAC matcher fixes, HTTP/2 control-frame flood throttling).
 
 ### Changed
 
-- Updated the supported frontend runtime to Node.js 22.
-- Hardened automation with Go 1.25.12, current immutable action and container pins, scheduled dependency updates, and OpenSSF Scorecard checks.
+- Bumped application Go dependencies (#78): `github.com/gin-gonic/gin` 1.10.1 → 1.12.0, `github.com/gin-contrib/cors` 1.7.6 → 1.7.7, `github.com/parquet-go/parquet-go` 0.29.0 → 0.32.0, `github.com/spf13/cobra` 1.8.1 → 1.10.2, `github.com/swaggo/gin-swagger` 1.6.0 → 1.6.1, `github.com/swaggo/swag` 1.16.4 → 1.16.6, `go.uber.org/zap` 1.27.0 → 1.28.0, `google.golang.org/protobuf` 1.36.11 → 1.36.12.
+- Bumped the Node.js 22 Alpine frontend image digest from `16e22a5` to `c610fcd` (#76).
 
 ## [1.0.0] - 2026-03-21
 
