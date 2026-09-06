@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-09-06
+
+### Changed
+
+- Bumped Preact (and related frontend deps from Dependabot frontend group #82) baked into the release Web UI via `package-release.sh`.
+- Overrode transitive `nanoid` to 3.3.18 in `app/` (#86) for CVE-2026-73086 / CVE-2026-67213 / CVE-2026-67214.
+- Pinned Dockerfile Go builder image to `golang:1.25.14-alpine` (#80). Runtime image remains `alpine:3.24`; release archives still use setup-go + `go.mod`.
+- Dev/bench dependency refreshes (#81, #84).
 ## [1.0.3] - 2026-08-30
 
 ### Security
