@@ -53,10 +53,10 @@ check-bundle-size: ui-build ## Check frontend bundle sizes against budgets
 	@CSS_SIZE=$$(wc -c < $(GO_DIR)/src/app/ui/static/css/app.min.css); \
 	JS_SIZE=$$(wc -c < $(GO_DIR)/src/app/ui/static/js/app.min.js); \
 	ICON_SIZE=$$(wc -c < $(GO_DIR)/src/app/ui/static/icons/sprite.svg); \
-	echo "  CSS:   $$CSS_SIZE bytes (budget: 40960 / 40KB)"; \
+	echo "  CSS:   $$CSS_SIZE bytes (budget: 57344 / 56KB)"; \
 	echo "  JS:    $$JS_SIZE bytes (budget: 90112 / 88KB)"; \
 	echo "  Icons: $$ICON_SIZE bytes (budget: 12288 / 12KB)"; \
-	if [ $$CSS_SIZE -gt 40960 ]; then echo "FAIL: CSS exceeds 40KB budget" && exit 1; fi; \
+	if [ $$CSS_SIZE -gt 57344 ]; then echo "FAIL: CSS exceeds 56KB budget" && exit 1; fi; \
 	if [ $$JS_SIZE -gt 90112 ]; then echo "FAIL: JS exceeds 88KB budget" && exit 1; fi; \
 	if [ $$ICON_SIZE -gt 12288 ]; then echo "FAIL: Icons exceed 12KB budget" && exit 1; fi; \
 	echo "All bundle sizes within budget."

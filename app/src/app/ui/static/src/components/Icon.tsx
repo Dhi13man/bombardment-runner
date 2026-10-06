@@ -70,7 +70,7 @@ interface IconProps {
  */
 export function Icon({ name, size = 'md', class: className, ...rest }: IconProps): JSX.Element {
   const sizeClass = SIZE_CLASSES[size];
-  const classes = [sizeClass, 'flex-shrink-0', className].filter(Boolean).join(' ');
+  const classes = [sizeClass, 'shrink-0', className].filter(Boolean).join(' ');
   const isDecorative = !rest['aria-label'];
 
   return (
