@@ -221,7 +221,7 @@ The frontend is a Preact single-page application bundled with esbuild:
 | ----- | ---------- | -------- |
 | Framework | Preact 10.25 (lightweight React) | `app/package.json` |
 | Language | TypeScript 5.5 (strict mode) | `app/tsconfig.json` |
-| Styling | Tailwind CSS 3.4 with CSS variables | `app/tailwind.config.js` |
+| Styling | Tailwind CSS 4 (CSS-first `@theme` + CSS variables) | `app/src/app/ui/static/src/css/base.css` |
 | Bundler | esbuild (ESM, ES2022 target) | `app/package.json` scripts |
 | Fonts | IBM Plex Sans + JetBrains Mono | Self-hosted in `/static/fonts/` |
 | Icons | Lucide SVG sprite | `/static/icons/` |

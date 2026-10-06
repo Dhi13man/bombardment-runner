@@ -3,7 +3,7 @@ WORKDIR /build
 COPY app/package.json app/package-lock.json ./
 RUN npm ci
 COPY app/scripts/ ./scripts/
-COPY app/tailwind.config.js app/tsconfig.json ./
+COPY app/tsconfig.json ./
 COPY app/src/app/ui/static/src/ ./src/app/ui/static/src/
 COPY app/src/app/ui/static/icons/ ./src/app/ui/static/icons/
 RUN npm run build

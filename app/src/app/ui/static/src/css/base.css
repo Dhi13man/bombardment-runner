@@ -1,10 +1,115 @@
 /* ============================================================
-   Section A: Tailwind Directives
+   Section A: Tailwind v4 (CSS-first)
    ============================================================ */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Explicit sources (previous content paths from tailwind.config.js) */
+@source "../../../**/*.html";
+@source "../**/*.{ts,tsx}";
+
+@theme {
+  --color-bg-base: var(--bg-base);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-overlay: var(--bg-overlay);
+  --color-bg-inset: var(--bg-inset);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-inverse: var(--text-inverse);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+  --color-accent-muted: var(--accent-muted);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-border: var(--accent-border);
+
+  --color-success: var(--status-success);
+  --color-success-muted: var(--status-success-muted);
+  --color-success-text: var(--status-success-text);
+
+  --color-warning: var(--status-warning);
+  --color-warning-muted: var(--status-warning-muted);
+  --color-warning-text: var(--status-warning-text);
+
+  --color-error: var(--status-error);
+  --color-error-muted: var(--status-error-muted);
+  --color-error-text: var(--status-error-text);
+
+  --color-info: var(--status-info);
+  --color-info-muted: var(--status-info-muted);
+  --color-info-text: var(--status-info-text);
+
+  --color-glass-bg: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
+
+  --color-border-hover: var(--border-hover);
+  --color-border-focus: var(--border-focus);
+
+  /* Own the font stacks here (avoid circular var(--font-sans) refs) */
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(129, 140, 248, 0.15);
+  --shadow-focus: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
+
+  --backdrop-blur-glass: var(--glass-blur);
+
+  --default-transition-duration: 250ms;
+  --transition-duration-instant: 100ms;
+  --transition-duration-fast: 150ms;
+  --transition-duration-normal: 250ms;
+  --transition-duration-slow: 400ms;
+
+  --text-xs: 11px;
+  --text-xs--line-height: 1.5;
+  --text-xs--letter-spacing: 0.01em;
+  --text-sm: 13px;
+  --text-sm--line-height: 1.5;
+  --text-sm--letter-spacing: 0;
+  --text-base: 14px;
+  --text-base--line-height: 1.6;
+  --text-base--letter-spacing: 0;
+  --text-lg: 16px;
+  --text-lg--line-height: 1.5;
+  --text-lg--letter-spacing: 0;
+  --text-xl: 18px;
+  --text-xl--line-height: 1.4;
+  --text-xl--letter-spacing: -0.01em;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 1.3;
+  --text-2xl--letter-spacing: -0.02em;
+  --text-3xl: 30px;
+  --text-3xl--line-height: 1.2;
+  --text-3xl--letter-spacing: -0.025em;
+
+  --spacing-0_5: 2px;
+}
+
+/*
+  v3 default border color was theme borderColor.DEFAULT (--border-default).
+  v4 defaults to currentcolor — restore prior look.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border-default);
+  }
+}
 
 /* ============================================================
    Section B: CSS Custom Properties
@@ -63,9 +168,7 @@
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-blur: 12px;
 
-  /* Fonts */
-  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Fonts: owned by @theme (--font-sans / --font-mono) */
 
   /* Chart */
   --chart-1: #818CF8;
@@ -321,7 +424,7 @@
   }
 
   .sidebar-link-icon {
-    @apply w-4 h-4 flex-shrink-0;
+    @apply w-4 h-4 shrink-0;
   }
 
   .sidebar-shortcut {
@@ -403,7 +506,7 @@
   }
 
   .badge-dot {
-    @apply inline-block rounded-full flex-shrink-0;
+    @apply inline-block rounded-full shrink-0;
     width: 6px;
     height: 6px;
   }
@@ -633,7 +736,7 @@
     color: var(--text-tertiary);
   }
   .custom-select-chevron {
-    @apply w-4 h-4 flex-shrink-0;
+    @apply w-4 h-4 shrink-0;
     color: var(--text-tertiary);
     transition: transform 150ms ease;
   }
@@ -670,7 +773,7 @@
     @apply flex items-center gap-2;
   }
   .checkbox {
-    @apply flex-shrink-0 cursor-pointer;
+    @apply shrink-0 cursor-pointer;
     width: 18px;
     height: 18px;
     border-radius: 4px;
@@ -712,7 +815,7 @@
     box-shadow: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--accent);
   }
   .radio-card-icon {
-    @apply w-5 h-5 flex-shrink-0;
+    @apply w-5 h-5 shrink-0;
     color: var(--text-tertiary);
   }
   .radio-card.active .radio-card-icon {
@@ -973,7 +1076,7 @@
   }
 
   .step-circle {
-    @apply flex items-center justify-center rounded-full flex-shrink-0;
+    @apply flex items-center justify-center rounded-full shrink-0;
     width: 36px;
     height: 36px;
     z-index: 1;
@@ -1096,7 +1199,7 @@
     @apply flex items-start gap-3 py-2;
   }
   .config-row-label {
-    @apply text-sm flex-shrink-0;
+    @apply text-sm shrink-0;
     color: var(--text-tertiary);
     min-width: 100px;
   }
@@ -1172,7 +1275,7 @@
     border-bottom: 1px solid var(--border-default);
   }
   .command-palette-search-icon {
-    @apply w-5 h-5 flex-shrink-0;
+    @apply w-5 h-5 shrink-0;
     color: var(--text-tertiary);
   }
   .command-palette-input {
@@ -1251,7 +1354,7 @@
   .toast-info { border-left: 3px solid var(--status-info); }
 
   .toast-icon {
-    @apply w-5 h-5 flex-shrink-0;
+    @apply w-5 h-5 shrink-0;
   }
   .toast-success .toast-icon { color: var(--status-success-text); }
   .toast-error .toast-icon { color: var(--status-error-text); }
@@ -1263,7 +1366,7 @@
     color: var(--text-primary);
   }
   .toast-close {
-    @apply flex-shrink-0 cursor-pointer;
+    @apply shrink-0 cursor-pointer;
     background: transparent;
     border: none;
     color: var(--text-tertiary);
@@ -1334,7 +1437,7 @@
   }
 
   .pipeline-node {
-    @apply rounded-full flex items-center justify-center flex-shrink-0;
+    @apply rounded-full flex items-center justify-center shrink-0;
     transition: all 150ms ease;
   }
   .pipeline-strip.compact .pipeline-node {
@@ -1463,7 +1566,7 @@
 
   /* ---- URL Remove Button ---- */
   .url-remove-btn {
-    @apply flex items-center justify-center flex-shrink-0 cursor-pointer;
+    @apply flex items-center justify-center shrink-0 cursor-pointer;
     width: 36px;
     height: 36px;
     border-radius: 8px;
