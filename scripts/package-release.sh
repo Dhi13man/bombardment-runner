@@ -7,7 +7,7 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 readonly ROOT_DIR
 readonly APP_DIR="${ROOT_DIR}/app"
 readonly DIST_DIR="${ROOT_DIR}/dist"
-readonly EXPECTED_GO_VERSION="go1.25.12"
+readonly EXPECTED_GO_VERSION="go1.26.10"
 readonly SMOKE_PORT="${SMOKE_PORT:-18080}"
 readonly SEMVER_CORE_IDENTIFIER='(0|[1-9][0-9]*)'
 readonly SEMVER_PRERELEASE_IDENTIFIER='(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)'

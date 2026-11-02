@@ -11,7 +11,7 @@ flowchart TB
         end
 
         subgraph Stage2[Stage 2: Go Builder]
-            GoAlpine[golang:1.25.12-alpine]
+            GoAlpine[golang:1.26.10-alpine]
             GoBuild["CGO_ENABLED=0<br/>go build -ldflags='-s -w'"]
             Binary[bombardment binary]
             GoAlpine --> GoBuild
