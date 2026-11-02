@@ -1,4 +1,4 @@
-FROM node:22-alpine@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS frontend
+FROM node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS frontend
 WORKDIR /build
 COPY app/package.json app/package-lock.json ./
 RUN npm ci
@@ -8,7 +8,7 @@ COPY app/src/app/ui/static/src/ ./src/app/ui/static/src/
 COPY app/src/app/ui/static/icons/ ./src/app/ui/static/icons/
 RUN npm run build
 
-FROM golang:1.25.14-alpine@sha256:1ae0735f00daffa3aaf1363a5184c0d2dc55c78e3db4ec70241cdac97bf84b59 AS builder
+FROM golang:1.26.10-alpine@sha256:a2012b4a1d1f9f7e9f44e0d39b805a901e856b1dd80b4e6ee4338db547050308 AS builder
 WORKDIR /build
 COPY app/go.mod app/go.sum ./
 RUN go mod download

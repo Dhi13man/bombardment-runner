@@ -38,7 +38,7 @@ type baseBunRepoImpl struct {
 func NewBaseBunPostgreSqlRepoImpl(dsn *string) BaseBunRepo {
 	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(*dsn)))
 	bunDb := bun.NewDB(sqldb, pgdialect.New())
-	bunDb.AddQueryHook(
+	bunDb = bunDb.WithQueryHook(
 		bunzap.NewQueryHook(
 			bunzap.QueryHookOptions{
 				Logger:       zap.L(),

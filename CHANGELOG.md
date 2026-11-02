@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+### Changed
+
+- Raised the Go toolchain to 1.26.10 (`app/`, `bench/`, Dockerfile builder `golang:1.26.10-alpine`, release packaging) because `google.golang.org/grpc` 1.85.0 requires Go 1.26.
+- Bumped app dependencies from Dependabot #104: grpc 1.85.0, `gin-contrib/cors` 1.7.9, `uptrace/bun` (+ pgdialect, pgdriver) 1.3.0; bench grpc 1.85.0 (#102).
+- Switched the Bun query hook from deprecated `AddQueryHook` to `WithQueryHook`.
+
 ## [1.0.4] - 2026-09-06
 
 ### Changed

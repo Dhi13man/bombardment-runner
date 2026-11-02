@@ -33,7 +33,7 @@ Bombardment Runner is a lightweight, extensible tool for bulk API testing and da
 
 ### Languages and Runtimes
 
-- Primary: Go 1.25.12+ (`app/go.mod`)
+- Primary: Go 1.26.10+ (`app/go.mod`)
 - Frontend: TypeScript 5 / Preact 10 (`app/package.json`)
 
 ### Frameworks
@@ -44,7 +44,7 @@ Bombardment Runner is a lightweight, extensible tool for bulk API testing and da
 
 ### Infrastructure
 
-- Container: Docker (multi-stage build: Node 22 + Go 1.25.12 + Alpine 3.23)
+- Container: Docker (multi-stage build: Node 22 + Go 1.26.10 + Alpine 3.23)
 - Orchestration: Docker Compose (single service)
 - Cloud: None (self-hosted / local)
 
@@ -237,7 +237,7 @@ Bundle size budgets enforced in CI: CSS 32KB, JS 55KB, Icons 12KB (`Makefile:48-
 | Stage | Base Image | Purpose |
 | ----- | ---------- | ------- |
 | 1: Frontend | `node:22-alpine` | npm ci, Tailwind CSS + esbuild bundling |
-| 2: Builder | `golang:1.25.12-alpine` | CGO_ENABLED=0, `-ldflags="-s -w"` |
+| 2: Builder | `golang:1.26.10-alpine` | CGO_ENABLED=0, `-ldflags="-s -w"` |
 | 3: Runtime | `alpine:3.23` | Non-root `appuser`, health check on `/v1/ping` |
 
 ### Docker Compose
