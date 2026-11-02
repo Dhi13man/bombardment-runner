@@ -6,11 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-11-02
+
 ### Changed
 
 - Raised the Go toolchain to 1.26.10 (`app/`, `bench/`, Dockerfile builder `golang:1.26.10-alpine`, release packaging) because `google.golang.org/grpc` 1.85.0 requires Go 1.26.
 - Bumped app dependencies from Dependabot #104: grpc 1.85.0, `gin-contrib/cors` 1.7.9, `uptrace/bun` (+ pgdialect, pgdriver) 1.3.0; bench grpc 1.85.0 (#102).
 - Switched the Bun query hook from deprecated `AddQueryHook` to `WithQueryHook`.
+
+## [1.0.5] - 2026-10-07
+
+### Changed
+
+- Migrated the Web UI styling to Tailwind CSS v4 (#96): `tailwindcss` 3.4 → 4.3.3 with `@tailwindcss/cli`, CSS-first configuration in `base.css` replacing `tailwind.config.js`, and the CSS bundle budget raised to 56KB. The rebuilt CSS is baked into the GitHub Release archives via `package-release.sh` (`npm run build` → `build:css`).
 
 ## [1.0.4] - 2026-09-06
 
@@ -20,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - Overrode transitive `nanoid` to 3.3.18 in `app/` (#86) for CVE-2026-73086 / CVE-2026-67213 / CVE-2026-67214.
 - Pinned Dockerfile Go builder image to `golang:1.25.14-alpine` (#80). Runtime image remains `alpine:3.24`; release archives still use setup-go + `go.mod`.
 - Dev/bench dependency refreshes (#81, #84).
+
 ## [1.0.3] - 2026-08-30
 
 ### Security
