@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-11-12
+
+### Changed
+
+- Bumped `github.com/xuri/excelize/v2` from 2.11.0 to 2.11.1 in `app/` (#109); ships in all release binaries. Go toolchain remains 1.26.10.
+
 ## [1.0.6] - 2026-11-02
 
 ### Changed
